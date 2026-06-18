@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item, TypeFilter } from '../types';
-import { Clock } from './icons';
+import { Clock, Layers } from './icons';
 import { timeAgo } from '../lib/util';
 
 const FILTERS: { id: TypeFilter; label: string }[] = [
@@ -90,7 +90,9 @@ function ResurfacedStrip({
 }
 
 export function ContextHeader({ onOpen }: { onOpen: (i: Item) => void }) {
-  const { view, projectById, visibleItems, items } = useForage();
+  const { view, projectById, visibleItems, items, storyboards, setView } = useForage();
+  const projectStoryboard =
+    view.kind === 'project' ? storyboards.find((s) => s.projectId === view.projectId) : undefined;
 
   let title = 'Library';
   let subtitle = `${visibleItems.length} items — everything you've foraged`;
@@ -121,6 +123,15 @@ export function ContextHeader({ onOpen }: { onOpen: (i: Item) => void }) {
         )}
         <h1 className="text-[22px] font-semibold tracking-tight">{title}</h1>
         <span className="text-[13px] text-faint">· {subtitle}</span>
+        {projectStoryboard && (
+          <button
+            onClick={() => setView({ kind: 'storyboard', storyboardId: projectStoryboard.id })}
+            className="ml-auto flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[12.5px] text-muted transition hover:text-ink"
+          >
+            <Layers width={15} height={15} />
+            Storyboard
+          </button>
+        )}
       </div>
 
       {brief && (

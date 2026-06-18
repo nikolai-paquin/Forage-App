@@ -59,6 +59,27 @@ export interface Project {
 export type View =
   | { kind: 'library' }
   | { kind: 'basket' }
-  | { kind: 'project'; projectId: string };
+  | { kind: 'project'; projectId: string }
+  | { kind: 'storyboard'; storyboardId: string };
 
 export type TypeFilter = ItemType | 'all';
+
+// ---- Storyboard (PRD §8.4) ----
+// An ordered sequence of frames built from Items, for AI video & sequenced design work.
+
+export interface Frame {
+  id: string;
+  /** The Item this frame shows (image/video/ai_asset). */
+  itemId: string;
+  /** Short direction for the shot, e.g. "wide, dawn" or "push-in". */
+  beat: string;
+  /** How this frame moves to the next. */
+  transition?: string;
+}
+
+export interface Storyboard {
+  id: string;
+  projectId: string;
+  title: string;
+  frames: Frame[];
+}

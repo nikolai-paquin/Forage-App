@@ -24,6 +24,7 @@ Other scripts: `npm run build` (type-check + production build), `npm run preview
 | Capture dialog with smart-paste type detection (⌘N) | `components/CaptureDialog.tsx` | F1 |
 | Item detail — notes, AI summary, palette, **AI prompt + model + source-ref bridge**, related row | `components/ItemDetail.tsx` | F8/F10 |
 | Projects with brief + **"Resurfaced for you"** strip | `components/ContextHeader.tsx`, `components/Sidebar.tsx` | F4/F9 |
+| **Storyboard mode** — drag-to-reorder frames, editable shot beats, per-frame AI prompt, frame picker, export shot list | `components/StoryboardView.tsx` | F11 |
 | Light/dark theming as first-class equals, system-aware, no-flash | `index.css`, `lib/theme.ts` | F5 |
 | Search + type filters | `components/Toolbar.tsx`, `components/ContextHeader.tsx` | F6 |
 | Local-first persistence (localStorage stands in for the SQLite source of truth) | `lib/store.tsx` | §0 |
@@ -36,13 +37,15 @@ Other scripts: `npm run build` (type-check + production build), `npm run preview
 3. Open the **AI Film** project → see the brief and the *Resurfaced for you* strip.
 4. Open the **"Memory — opening frame v3"** AI asset → see the prompt/model and the **"derived from"**
    link back to the grain study (the input→output graph).
-5. Toggle **light/dark** in the top-right.
+5. Open the **Opening sequence** storyboard (left sidebar) → **drag frames** to re-sequence, edit a
+   shot description, and **Add frame** from the project's items.
+6. Toggle **light/dark** in the top-right.
 
 ## Not yet built (next milestones)
 
 Virtualized grid for 10k+ items, browser extension + mobile share-sheet capture, real AI
-tagging/embeddings/summaries, the Forage Digest surface, storyboard mode, and the Tauri shell. See
-the PRD roadmap (§12).
+tagging/embeddings/summaries, the Forage Digest surface, and the Tauri shell (the downloadable
+macOS app — built/verified on a Mac). See the PRD roadmap (§12).
 
 ## Notes
 

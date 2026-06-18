@@ -6,11 +6,12 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { Item, Project, TypeFilter, View } from '../types';
-import { sampleItems, sampleProjects } from '../data/sample';
+import type { Frame, Item, Project, Storyboard, TypeFilter, View } from '../types';
+import { sampleItems, sampleProjects, sampleStoryboards } from '../data/sample';
 import { uid } from './util';
 
 const STORE_KEY = 'forage.items.v1';
+const SB_KEY = 'forage.storyboards.v1';
 
 interface NewItemInput {
   type: Item['type'];
@@ -26,6 +27,7 @@ interface NewItemInput {
 interface ForageStore {
   items: Item[];
   projects: Project[];
+  storyboards: Storyboard[];
   view: View;
   query: string;
   typeFilter: TypeFilter;
@@ -38,6 +40,11 @@ interface ForageStore {
   assignToProject: (itemId: string, projectId: string) => void;
   projectById: (id: string) => Project | undefined;
   itemById: (id: string) => Item | undefined;
+  storyboardById: (id: string) => Storyboard | undefined;
+  reorderFrames: (storyboardId: string, frames: Frame[]) => void;
+  addFrame: (storyboardId: string, itemId: string) => void;
+  removeFrame: (storyboardId: string, frameId: string) => void;
+  updateFrameBeat: (storyboardId: string, frameId: string, beat: string) => void;
   /** Items in the current view, after search + type filtering. */
   visibleItems: Item[];
   basketCount: number;
@@ -45,19 +52,22 @@ interface ForageStore {
 
 const Ctx = createContext<ForageStore | null>(null);
 
-function loadItems(): Item[] {
+function loadJSON<T>(key: string, fallback: T): T {
   try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return JSON.parse(raw) as Item[];
+    const raw = localStorage.getItem(key);
+    if (raw) return JSON.parse(raw) as T;
   } catch {
     /* fall through to seed */
   }
-  return sampleItems;
+  return fallback;
 }
 
 export function ForageProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<Item[]>(loadItems);
+  const [items, setItems] = useState<Item[]>(() => loadJSON(STORE_KEY, sampleItems));
   const [projects] = useState<Project[]>(sampleProjects);
+  const [storyboards, setStoryboards] = useState<Storyboard[]>(() =>
+    loadJSON(SB_KEY, sampleStoryboards),
+  );
   const [view, setView] = useState<View>({ kind: 'library' });
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
@@ -70,6 +80,14 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       /* storage full / disabled — non-fatal in the prototype */
     }
   }, [items]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SB_KEY, JSON.stringify(storyboards));
+    } catch {
+      /* non-fatal */
+    }
+  }, [storyboards]);
 
   const store = useMemo<ForageStore>(() => {
     const projectById = (id: string) => projects.find((p) => p.id === id);
@@ -97,6 +115,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
     return {
       items,
       projects,
+      storyboards,
       view,
       query,
       typeFilter,
@@ -105,8 +124,35 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       setTypeFilter,
       projectById,
       itemById,
+      storyboardById: (id) => storyboards.find((s) => s.id === id),
       visibleItems,
       basketCount: items.filter((i) => i.projectIds.length === 0).length,
+      reorderFrames: (sbId, frames) =>
+        setStoryboards((prev) =>
+          prev.map((s) => (s.id === sbId ? { ...s, frames } : s)),
+        ),
+      addFrame: (sbId, itemId) =>
+        setStoryboards((prev) =>
+          prev.map((s) =>
+            s.id === sbId
+              ? { ...s, frames: [...s.frames, { id: uid(), itemId, beat: '' }] }
+              : s,
+          ),
+        ),
+      removeFrame: (sbId, frameId) =>
+        setStoryboards((prev) =>
+          prev.map((s) =>
+            s.id === sbId ? { ...s, frames: s.frames.filter((f) => f.id !== frameId) } : s,
+          ),
+        ),
+      updateFrameBeat: (sbId, frameId, beat) =>
+        setStoryboards((prev) =>
+          prev.map((s) =>
+            s.id === sbId
+              ? { ...s, frames: s.frames.map((f) => (f.id === frameId ? { ...f, beat } : f)) }
+              : s,
+          ),
+        ),
       addItem: (input) => {
         const item: Item = {
           id: uid(),
@@ -143,7 +189,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           ),
         ),
     };
-  }, [items, projects, view, query, typeFilter]);
+  }, [items, projects, storyboards, view, query, typeFilter]);
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }

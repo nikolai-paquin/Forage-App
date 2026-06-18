@@ -1,4 +1,4 @@
-import type { Item, Project } from '../types';
+import type { Item, Project, Storyboard } from '../types';
 
 const now = Date.now();
 const days = (n: number) => now - n * 86_400_000;
@@ -275,5 +275,20 @@ export const sampleItems: Item[] = [
     projectIds: ['p_film', 'p_studio'],
     createdAt: days(13),
     lastSeenAt: days(7),
+  },
+];
+
+export const sampleStoryboards: Storyboard[] = [
+  {
+    id: 'sb_opening',
+    projectId: 'p_film',
+    title: 'Opening sequence',
+    frames: [
+      { id: 'f1', itemId: 'i_texture', beat: 'Wide, dawn light', transition: 'slow fade' },
+      { id: 'f2', itemId: 'i_aiframe', beat: 'Push-in on the window', transition: 'match cut' },
+      { id: 'f3', itemId: 'i_aishot', beat: 'Hand opens the window', transition: 'hard cut' },
+      { id: 'f4', itemId: 'i_grain', beat: 'Dust in the warm air', transition: 'dissolve' },
+      { id: 'f5', itemId: 'i_diffusion', beat: 'Title over grain', transition: 'cut to black' },
+    ],
   },
 ];

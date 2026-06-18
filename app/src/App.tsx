@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar';
 import { Toolbar } from './components/Toolbar';
 import { ContextHeader } from './components/ContextHeader';
 import { MasonryGrid } from './components/MasonryGrid';
+import { StoryboardView } from './components/StoryboardView';
 import { ItemDetail } from './components/ItemDetail';
 import { CaptureDialog } from './components/CaptureDialog';
 import type { Item } from './types';
@@ -33,7 +34,7 @@ function EmptyState({ onCapture }: { onCapture: () => void }) {
 }
 
 function Workspace() {
-  const { visibleItems, markSeen, view } = useForage();
+  const { visibleItems, markSeen, view, storyboardById } = useForage();
   const [selected, setSelected] = useState<Item | null>(null);
   const [capture, setCapture] = useState(false);
 
@@ -65,19 +66,39 @@ function Workspace() {
         <main className="flex-1 overflow-y-auto">
           {/* re-key on view so the header + grid animate in on navigation */}
           <motion.div
-            key={view.kind + (view.kind === 'project' ? view.projectId : '')}
+            key={
+              view.kind +
+              (view.kind === 'project'
+                ? view.projectId
+                : view.kind === 'storyboard'
+                  ? view.storyboardId
+                  : '')
+            }
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
-            <ContextHeader onOpen={open} />
-            <div className="px-5 pb-24">
-              {visibleItems.length === 0 ? (
-                <EmptyState onCapture={() => setCapture(true)} />
-              ) : (
-                <MasonryGrid items={visibleItems} onOpen={open} />
-              )}
-            </div>
+            {view.kind === 'storyboard' ? (
+              (() => {
+                const sb = storyboardById(view.storyboardId);
+                return sb ? (
+                  <StoryboardView storyboard={sb} />
+                ) : (
+                  <EmptyState onCapture={() => setCapture(true)} />
+                );
+              })()
+            ) : (
+              <>
+                <ContextHeader onOpen={open} />
+                <div className="px-5 pb-24">
+                  {visibleItems.length === 0 ? (
+                    <EmptyState onCapture={() => setCapture(true)} />
+                  ) : (
+                    <MasonryGrid items={visibleItems} onOpen={open} />
+                  )}
+                </div>
+              </>
+            )}
           </motion.div>
         </main>
       </div>

@@ -42,10 +42,14 @@ function NavRow({
 }
 
 export function Sidebar() {
-  const { view, setView, projects, basketCount } = useForage();
-  const is = (v: View) =>
-    v.kind === view.kind &&
-    (v.kind !== 'project' || (view.kind === 'project' && v.projectId === view.projectId));
+  const { view, setView, projects, basketCount, storyboards } = useForage();
+  const is = (v: View) => {
+    if (v.kind !== view.kind) return false;
+    if (v.kind === 'project' && view.kind === 'project') return v.projectId === view.projectId;
+    if (v.kind === 'storyboard' && view.kind === 'storyboard')
+      return v.storyboardId === view.storyboardId;
+    return v.kind !== 'project' && v.kind !== 'storyboard';
+  };
 
   return (
     <aside className="flex w-[228px] shrink-0 flex-col gap-5 border-r border-border px-3 pb-4 pt-3">
@@ -99,13 +103,25 @@ export function Sidebar() {
         ))}
       </div>
 
+      <div className="flex flex-col gap-0.5">
+        <p className="px-2.5 pb-1 text-[11px] font-medium uppercase tracking-wider text-faint">
+          Storyboards
+        </p>
+        {storyboards.map((sb) => {
+          const p = projects.find((pr) => pr.id === sb.projectId);
+          return (
+            <NavRow
+              key={sb.id}
+              active={is({ kind: 'storyboard', storyboardId: sb.id })}
+              onClick={() => setView({ kind: 'storyboard', storyboardId: sb.id })}
+              icon={<Layers width={16} height={16} style={{ color: p?.color }} />}
+              label={sb.title}
+            />
+          );
+        })}
+      </div>
+
       <div className="mt-auto flex flex-col gap-0.5 border-t border-border pt-3">
-        <NavRow
-          active={false}
-          onClick={() => {}}
-          icon={<Layers width={17} height={17} />}
-          label="Storyboards"
-        />
         <NavRow
           active={false}
           onClick={() => {}}
