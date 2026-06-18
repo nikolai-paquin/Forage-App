@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Item } from '../types';
+import { useForage } from '../lib/store';
 import { ItemTile } from './ItemTile';
 
 const GAP = 10; // matches gap-2.5 / mb-2.5
@@ -44,6 +45,7 @@ export function MasonryGrid({
   onOpen: (item: Item) => void;
   targetWidth?: number;
 }) {
+  const { focusedId } = useForage();
   const ref = useRef<HTMLDivElement>(null);
   const scrollParent = useRef<HTMLElement | null>(null);
   const [cols, setCols] = useState(4);
@@ -94,6 +96,30 @@ export function MasonryGrid({
     () => layout(items, cols, colWidth || 1),
     [items, cols, colWidth],
   );
+
+  // Bring the keyboard-focused tile into view (works virtualized or not).
+  useEffect(() => {
+    if (!focusedId) return;
+    const grid = ref.current;
+    if (!grid) return;
+    let placed: Placed | undefined;
+    for (const b of buckets) {
+      placed = b.find((p) => p.item.id === focusedId);
+      if (placed) break;
+    }
+    if (!placed) return;
+    const sp = nearestScrollParent(grid);
+    if (!sp) return;
+    const gridTop = grid.getBoundingClientRect().top - sp.getBoundingClientRect().top + sp.scrollTop;
+    const top = gridTop + placed.top;
+    const bottom = top + placed.h;
+    const viewTop = sp.scrollTop;
+    const viewBottom = viewTop + sp.clientHeight;
+    if (top < viewTop + 16 || bottom > viewBottom - 16) {
+      sp.scrollTo({ top: Math.max(0, top - 96), behavior: 'smooth' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusedId]);
 
   // Visible band within the grid's own coordinate space, padded a screen each way.
   const start = scroll.top - scroll.gridTop - scroll.viewH;

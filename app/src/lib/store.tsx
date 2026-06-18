@@ -9,6 +9,7 @@ import {
 import type { FilterEntry, Item, Project, SortBy, Space, SpaceElement, TypeFilter, View } from '../types';
 import { sampleItems, sampleProjects } from '../data/sample';
 import { sourceLabel, uid } from './util';
+import { idbGet, idbSet } from './idb';
 import { findDuplicate, type DupeCandidate } from './dedupe';
 import {
   getAutoSync,
@@ -32,10 +33,12 @@ export interface SyncCfg {
   auto: boolean;
 }
 
-const STORE_KEY = 'forage.items.v2';
+const STORE_KEY = 'forage.items.v2'; // legacy localStorage key, migrated into IDB
 const TYPES_KEY = 'forage.fileTypes.v1';
 const SOURCES_KEY = 'forage.sources.v1';
-const SPACES_KEY = 'forage.spaces.v1';
+const SPACES_KEY = 'forage.spaces.v1'; // legacy localStorage key, migrated into IDB
+const IDB_ITEMS = 'items';
+const IDB_SPACES = 'spaces';
 
 const DEFAULT_TYPES: FilterEntry[] = [
   { value: 'image', label: 'Images', enabled: true },
@@ -94,6 +97,12 @@ interface ForageStore {
   fileTypes: FilterEntry[];
   sources: FilterEntry[];
   selectedIds: string[];
+  /** True once the library has loaded from IndexedDB (avoids a first-paint flash). */
+  hydrated: boolean;
+  /** Keyboard-navigation cursor in the current grid. */
+  focusedId?: string;
+  setFocusedId: (id?: string) => void;
+  clearLibrary: () => void;
   setView: (v: View) => void;
   setQuery: (q: string) => void;
   setTypeFilter: (t: TypeFilter) => void;
@@ -156,18 +165,22 @@ interface ForageStore {
 
 const Ctx = createContext<ForageStore | null>(null);
 
-function load(): Item[] {
+/** One-time migration of legacy localStorage JSON into the new IDB store. */
+function migrateLegacy<T>(key: string): T | undefined {
   try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return JSON.parse(raw) as Item[];
+    const raw = localStorage.getItem(key);
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as T;
+    localStorage.removeItem(key);
+    return parsed;
   } catch {
-    /* seed */
+    return undefined;
   }
-  return sampleItems;
 }
 
 export function ForageProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<Item[]>(load);
+  const [items, setItems] = useState<Item[]>([]);
+  const [hydrated, setHydrated] = useState(false);
   const [projects] = useState<Project[]>(sampleProjects);
   const [view, setView] = useState<View>({ kind: 'library', tab: 'all' });
   const [query, setQuery] = useState('');
@@ -177,10 +190,11 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   const [sortBy, setSortBy] = useState<SortBy>('recent');
   const [fileTypes, setFileTypes] = useState<FilterEntry[]>(() => loadJSON(TYPES_KEY, DEFAULT_TYPES));
   const [sources, setSources] = useState<FilterEntry[]>(() =>
-    loadJSON(SOURCES_KEY, deriveSources(load())),
+    loadJSON(SOURCES_KEY, deriveSources(sampleItems)),
   );
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [spaces, setSpaces] = useState<Space[]>(() => loadJSON(SPACES_KEY, []));
+  const [focusedId, setFocusedId] = useState<string | undefined>(undefined);
+  const [spaces, setSpaces] = useState<Space[]>([]);
   const [syncCfg, setSyncCfg] = useState<SyncCfg>(() => ({
     endpoint: getSyncEndpoint(),
     key: getSyncKey(),
@@ -189,13 +203,40 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   const [syncBusy, setSyncBusy] = useState(false);
   const [lastSyncedAt, setLastSyncedState] = useState<number>(() => getLastSyncedAt());
 
+  // Hydrate the library from IndexedDB once (migrating any legacy localStorage
+  // data, and seeding samples only on a genuine first run).
   useEffect(() => {
-    try {
-      localStorage.setItem(STORE_KEY, JSON.stringify(items));
-    } catch {
-      /* non-fatal */
-    }
-  }, [items]);
+    let cancelled = false;
+    (async () => {
+      let loadedItems = await idbGet<Item[]>(IDB_ITEMS);
+      if (loadedItems === undefined) {
+        loadedItems = migrateLegacy<Item[]>(STORE_KEY) ?? sampleItems;
+      }
+      let loadedSpaces = await idbGet<Space[]>(IDB_SPACES);
+      if (loadedSpaces === undefined) {
+        loadedSpaces = migrateLegacy<Space[]>(SPACES_KEY) ?? [];
+      }
+      if (cancelled) return;
+      setItems(loadedItems);
+      setSpaces(loadedSpaces);
+      setHydrated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Persist the library to IndexedDB (only after hydration, so we never clobber
+  // stored data with the empty initial state).
+  useEffect(() => {
+    if (!hydrated) return;
+    idbSet(IDB_ITEMS, items).catch(() => {});
+  }, [items, hydrated]);
+  useEffect(() => {
+    if (!hydrated) return;
+    idbSet(IDB_SPACES, spaces).catch(() => {});
+  }, [spaces, hydrated]);
+
   useEffect(() => {
     try {
       localStorage.setItem(TYPES_KEY, JSON.stringify(fileTypes));
@@ -210,19 +251,12 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       /* non-fatal */
     }
   }, [sources]);
-  useEffect(() => {
-    try {
-      localStorage.setItem(SPACES_KEY, JSON.stringify(spaces));
-    } catch {
-      /* non-fatal */
-    }
-  }, [spaces]);
   // selection is per-view
   useEffect(() => setSelectedIds([]), [view]);
 
   // Auto-sync: debounced push when local data changes.
   useEffect(() => {
-    if (!syncCfg.auto || !syncConfigured()) return;
+    if (!hydrated || !syncCfg.auto || !syncConfigured()) return;
     const t = setTimeout(() => {
       pushSnapshot({ v: 1, updatedAt: Date.now(), items, spaces })
         .then(() => {
@@ -233,11 +267,11 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         .catch(() => {});
     }, 2500);
     return () => clearTimeout(t);
-  }, [items, spaces, syncCfg]);
+  }, [items, spaces, syncCfg, hydrated]);
 
   // Auto-sync: pull + merge on mount/config change, then periodically.
   useEffect(() => {
-    if (!syncCfg.auto || !syncConfigured()) return;
+    if (!hydrated || !syncCfg.auto || !syncConfigured()) return;
     let cancelled = false;
     const doPull = async () => {
       try {
@@ -255,7 +289,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       clearInterval(iv);
     };
-  }, [syncCfg]);
+  }, [syncCfg, hydrated]);
 
   const patchSpace = (spaceId: string, fn: (s: Space) => Space) =>
     setSpaces((prev) =>
@@ -329,6 +363,15 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       fileTypes,
       sources,
       selectedIds,
+      hydrated,
+      focusedId,
+      setFocusedId,
+      clearLibrary: () => {
+        setItems([]);
+        setSpaces([]);
+        setSelectedIds([]);
+        setFocusedId(undefined);
+      },
       setView,
       setQuery,
       setTypeFilter,
@@ -510,7 +553,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, projects, view, query, typeFilter, sourceFilter, tagFilter, sortBy, fileTypes, sources, selectedIds, spaces, syncCfg, syncBusy, lastSyncedAt]);
+  }, [items, projects, view, query, typeFilter, sourceFilter, tagFilter, sortBy, fileTypes, sources, selectedIds, focusedId, hydrated, spaces, syncCfg, syncBusy, lastSyncedAt]);
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }

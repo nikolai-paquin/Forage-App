@@ -3,8 +3,25 @@
 This wraps the Forage web app in a native **Tauri 2** shell — a small, fast,
 real downloadable macOS app (and Windows/Linux from the same code).
 
-> **Build on your Mac.** A macOS app can only be compiled and notarized on
-> macOS, so these steps run locally — not in CI / the cloud sandbox.
+## Easiest: download a build from CI (no local setup)
+
+A GitHub Actions workflow compiles the macOS app for you on an Apple-Silicon
+runner — no Rust/Xcode needed on your machine.
+
+1. On GitHub: **Actions → "Build macOS app" → Run workflow** (pick your branch).
+2. When it finishes (~10 min), open the run and download the **`forage-macos`**
+   artifact (a zip containing `Forage_0.1.0_aarch64.dmg`).
+3. Unzip, open the `.dmg`, drag **Forage** into Applications.
+
+> **First launch (unsigned app).** The build isn't code-signed yet, so macOS
+> Gatekeeper will balk the first time. Either **right-click the app → Open →
+> Open**, or run `xattr -dr com.apple.quarantine /Applications/Forage.app`. After
+> that it launches normally. (Signing/notarization removes this — see below.)
+
+Tagging a release (`git tag v0.1.0 && git push --tags`) runs the same build and
+attaches the `.dmg` to a GitHub Release.
+
+## Build locally instead
 
 ## Prerequisites (one-time)
 
@@ -26,8 +43,13 @@ it, with hot reload.
 
 ```bash
 cd app
+npm run tauri icon src-tauri/icons/icon.png   # one-time: generates .icns/.ico/pngs
 npm run tauri build
 ```
+
+> The first command generates the platform icon set the bundler expects
+> (`tauri.conf.json` → `bundle.icon`). Run it once, or any time you swap the
+> source icon. CI does this automatically.
 
 Output (under `app/src-tauri/target/release/bundle/`):
 - `macos/Forage.app` — the app bundle

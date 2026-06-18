@@ -1,44 +1,61 @@
-// Backup & restore — a full, portable snapshot of everything Forage keeps in
-// localStorage. The whole point: a browser cache wipe should never lose a library.
-//
-// The file is plain JSON so it can be inspected, diffed, or migrated by hand.
+// Backup & restore — a full, portable snapshot of a Forage library. The library
+// (items + spaces) lives in IndexedDB; smaller config (filters, theme, sync, AI
+// endpoint) lives in localStorage. A backup captures both so a restore — or a move
+// to a new machine — is lossless. Plain JSON, so it stays inspectable by hand.
+import { idbGet, idbSet } from './idb';
 
 const PREFIX = 'forage.';
+const IDB_ITEMS = 'items';
+const IDB_SPACES = 'spaces';
 
 export interface Backup {
   app: 'forage';
-  version: 1;
+  version: 2;
   exportedAt: number;
-  /** Every forage.* localStorage key, with its parsed value. */
-  data: Record<string, unknown>;
+  /** The library — items + spaces, from IndexedDB. */
+  idb: { items: unknown[]; spaces: unknown[] };
+  /** Config — every forage.* localStorage key. */
+  local: Record<string, unknown>;
 }
 
-/** Snapshot every forage.* key currently in localStorage. */
-export function buildBackup(): Backup {
-  const data: Record<string, unknown> = {};
+function snapshotLocal(): Record<string, unknown> {
+  const local: Record<string, unknown> = {};
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (!key || !key.startsWith(PREFIX)) continue;
     const raw = localStorage.getItem(key);
     if (raw == null) continue;
     try {
-      data[key] = JSON.parse(raw);
+      local[key] = JSON.parse(raw);
     } catch {
-      data[key] = raw; // keep non-JSON values verbatim
+      local[key] = raw;
     }
   }
-  return { app: 'forage', version: 1, exportedAt: Date.now(), data };
+  return local;
+}
+
+export async function buildBackup(): Promise<Backup> {
+  const [items, spaces] = await Promise.all([
+    idbGet<unknown[]>(IDB_ITEMS),
+    idbGet<unknown[]>(IDB_SPACES),
+  ]);
+  return {
+    app: 'forage',
+    version: 2,
+    exportedAt: Date.now(),
+    idb: { items: items ?? [], spaces: spaces ?? [] },
+    local: snapshotLocal(),
+  };
 }
 
 /** Trigger a download of the current library as a dated JSON file. */
-export function exportBackup() {
-  const backup = buildBackup();
+export async function exportBackup() {
+  const backup = await buildBackup();
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const stamp = new Date().toISOString().slice(0, 10);
   a.href = url;
-  a.download = `forage-backup-${stamp}.json`;
+  a.download = `forage-backup-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -46,23 +63,22 @@ export function exportBackup() {
 }
 
 export interface ImportResult {
-  keys: number;
   items: number;
 }
 
 /** Validate + restore a backup file, overwriting current state. Throws on bad input. */
 export async function importBackup(file: File): Promise<ImportResult> {
-  const text = await file.text();
-  let parsed: Backup;
+  let parsed: Partial<Backup> & { data?: Record<string, unknown> };
   try {
-    parsed = JSON.parse(text) as Backup;
+    parsed = JSON.parse(await file.text());
   } catch {
     throw new Error('That file isn’t valid JSON.');
   }
-  if (!parsed || parsed.app !== 'forage' || typeof parsed.data !== 'object') {
+  if (!parsed || parsed.app !== 'forage') {
     throw new Error('That doesn’t look like a Forage backup.');
   }
-  // Clear existing forage.* keys first so a restore is a clean replace, not a merge.
+
+  // Clear existing forage.* config so a restore is a clean replace, not a merge.
   const stale: string[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
@@ -70,36 +86,49 @@ export async function importBackup(file: File): Promise<ImportResult> {
   }
   stale.forEach((k) => localStorage.removeItem(k));
 
-  let keys = 0;
-  for (const [key, value] of Object.entries(parsed.data)) {
-    if (!key.startsWith(PREFIX)) continue;
-    localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
-    keys++;
+  let items: unknown[] = [];
+  let spaces: unknown[] = [];
+
+  if (parsed.version === 2 && parsed.idb && parsed.local) {
+    items = parsed.idb.items ?? [];
+    spaces = parsed.idb.spaces ?? [];
+    for (const [key, value] of Object.entries(parsed.local)) {
+      if (key.startsWith(PREFIX)) {
+        localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+      }
+    }
+  } else if (parsed.data) {
+    // Legacy v1 backup: everything lived in localStorage, including the library.
+    const data = parsed.data;
+    items = (data['forage.items.v2'] as unknown[]) ?? [];
+    spaces = (data['forage.spaces.v1'] as unknown[]) ?? [];
+    for (const [key, value] of Object.entries(data)) {
+      if (key === 'forage.items.v2' || key === 'forage.spaces.v1') continue;
+      if (key.startsWith(PREFIX)) {
+        localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+      }
+    }
+  } else {
+    throw new Error('That backup is missing its data.');
   }
-  const items = Array.isArray((parsed.data as Record<string, unknown>)['forage.items.v2'])
-    ? (parsed.data['forage.items.v2'] as unknown[]).length
-    : 0;
-  return { keys, items };
+
+  await Promise.all([idbSet(IDB_ITEMS, items), idbSet(IDB_SPACES, spaces)]);
+  return { items: Array.isArray(items) ? items.length : 0 };
 }
 
 /** Rough stats for the Data settings pane. */
-export function storageStats(): { items: number; bytes: number } {
-  let bytes = 0;
-  let items = 0;
+export async function storageStats(): Promise<{ items: number; bytes: number }> {
+  const [items, spaces] = await Promise.all([
+    idbGet<unknown[]>(IDB_ITEMS),
+    idbGet<unknown[]>(IDB_SPACES),
+  ]);
+  let bytes = JSON.stringify(items ?? []).length + JSON.stringify(spaces ?? []).length;
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (!key || !key.startsWith(PREFIX)) continue;
-    const raw = localStorage.getItem(key) ?? '';
-    bytes += key.length + raw.length;
-    if (key === 'forage.items.v2') {
-      try {
-        items = (JSON.parse(raw) as unknown[]).length;
-      } catch {
-        /* ignore */
-      }
-    }
+    bytes += key.length + (localStorage.getItem(key) ?? '').length;
   }
-  return { items, bytes };
+  return { items: Array.isArray(items) ? items.length : 0, bytes };
 }
 
 export function formatBytes(bytes: number): string {

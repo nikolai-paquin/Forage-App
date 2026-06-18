@@ -60,11 +60,12 @@ function LinkArt({ item }: { item: Item }) {
 }
 
 export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) => void }) {
-  const { selectedIds, toggleSelect, view, restoreItem, deleteForever } = useForage();
+  const { selectedIds, focusedId, toggleSelect, view, restoreItem, deleteForever } = useForage();
   const [hover, setHover] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const selected = selectedIds.includes(item.id);
+  const focused = focusedId === item.id;
   const anySelected = selectedIds.length > 0;
   const isTrash = view.kind === 'library' && view.tab === 'trash';
   const stop = (e: React.MouseEvent) => e.stopPropagation();
@@ -93,7 +94,11 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: 'spring', stiffness: 400, damping: 34, mass: 0.6 }}
       className={`group relative mb-2.5 block w-full overflow-hidden rounded-xl bg-surface-2 text-left outline-none transition-shadow duration-300 hover:shadow-[var(--shadow-tile)] ${
-        selected ? 'ring-2 ring-offset-2 ring-offset-canvas ring-[var(--ink)]' : ''
+        selected
+          ? 'ring-2 ring-offset-2 ring-offset-canvas ring-[var(--ink)]'
+          : focused
+            ? 'ring-2 ring-offset-2 ring-offset-canvas ring-[var(--accent)]'
+            : ''
       }`}
     >
       <div className="w-full overflow-hidden" style={{ aspectRatio: String(item.ratio) }}>

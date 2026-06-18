@@ -30,6 +30,9 @@ Other scripts: `npm run build` (type-check + production build), `npm run preview
 | **Command palette (⌘K)** — full-text search across saves + jump-to-view + run-command, keyboard navigable | `components/SearchOverlay.tsx` | F6 |
 | **Semantic search (optional)** — embeddings-based "find by vibe", blended over keyword results, cached per-item | `lib/semantic.ts`, `../server/worker.js` | F6 |
 | **Virtualized masonry** — exact-offset windowing for 10k+ saves (kicks in past 80 items) | `components/MasonryGrid.tsx` | F2 |
+| **Durable storage** — library in IndexedDB (no localStorage quota cliff for image uploads), migrated automatically | `lib/idb.ts`, `lib/store.tsx` | §0 |
+| **In-grid keyboard nav** — arrows/hjkl to move, Enter to open, x/Space to select, with auto-scroll | `App.tsx`, `components/MasonryGrid.tsx` | F6 |
+| **Desktop build (Tauri 2)** — one-click macOS `.dmg` via CI, or local build | `src-tauri/`, `../.github/workflows/desktop.yml`, `DESKTOP.md` | §10 |
 | **Duplicate detection** — capture flows skip URLs/images already saved | `lib/dedupe.ts` | F1 |
 | **Cross-device sync (optional)** — per-item last-write-wins merge against a KV Worker; auto or manual | `lib/sync.ts`, `../server/sync-worker.js` | §0 |
 | **Backup & restore** — export/import the whole library as portable JSON | `lib/backup.ts`, `components/SettingsModal.tsx` (Data) | §0 |
@@ -60,8 +63,8 @@ back to heuristics if the endpoint is unreachable.
 
 ## Not yet built (next milestones)
 
-The Forage Digest surface, in-grid keyboard navigation/multi-select, and a signed/auto-updating
-Tauri release (built/verified on a Mac). See the PRD roadmap (§12).
+The Forage Digest surface, and a **signed/notarized** auto-updating Tauri release (the CI build is
+unsigned — Gatekeeper right-click-open on first launch, see `DESKTOP.md`). See the PRD roadmap (§12).
 
 ## Notes
 

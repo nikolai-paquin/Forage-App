@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePwaInstall } from '../lib/pwa';
+import { useForage } from '../lib/store';
 import { Camera, Command, Download, Search, Sparkle } from './icons';
 
 const SEEN_KEY = 'forage.onboarded.v1';
@@ -27,6 +28,7 @@ const TIPS = [
 export function Onboarding({ onCapture }: { onCapture: () => void }) {
   const [open, setOpen] = useState(false);
   const { canInstall, promptInstall } = usePwaInstall();
+  const { clearLibrary } = useForage();
 
   useEffect(() => {
     try {
@@ -89,34 +91,36 @@ export function Onboarding({ onCapture }: { onCapture: () => void }) {
               ))}
             </div>
 
-            <div className="mt-6 flex items-center gap-2.5">
+            <div className="mt-6 flex flex-wrap items-center gap-2.5">
               <button
                 onClick={() => {
+                  clearLibrary();
                   dismiss();
                   onCapture();
                 }}
                 className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink"
                 style={{ background: 'var(--ink)' }}
               >
-                <Camera size={14} /> Make your first save
+                <Camera size={14} /> Start fresh
+              </button>
+              <button
+                onClick={dismiss}
+                className="flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-[13px] font-medium text-ink transition hover:bg-surface-2"
+              >
+                <Sparkle size={14} /> Explore with samples
               </button>
               {canInstall && (
                 <button
-                  onClick={() => {
-                    promptInstall();
-                  }}
+                  onClick={() => promptInstall()}
                   className="flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-[13px] font-medium text-ink transition hover:bg-surface-2"
                 >
                   <Download size={14} /> Install app
                 </button>
               )}
-              <button
-                onClick={dismiss}
-                className="ml-auto text-[13px] text-muted transition hover:text-ink"
-              >
-                Skip
-              </button>
             </div>
+            <p className="mt-3 text-[12px] text-faint">
+              Start fresh clears the sample library so it’s just your saves.
+            </p>
           </motion.div>
         </motion.div>
       )}

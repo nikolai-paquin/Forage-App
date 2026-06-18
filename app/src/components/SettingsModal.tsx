@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTheme } from '../lib/theme';
 import { useForage } from '../lib/store';
@@ -25,6 +25,7 @@ import {
   Plus,
   Sparkle,
   Share2,
+  Trash2,
   User,
   Volume2,
   Wand,
@@ -151,7 +152,12 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   const fileRef = useRef<HTMLInputElement>(null);
   const [endpoint, setEndpoint] = useState(getAiEndpoint());
   const [savedEndpoint, setSavedEndpoint] = useState(false);
-  const stats = storageStats();
+  const [stats, setStats] = useState({ items: 0, bytes: 0 });
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  useEffect(() => {
+    if (open && active === 'data') storageStats().then(setStats);
+  }, [open, active]);
 
   const handleImport = async (file?: File) => {
     if (!file) return;
@@ -187,6 +193,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
     lastSyncedAt,
     updateSyncCfg,
     syncNow,
+    clearLibrary,
   } = useForage();
 
   const tagCounts = new Map<string, number>();
@@ -427,10 +434,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
 
                   <div className="flex flex-wrap gap-2.5">
                     <button
-                      onClick={() => {
-                        exportBackup();
-                        toast('Backup downloaded');
-                      }}
+                      onClick={() => exportBackup().then(() => toast('Backup downloaded'))}
                       className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink"
                       style={{ background: 'var(--ink)' }}
                     >
@@ -457,6 +461,42 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                     <Info size={14} className="mt-0.5 shrink-0" />
                     <span>Importing replaces your current library. Export first if unsure.</span>
                   </p>
+
+                  <div className="mt-8 border-t border-border pt-5">
+                    <p className="text-[13.5px] font-medium text-ink">Start over</p>
+                    <p className="mt-1 mb-3 max-w-md text-[12.5px] text-muted">
+                      Remove every save and space from this device. Handy for a clean slate — your
+                      filters, theme, and sync settings are kept.
+                    </p>
+                    {confirmReset ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            clearLibrary();
+                            setConfirmReset(false);
+                            storageStats().then(setStats);
+                            toast('Library cleared');
+                          }}
+                          className="rounded-full bg-red-500 px-4 py-2 text-[13px] font-medium text-white transition hover:bg-red-600"
+                        >
+                          Yes, clear everything
+                        </button>
+                        <button
+                          onClick={() => setConfirmReset(false)}
+                          className="rounded-full border border-border px-4 py-2 text-[13px] text-ink transition hover:bg-surface-2"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmReset(true)}
+                        className="flex items-center gap-1.5 rounded-full border border-red-300 px-4 py-2 text-[13px] font-medium text-red-500 transition hover:bg-red-500 hover:text-white"
+                      >
+                        <Trash2 size={15} /> Clear library
+                      </button>
+                    )}
+                  </div>
                 </>
               ) : active === 'ai' ? (
                 <>

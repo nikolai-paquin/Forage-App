@@ -1,0 +1,61 @@
+name: Build macOS app
+
+# Builds the Forage desktop app (Tauri) into a downloadable .dmg/.app on a macOS
+# runner — so you can install it on your Mac without a local Rust/Xcode setup.
+#
+# Run it manually:  Actions → "Build macOS app" → Run workflow  → download the
+# "forage-macos" artifact when it finishes (~10 min).
+# Tag a release:    push a tag like v0.1.0 to also publish a GitHub Release.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-14 # Apple Silicon — matches a Mac Studio (arm64)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri -> target
+
+      - name: Install frontend dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: Generate platform icons (.icns/.ico/pngs from icon.png)
+        working-directory: app
+        run: npm run tauri icon src-tauri/icons/icon.png
+
+      - name: Build the desktop app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: app
+          args: --target aarch64-apple-darwin
+          # On a tag push, also create a GitHub Release with the bundles attached.
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          releaseName: ${{ github.ref_type == 'tag' && format('Forage {0}', github.ref_name) || '' }}
+          releaseDraft: false
+
+      - name: Upload app as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: forage-macos
+          if-no-files-found: error
+          path: |
+            app/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+            app/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app

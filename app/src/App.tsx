@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ForageProvider, useForage } from './lib/store';
 import { TopBar } from './components/TopBar';
@@ -24,10 +24,25 @@ import { indexItems } from './lib/semantic';
 import { useTheme } from './lib/theme';
 import { toast } from './lib/toast';
 import { Toaster } from './components/Toaster';
+import { Search } from './components/icons';
 import type { Item } from './types';
 
 function Workspace() {
-  const { view, items, markSeen, addItem, updateItem, setView, createSpace, findDuplicate } = useForage();
+  const {
+    view,
+    items,
+    visibleItems,
+    hydrated,
+    focusedId,
+    setFocusedId,
+    toggleSelect,
+    markSeen,
+    addItem,
+    updateItem,
+    setView,
+    createSpace,
+    findDuplicate,
+  } = useForage();
   const { dark, toggle } = useTheme();
   const [selected, setSelected] = useState<Item | null>(null);
   const [capture, setCapture] = useState(false);
@@ -147,6 +162,70 @@ function Workspace() {
     markSeen(item.id);
   };
 
+  // In-grid keyboard navigation. A ref carries live state so the listener stays
+  // stable (no re-subscribe churn from the grid re-rendering each keystroke).
+  const navRef = useRef({
+    list: visibleItems,
+    focusedId,
+    setFocusedId,
+    toggleSelect,
+    open,
+    blocked: false,
+    isGrid: false,
+  });
+  navRef.current = {
+    list: visibleItems,
+    focusedId,
+    setFocusedId,
+    toggleSelect,
+    open,
+    blocked: capture || search || settings || resurface || selected !== null,
+    isGrid: view.kind === 'library' || view.kind === 'collection',
+  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const s = navRef.current;
+      if (s.blocked || !s.isGrid || !s.list.length) return;
+      const t = e.target as HTMLElement | null;
+      if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      const idx = s.focusedId ? s.list.findIndex((i) => i.id === s.focusedId) : -1;
+      const move = (d: number) => {
+        e.preventDefault();
+        const ni = idx < 0 ? 0 : Math.min(Math.max(idx + d, 0), s.list.length - 1);
+        s.setFocusedId(s.list[ni].id);
+      };
+      switch (e.key) {
+        case 'ArrowRight':
+        case 'ArrowDown':
+        case 'j':
+        case 'l':
+          move(1);
+          break;
+        case 'ArrowLeft':
+        case 'ArrowUp':
+        case 'k':
+        case 'h':
+          move(-1);
+          break;
+        case 'Enter':
+          if (idx >= 0) {
+            e.preventDefault();
+            s.open(s.list[idx]);
+          }
+          break;
+        case 'x':
+        case ' ':
+          if (idx >= 0) {
+            e.preventDefault();
+            s.toggleSelect(s.list[idx].id);
+          }
+          break;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const viewKey =
     view.kind +
     (view.kind === 'collection' || view.kind === 'space'
@@ -154,6 +233,23 @@ function Workspace() {
       : view.kind === 'library'
         ? view.tab
         : '');
+
+  // Brief splash while the library loads from IndexedDB — avoids an empty-state flash.
+  if (!hydrated) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-canvas text-faint">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="flex items-center gap-2"
+        >
+          <Search size={18} />
+          <span className="text-[14px]">Forage</span>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-canvas text-ink">
@@ -214,8 +310,7 @@ function Workspace() {
           settings: () => setSettings(true),
           resurface: () => setResurface(true),
           exportBackup: () => {
-            exportBackup();
-            toast('Backup downloaded');
+            exportBackup().then(() => toast('Backup downloaded'));
           },
           toggleTheme: toggle,
           newSpace: createSpace,
