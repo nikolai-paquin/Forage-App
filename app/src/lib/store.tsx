@@ -68,7 +68,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   const [storyboards, setStoryboards] = useState<Storyboard[]>(() =>
     loadJSON(SB_KEY, sampleStoryboards),
   );
-  const [view, setView] = useState<View>({ kind: 'library' });
+  const [view, setView] = useState<View>({ kind: 'home' });
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
 

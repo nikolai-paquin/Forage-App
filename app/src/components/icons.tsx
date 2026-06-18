@@ -107,6 +107,13 @@ export const Basket = (p: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const Home = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M4 11.5 12 4.5l8 7M6 10v9.5h12V10" />
+    <path d="M10 19.5v-5h4v5" />
+  </svg>
+);
+
 export const Image = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)}>
     <rect x="3.5" y="4.5" width="17" height="15" rx="2" />

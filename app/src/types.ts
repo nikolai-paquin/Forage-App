@@ -57,6 +57,7 @@ export interface Project {
 }
 
 export type View =
+  | { kind: 'home' }
   | { kind: 'library' }
   | { kind: 'basket' }
   | { kind: 'project'; projectId: string }

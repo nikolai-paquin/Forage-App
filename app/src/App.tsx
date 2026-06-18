@@ -8,6 +8,7 @@ import { MasonryGrid } from './components/MasonryGrid';
 import { StoryboardView } from './components/StoryboardView';
 import { ItemDetail } from './components/ItemDetail';
 import { CaptureDialog } from './components/CaptureDialog';
+import { HomeView } from './components/HomeView';
 import { DitherGlow } from './components/DitherGlow';
 import type { Item } from './types';
 import { Basket, Plus } from './components/icons';
@@ -83,7 +84,9 @@ function Workspace() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
-            {view.kind === 'storyboard' ? (
+            {view.kind === 'home' ? (
+              <HomeView onOpen={open} onCapture={() => setCapture(true)} />
+            ) : view.kind === 'storyboard' ? (
               (() => {
                 const sb = storyboardById(view.storyboardId);
                 return sb ? (
@@ -110,6 +113,9 @@ function Workspace() {
 
       <ItemDetail item={selected} onClose={() => setSelected(null)} onOpen={open} />
       <CaptureDialog open={capture} onClose={() => setCapture(false)} />
+
+      {/* Global filmic grain over everything (below modals) */}
+      <div className="noise grain-overlay" aria-hidden />
     </div>
   );
 }

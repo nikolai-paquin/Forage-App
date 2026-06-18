@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { View } from '../types';
-import { Basket, Clock, Grid, Layers } from './icons';
+import { Basket, Clock, Grid, Home, Layers } from './icons';
 
 function NavRow({
   active,
@@ -68,6 +68,12 @@ export function Sidebar() {
       </div>
 
       <nav className="flex flex-col gap-0.5">
+        <NavRow
+          active={is({ kind: 'home' })}
+          onClick={() => setView({ kind: 'home' })}
+          icon={<Home width={17} height={17} />}
+          label="Home"
+        />
         <NavRow
           active={is({ kind: 'library' })}
           onClick={() => setView({ kind: 'library' })}
