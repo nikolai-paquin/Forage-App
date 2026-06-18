@@ -2,10 +2,23 @@
 
 > **One line:** Forage is a calm, beautiful home for everything a creative person gathers and generates — so inspiration and assets stop dying in folders, tabs, and saved-for-later limbo.
 
-- **Status:** Draft v1
+- **Status:** Draft v2
 - **Author:** Nikolai Paquin
 - **Last updated:** 2026-06-18
-- **Platforms:** macOS (desktop), iOS, Android
+- **Platforms:** macOS (desktop) first → iOS, Android
+
+> **Companion docs:** [`docs/STRATEGY.md`](docs/STRATEGY.md) (positioning, naming, narrative, competitive) · [`docs/SCREENS.md`](docs/SCREENS.md) (wireframes & key flows)
+
+---
+
+## 0. Decisions Locked
+
+| Decision | Choice | Rationale |
+|---|---|---|
+| **Sync model** | **Local-first**, opt-in cloud sync later | Speed is a feature; offline-capable; fastest path to a great-feeling prototype. Data model designed sync-ready from day one (UUIDs, timestamps, soft-deletes) so cloud is additive, not a rewrite. |
+| **Platform order** | **macOS desktop first** → iOS → Android | Nail the premium feel on the surface used most for organizing; capture-on-mobile follows once the canvas is proven. |
+| **Accounts** | None at MVP (local profile); accounts arrive with sync | No auth friction to first value. |
+| **AI processing** | On-capture for cheap signals (palette, type, OG/oEmbed); on-demand for expensive ones (summaries, embeddings) until volume justifies background batching | Controls cost without hurting the core feel. |
 
 ---
 
@@ -205,8 +218,9 @@ Every feature serves one stage of this loop. If a feature doesn't, it's a non-go
 ### Recommended stack
 - **App shell:** **Tauri 2** — Rust core + web frontend, produces a real downloadable macOS app *and* iOS/Android binaries from one codebase, with much smaller/faster output than Electron and native system-webview rendering (great for the Apple feel). Native share-sheet and filesystem access via plugins.
 - **Frontend:** **React + TypeScript**, **Tailwind CSS** for the design system, **Framer Motion** for micro-interactions, a virtualized masonry lib (custom or `masonic`-style) for grid performance.
-- **Local-first data:** local SQLite (via Tauri) + a sync layer. Media cached locally; offline-capable.
-- **Backend / sync / AI:** **Supabase** — Postgres + Auth + Storage + **pgvector** for semantic search embeddings. Object storage (Supabase Storage / S3) for media.
+- **Local-first data (locked):** local **SQLite** (via Tauri SQL plugin) is the source of truth; media stored in an app-managed local library folder with generated thumbnails. Fully offline. Schema is **sync-ready from day one** — every row carries a UUID, `created_at`/`updated_at`, and soft-delete `deleted_at` so cloud sync is additive later, not a migration.
+- **Sync (later milestone):** **Supabase** — Postgres + Auth + Storage + **pgvector**. When it lands, local stays authoritative and pushes/pulls deltas; the user never waits on the network to use Forage.
+- **Vector search, local-first:** embeddings stored in SQLite (e.g. `sqlite-vec`) so semantic search works offline; mirrors to pgvector when sync exists.
 - **AI layer:** embeddings + auto-tagging + summaries via the latest **Claude** models (e.g. `claude-opus-4-8` for summaries/understanding, plus an embedding model for semantic search). Vision tagging for images.
 
 ### Trade-off noted
@@ -246,11 +260,12 @@ Supporting metrics:
 
 ## 13. Open Questions
 
-1. **Sync model:** fully cloud-synced from day one, or local-first with opt-in sync later? (Affects M0 architecture.)
-2. **Auth & accounts:** single-user local, or accounts from the start (needed for cross-device sync)?
-3. **AI cost:** auto-summarize/tag everything on capture (better UX, higher cost) vs. on-demand?
-4. **Mobile scope for v1:** full app, or capture-and-browse companion first?
-5. **Monetization (later):** personal tool, or a product? (Changes nothing about MVP, but shapes the data model for sharing.)
+**Resolved (see §0):** sync model → local-first; auth → none at MVP; AI cost → hybrid on-capture/on-demand; platform → macOS first.
+
+**Still open:**
+1. **Mobile scope for v1:** full app, or capture-and-browse companion first? *(Leaning: capture-and-browse companion — most mobile foraging is capture.)*
+2. **Monetization (later):** personal tool, or a product? Changes nothing about MVP, but shapes whether sharing/multiplayer get prioritized.
+3. **AI provider keys:** ship with a bundled/limited AI tier, or bring-your-own-key for power users at first? (Cost vs. friction.)
 
 ---
 
