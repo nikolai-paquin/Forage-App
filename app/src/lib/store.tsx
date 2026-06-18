@@ -29,9 +29,11 @@ interface ForageStore {
   view: View;
   query: string;
   typeFilter: TypeFilter;
+  sourceFilter: string;
   setView: (v: View) => void;
   setQuery: (q: string) => void;
   setTypeFilter: (t: TypeFilter) => void;
+  setSourceFilter: (s: string) => void;
   addItem: (input: NewItemInput) => Item;
   toggleFavorite: (id: string) => void;
   markSeen: (id: string) => void;
@@ -63,6 +65,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<View>({ kind: 'library', tab: 'all' });
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
 
   useEffect(() => {
     try {
@@ -89,6 +92,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
     const q = query.trim().toLowerCase();
     const visibleItems = inView
       .filter((it) => typeFilter === 'all' || it.type === typeFilter)
+      .filter((it) => sourceFilter === 'all' || it.source === sourceFilter)
       .filter((it) => {
         if (!q) return true;
         const hay = [it.title, it.source, it.note, it.summary, ...it.tags]
@@ -105,9 +109,11 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       view,
       query,
       typeFilter,
+      sourceFilter,
       setView,
       setQuery,
       setTypeFilter,
+      setSourceFilter,
       projectById,
       itemById,
       projectItemCount: (id) => items.filter((i) => i.projectIds.includes(id)).length,
@@ -153,7 +159,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           ),
         ),
     };
-  }, [items, projects, view, query, typeFilter]);
+  }, [items, projects, view, query, typeFilter, sourceFilter]);
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }

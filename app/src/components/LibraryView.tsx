@@ -4,15 +4,35 @@ import { useForage } from '../lib/store';
 import type { Item, LibraryTab } from '../types';
 import { MasonryGrid } from './MasonryGrid';
 import { CollectionCover } from './CollectionCover';
+import { FilterMenu, type Option } from './FilterMenu';
+import { sourceLabel } from '../lib/util';
+import type { ItemType } from '../types';
 import {
   Bookmark,
   Clock,
+  Code,
+  Compass,
   Grid,
   Image as ImageIcon,
   Inbox,
+  Layers,
+  Link,
+  Play,
   Plus,
+  Sparkle,
   Trash2,
 } from './icons';
+
+const TYPE_OPTIONS: { value: ItemType | 'all'; label: string; icon: React.ReactNode }[] = [
+  { value: 'all', label: 'All types', icon: <ImageIcon size={14} /> },
+  { value: 'image', label: 'Images', icon: <ImageIcon size={14} /> },
+  { value: 'video', label: 'Video', icon: <Play size={14} /> },
+  { value: 'link', label: 'Links', icon: <Link size={14} /> },
+  { value: 'gif', label: 'GIFs', icon: <ImageIcon size={14} /> },
+  { value: 'ai_asset', label: 'AI assets', icon: <Sparkle size={14} /> },
+  { value: 'vector', label: 'Vectors', icon: <Layers size={14} /> },
+  { value: 'code', label: 'Code', icon: <Code size={14} /> },
+];
 
 const TABS: { id: LibraryTab; label: string; icon: React.ReactNode }[] = [
   { id: 'all', label: 'All', icon: <ImageIcon size={15} /> },
@@ -43,10 +63,18 @@ function Empty({
 }
 
 export function LibraryView({ onOpen, onCapture }: { onOpen: (i: Item) => void; onCapture: () => void }) {
-  const { view, setView, visibleItems, projects } = useForage();
+  const { view, setView, visibleItems, projects, items, typeFilter, setTypeFilter, sourceFilter, setSourceFilter } =
+    useForage();
   const [density, setDensity] = useState(235);
   if (view.kind !== 'library') return null;
   const tab = view.tab;
+
+  const sourceOptions: Option[] = [
+    { value: 'all', label: 'All sources', icon: <Compass size={14} /> },
+    ...Array.from(new Set(items.map((i) => i.source).filter(Boolean) as string[]))
+      .map((s) => ({ value: s, label: sourceLabel(s) }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+  ];
 
   return (
     <div className="px-5 pb-32">
@@ -79,8 +107,8 @@ export function LibraryView({ onOpen, onCapture }: { onOpen: (i: Item) => void; 
           })}
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-faint">
+        <div className="flex items-center gap-3">
+          <div className="mr-1 flex items-center gap-2 text-faint">
             <Grid size={15} />
             <input
               type="range"
@@ -93,6 +121,22 @@ export function LibraryView({ onOpen, onCapture }: { onOpen: (i: Item) => void; 
             />
             <span className="h-3.5 w-3.5 rounded-[3px] border border-border-strong" />
           </div>
+          {tab !== 'trash' && (
+            <>
+              <FilterMenu
+                icon={<ImageIcon size={14} className="text-faint" />}
+                options={TYPE_OPTIONS}
+                value={typeFilter}
+                onChange={(v) => setTypeFilter(v as ItemType | 'all')}
+              />
+              <FilterMenu
+                icon={<Compass size={14} className="text-faint" />}
+                options={sourceOptions}
+                value={sourceFilter}
+                onChange={setSourceFilter}
+              />
+            </>
+          )}
           <button className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-muted transition hover:text-ink">
             <Clock size={14} />
             Most recent

@@ -1,6 +1,33 @@
 export const uid = () =>
   's_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
 
+const SOURCE_LABELS: Record<string, string> = {
+  'youtube.com': 'YouTube',
+  'x.com': 'X',
+  'twitter.com': 'X',
+  'pinterest.com': 'Pinterest',
+  'vimeo.com': 'Vimeo',
+  'dribbble.com': 'Dribbble',
+  'behance.net': 'Behance',
+  'instagram.com': 'Instagram',
+  'unsplash.com': 'Unsplash',
+  'cargo.site': 'Cargo',
+  'fontsinuse.com': 'Fonts in Use',
+  upload: 'Upload',
+  gist: 'Gist',
+  paste: 'Paste',
+  note: 'Note',
+  Flora: 'Flora (AI)',
+};
+
+/** Friendly label for a save's source (domain or tool). */
+export function sourceLabel(source?: string): string {
+  if (!source) return 'Unknown';
+  if (SOURCE_LABELS[source]) return SOURCE_LABELS[source];
+  const base = source.replace(/^www\./, '').split('.')[0];
+  return base.charAt(0).toUpperCase() + base.slice(1);
+}
+
 export function timeAgo(ms: number): string {
   const diff = Date.now() - ms;
   const min = Math.round(diff / 60000);
