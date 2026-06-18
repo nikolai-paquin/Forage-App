@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item } from '../types';
+import { suggestTags, generatePrompt } from '../lib/ai';
+import { extractPalette } from '../lib/color';
 
 function TagAdder({ onAdd }: { onAdd: (t: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -212,7 +214,16 @@ export function ItemDetail({
             <div className="flex items-center gap-1">
               <span className="mr-2 text-[13px] tabular-nums text-white/50">100%</span>
               <input type="range" min={50} max={150} defaultValue={100} className="mr-3 h-1 w-28 accent-white" />
-              <button className={iconBtn} title="Pick colour"><Pipette size={17} /></button>
+              <button
+                onClick={() => {
+                  const m = item.type === 'video' ? item.poster : item.media;
+                  if (m) extractPalette(m).then((p) => p.length && updateItem(item.id, { palette: p }));
+                }}
+                className={iconBtn}
+                title="Extract palette"
+              >
+                <Pipette size={17} />
+              </button>
               {item.url && (
                 <a href={item.url} target="_blank" rel="noreferrer" className={iconBtn} title="Open source">
                   <ExternalLink size={17} />
@@ -282,10 +293,25 @@ export function ItemDetail({
                 </span>
               </div>
 
-              <div className="mb-5 flex gap-2">
-                {item.palette.map((c) => (
-                  <span key={c} className="h-5 w-5 rounded-full ring-1 ring-white/15" style={{ background: c }} />
+              <div className="mb-5 flex items-center gap-2">
+                {item.palette.map((c, i) => (
+                  <span
+                    key={`${c}-${i}`}
+                    title={c}
+                    className="h-5 w-5 rounded-full ring-1 ring-white/15"
+                    style={{ background: c }}
+                  />
                 ))}
+                <button
+                  onClick={() => {
+                    const m = item.type === 'video' ? item.poster : item.media;
+                    if (m) extractPalette(m).then((p) => p.length && updateItem(item.id, { palette: p }));
+                  }}
+                  title="Re-extract palette"
+                  className="grid h-5 w-5 place-items-center rounded-full text-white/40 hover:text-white"
+                >
+                  <Pipette size={12} />
+                </button>
               </div>
 
               <div className="flex flex-col gap-4">
@@ -321,12 +347,35 @@ export function ItemDetail({
                   <p className="mb-2 flex items-center gap-1.5 text-[12px] text-white/45">
                     <Sparkle size={13} /> Image Prompt
                   </p>
-                  {item.ai ? (
-                    <p className="rounded-lg border border-white/10 bg-white/5 p-2.5 text-[12.5px] leading-relaxed text-white/80">
-                      {item.ai.prompt}
-                    </p>
+                  {item.ai?.prompt ? (
+                    <>
+                      <p className="rounded-lg border border-white/10 bg-white/5 p-2.5 text-[12.5px] leading-relaxed text-white/80">
+                        {item.ai.prompt}
+                      </p>
+                      <button
+                        onClick={() =>
+                          updateItem(item.id, {
+                            ai: {
+                              prompt: generatePrompt(item),
+                              model: item.ai?.model || 'forage-local',
+                              sourceRefId: item.ai?.sourceRefId,
+                            },
+                          })
+                        }
+                        className="mt-1.5 text-[12px] text-white/45 transition hover:text-white"
+                      >
+                        Regenerate
+                      </button>
+                    </>
                   ) : (
-                    <button className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[13px] text-white/70 transition hover:text-white">
+                    <button
+                      onClick={() =>
+                        updateItem(item.id, {
+                          ai: { prompt: generatePrompt(item), model: 'forage-local' },
+                        })
+                      }
+                      className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[13px] text-white/70 transition hover:text-white"
+                    >
                       Generate prompt
                     </button>
                   )}
@@ -370,7 +419,12 @@ export function ItemDetail({
                       </span>
                     ))}
                     <TagAdder onAdd={(t) => addTag(item.id, t)} />
-                    <button className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[12px] text-white/60 hover:text-white">Auto-tag</button>
+                    <button
+                      onClick={() => suggestTags(item).forEach((t) => addTag(item.id, t))}
+                      className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[12px] text-white/60 hover:text-white"
+                    >
+                      <Sparkle size={11} /> Auto-tag
+                    </button>
                   </div>
                 </div>
 

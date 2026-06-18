@@ -15,10 +15,11 @@ import { SettingsModal } from './components/SettingsModal';
 import { Fab } from './components/Fab';
 import { BulkBar } from './components/BulkBar';
 import { detectFromInput } from './lib/util';
+import { extractPalette } from './lib/color';
 import type { Item } from './types';
 
 function Workspace() {
-  const { view, markSeen, addItem } = useForage();
+  const { view, markSeen, addItem, updateItem } = useForage();
   const [selected, setSelected] = useState<Item | null>(null);
   const [capture, setCapture] = useState(false);
   const [search, setSearch] = useState(false);
@@ -32,14 +33,17 @@ function Workspace() {
     Array.from(files).forEach((file) => {
       if (!file.type.startsWith('image/')) return;
       const reader = new FileReader();
-      reader.onload = () =>
-        addItem({
+      reader.onload = () => {
+        const dataUrl = String(reader.result);
+        const created = addItem({
           type: file.type === 'image/gif' ? 'gif' : 'image',
           title: file.name.replace(/\.[^.]+$/, ''),
-          media: String(reader.result),
+          media: dataUrl,
           source: 'upload',
           projectIds: targetCollection,
         });
+        extractPalette(dataUrl).then((p) => p.length && updateItem(created.id, { palette: p }));
+      };
       reader.readAsDataURL(file);
     });
   };
