@@ -4,8 +4,10 @@ import { useTheme } from '../lib/theme';
 import { useForage } from '../lib/store';
 import { exportBackup, importBackup, storageStats, formatBytes } from '../lib/backup';
 import { getAiEndpoint, setAiEndpoint } from '../lib/ai';
+import { generateSyncKey } from '../lib/sync';
 import { usePwaInstall } from '../lib/pwa';
 import { toast } from '../lib/toast';
+import { timeAgo } from '../lib/util';
 import type { FilterEntry } from '../types';
 import {
   Camera,
@@ -22,6 +24,7 @@ import {
   Palette,
   Plus,
   Sparkle,
+  Share2,
   User,
   Volume2,
   Wand,
@@ -37,6 +40,7 @@ const NAV = [
   { id: 'capture', label: 'Capture', icon: <Camera size={16} /> },
   { id: 'sound', label: 'Sound', icon: <Volume2 size={16} /> },
   { id: 'updates', label: 'Updates', icon: <Download size={16} /> },
+  { id: 'sync', label: 'Sync', icon: <Share2 size={16} /> },
   { id: 'data', label: 'Data', icon: <Database size={16} /> },
   { id: 'about', label: 'About', icon: <Info size={16} /> },
 ];
@@ -178,6 +182,11 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
     removeTagEverywhere,
     setTagFilter,
     setView,
+    syncCfg,
+    syncBusy,
+    lastSyncedAt,
+    updateSyncCfg,
+    syncNow,
   } = useForage();
 
   const tagCounts = new Map<string, number>();
@@ -331,6 +340,69 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                   >
                     Sign in
                   </button>
+                </>
+              ) : active === 'sync' ? (
+                <>
+                  <h2 className="text-[24px] font-semibold tracking-tight">Sync</h2>
+                  <p className="mt-2 mb-6 max-w-md text-[13.5px] text-muted">
+                    Keep your library in step across devices. Deploy the sync Worker (see{' '}
+                    <code className="rounded bg-surface-2 px-1 py-0.5 text-[11.5px]">/server</code>),
+                    then use the same endpoint and sync key on each device. Merges are
+                    last-write-wins per item, so edits and deletes both survive.
+                  </p>
+
+                  <label className="mb-1.5 block text-[13px] font-medium text-ink">Sync endpoint URL</label>
+                  <input
+                    value={syncCfg.endpoint}
+                    onChange={(e) => updateSyncCfg({ endpoint: e.target.value })}
+                    placeholder="https://forage-sync.you.workers.dev"
+                    className="mb-4 w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-ink outline-none placeholder:text-faint focus:border-border-strong"
+                  />
+
+                  <label className="mb-1.5 block text-[13px] font-medium text-ink">Sync key</label>
+                  <div className="flex gap-2">
+                    <input
+                      value={syncCfg.key}
+                      onChange={(e) => updateSyncCfg({ key: e.target.value })}
+                      placeholder="Paste your key, or generate one"
+                      className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 font-mono text-[12.5px] text-ink outline-none placeholder:text-faint focus:border-border-strong"
+                    />
+                    <button
+                      onClick={() => updateSyncCfg({ key: generateSyncKey() })}
+                      className="rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] font-medium text-ink transition hover:bg-surface-2"
+                    >
+                      Generate
+                    </button>
+                  </div>
+                  <p className="mt-2 flex items-start gap-2 text-[12px] text-faint">
+                    <Info size={13} className="mt-0.5 shrink-0" />
+                    <span>This key is the password to your library on the server. Keep it private.</span>
+                  </p>
+
+                  <div className="mt-6 flex items-center justify-between border-t border-border py-3.5">
+                    <div>
+                      <p className="text-[13.5px] font-medium text-ink">Auto-sync</p>
+                      <p className="text-[12.5px] text-muted">Push changes and pull updates automatically.</p>
+                    </div>
+                    <Toggle
+                      on={syncCfg.auto}
+                      onClick={() => updateSyncCfg({ auto: !syncCfg.auto })}
+                    />
+                  </div>
+
+                  <div className="mt-4 flex items-center gap-3">
+                    <button
+                      disabled={!syncCfg.endpoint.trim() || !syncCfg.key.trim() || syncBusy}
+                      onClick={() => syncNow()}
+                      className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink disabled:opacity-40"
+                      style={{ background: 'var(--ink)' }}
+                    >
+                      <Share2 size={15} /> {syncBusy ? 'Syncing…' : 'Sync now'}
+                    </button>
+                    <span className="text-[12.5px] text-faint">
+                      {lastSyncedAt ? `Last synced ${timeAgo(lastSyncedAt)}` : 'Not synced yet'}
+                    </span>
+                  </div>
                 </>
               ) : active === 'data' ? (
                 <>

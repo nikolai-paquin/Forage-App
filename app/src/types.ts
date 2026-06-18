@@ -46,6 +46,8 @@ export interface Item {
   favorite?: boolean;
   /** ms epoch — sync-ready timestamps from day one (PRD §0). */
   createdAt: number;
+  /** Last mutation time — drives last-write-wins sync merges. */
+  updatedAt?: number;
   /** Powers resurfacing: how long since it was last seen. */
   lastSeenAt: number;
   /** Soft-delete timestamp; set when moved to Trash. */
@@ -87,6 +89,8 @@ export interface Space {
   name: string;
   elements: SpaceElement[];
   createdAt: number;
+  /** Last mutation time — drives last-write-wins sync merges. */
+  updatedAt?: number;
 }
 
 export type TypeFilter = ItemType | 'all';

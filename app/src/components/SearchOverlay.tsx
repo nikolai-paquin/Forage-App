@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item } from '../types';
 import { COLOR_SWATCHES, matchColor } from '../lib/color';
+import { aiEnabled } from '../lib/ai';
+import { semanticSearch, type SemanticHit } from '../lib/semantic';
 import {
   Bookmark,
   Camera,
@@ -111,20 +113,54 @@ export function SearchOverlay({
     [projects, query, color],
   );
 
+  // Semantic ("find by vibe") results, when an AI endpoint is configured. Debounced;
+  // keyword results show instantly and semantic refines/extends them.
+  const [semantic, setSemantic] = useState<SemanticHit[]>([]);
+  const semanticOn = aiEnabled();
+  useEffect(() => {
+    if (!open || !semanticOn || !query.trim()) {
+      setSemantic([]);
+      return;
+    }
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const hits = await semanticSearch(query, items, { limit: 12 });
+      if (!cancelled) setSemantic(hits);
+    }, 220);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [query, open, semanticOn, items]);
+
   const itemHits = useMemo(() => {
     if (!query && !color) return [];
-    let hits = items.filter((it) => !it.deletedAt);
-    if (query)
-      hits = hits.filter((it) =>
-        [it.title, it.source, it.note, it.summary, it.url, it.code, it.ai?.prompt, ...it.tags]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-          .includes(query),
-      );
-    if (color) hits = hits.filter((it) => matchColor(it.palette, color));
-    return hits.slice(0, 12);
-  }, [items, query, color]);
+    const live = items.filter((it) => !it.deletedAt);
+    const colorOk = (it: Item) => !color || matchColor(it.palette, color);
+    const keywordOk = (it: Item) =>
+      !query ||
+      [it.title, it.source, it.note, it.summary, it.url, it.code, it.ai?.prompt, ...it.tags]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(query);
+
+    if (semantic.length) {
+      const byId = new Map(live.map((it) => [it.id, it]));
+      const seen = new Set<string>();
+      const out: Item[] = [];
+      for (const h of semantic) {
+        const it = byId.get(h.id);
+        if (it && colorOk(it)) {
+          out.push(it);
+          seen.add(it.id);
+        }
+      }
+      for (const it of live) if (!seen.has(it.id) && colorOk(it) && keywordOk(it)) out.push(it);
+      return out.slice(0, 12);
+    }
+    return live.filter((it) => colorOk(it) && keywordOk(it)).slice(0, 12);
+  }, [items, query, color, semantic]);
 
   // Flat list of runnable rows, in render order — drives keyboard navigation.
   const flat = useMemo(
@@ -249,7 +285,7 @@ export function SearchOverlay({
               )}
 
               {itemHits.length > 0 && (
-                <Section title="Saves">
+                <Section title={semantic.length ? 'Saves · by meaning' : 'Saves'}>
                   {itemHits.map((it, i) => (
                     <Row
                       key={it.id}

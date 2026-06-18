@@ -1,0 +1,9 @@
+name = "forage-sync"
+main = "sync-worker.js"
+compatibility_date = "2025-01-01"
+
+# Create the namespace, then paste the printed id below:
+#   wrangler kv namespace create FORAGE
+[[kv_namespaces]]
+binding = "FORAGE"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"

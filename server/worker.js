@@ -7,9 +7,12 @@
 //   wrangler secret put ANTHROPIC_API_KEY
 //   wrangler deploy
 //
-// Contract (called by app/src/lib/ai.ts):
-//   POST { task: 'tags' | 'prompt', item: { title, type, source, note, summary, tags, palette } }
-//   ->   { tags: string[] }   |   { prompt: string }
+// Contract (called by app/src/lib/ai.ts and lib/semantic.ts):
+//   POST { task: 'tags' | 'prompt', item: {...} }  ->  { tags: string[] } | { prompt: string }
+//   POST { task: 'embed', text: '...' }            ->  { vector: number[] }
+//
+// `embed` powers semantic search and uses Cloudflare Workers AI (no extra key) —
+// add an `[ai] binding = "AI"` in wrangler.toml to enable it. Tags/prompt use Claude.
 
 const MODEL = 'claude-haiku-4-5-20251001';
 const ANTHROPIC_VERSION = '2023-06-01';
@@ -30,7 +33,6 @@ export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
     if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
-    if (!env.ANTHROPIC_API_KEY) return json({ error: 'ANTHROPIC_API_KEY not set' }, 500);
 
     let body;
     try {
@@ -39,7 +41,24 @@ export default {
       return json({ error: 'invalid JSON' }, 400);
     }
 
-    const { task, item } = body || {};
+    const { task, item, text } = body || {};
+
+    // --- Semantic embeddings (Cloudflare Workers AI) ---
+    if (task === 'embed') {
+      if (!env.AI) return json({ error: 'AI binding not configured' }, 500);
+      if (typeof text !== 'string' || !text.trim()) return json({ error: 'expected { text }' }, 400);
+      try {
+        const out = await env.AI.run('@cf/baai/bge-small-en-v1.5', { text: text.slice(0, 2000) });
+        const vector = out?.data?.[0];
+        if (!Array.isArray(vector)) return json({ error: 'no embedding returned' }, 502);
+        return json({ vector });
+      } catch (e) {
+        return json({ error: 'embed failed', detail: String(e) }, 502);
+      }
+    }
+
+    // --- Tags / prompt (Claude) ---
+    if (!env.ANTHROPIC_API_KEY) return json({ error: 'ANTHROPIC_API_KEY not set' }, 500);
     if ((task !== 'tags' && task !== 'prompt') || !item) {
       return json({ error: 'expected { task, item }' }, 400);
     }

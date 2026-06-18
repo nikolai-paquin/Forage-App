@@ -14,7 +14,7 @@ const TYPE_META: Record<string, { label: string; icon: React.ReactNode }> = {
 };
 
 export function CaptureDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { addItem, projects } = useForage();
+  const { addItem, projects, findDuplicate } = useForage();
   const [text, setText] = useState('');
   const [projectId, setProjectId] = useState('');
   const [tags, setTags] = useState('');
@@ -35,13 +35,22 @@ export function CaptureDialog({ open, onClose }: { open: boolean; onClose: () =>
   const submit = () => {
     if (!text.trim()) return;
     const d = detected!;
+    const trimmed = text.trim();
+    const url = /^https?:/i.test(text) ? trimmed : undefined;
+    const media = isImg ? trimmed : undefined;
+    const code = d.type === 'code' ? trimmed : undefined;
+    if (findDuplicate({ url, media, code })) {
+      toast('Already in your library');
+      onClose();
+      return;
+    }
     addItem({
       type: d.type,
       title: d.title,
       source: d.source,
-      url: /^https?:/i.test(text) ? text.trim() : undefined,
-      media: isImg ? text.trim() : undefined,
-      code: d.type === 'code' ? text.trim() : undefined,
+      url,
+      media,
+      code,
       tags: tags
         .split(',')
         .map((t) => t.trim())

@@ -19,13 +19,15 @@ import { detectFromInput } from './lib/util';
 import { extractPalette } from './lib/color';
 import { consumeShareUrl } from './lib/ingest';
 import { exportBackup } from './lib/backup';
+import { aiEnabled } from './lib/ai';
+import { indexItems } from './lib/semantic';
 import { useTheme } from './lib/theme';
 import { toast } from './lib/toast';
 import { Toaster } from './components/Toaster';
 import type { Item } from './types';
 
 function Workspace() {
-  const { view, markSeen, addItem, updateItem, setView, createSpace } = useForage();
+  const { view, items, markSeen, addItem, updateItem, setView, createSpace, findDuplicate } = useForage();
   const { dark, toggle } = useTheme();
   const [selected, setSelected] = useState<Item | null>(null);
   const [capture, setCapture] = useState(false);
@@ -42,6 +44,10 @@ function Workspace() {
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = String(reader.result);
+        if (findDuplicate({ media: dataUrl })) {
+          toast('Already in your library');
+          return;
+        }
         const created = addItem({
           type: file.type === 'image/gif' ? 'gif' : 'image',
           title: file.name.replace(/\.[^.]+$/, ''),
@@ -67,15 +73,14 @@ function Workspace() {
       const text = e.clipboardData?.getData('text')?.trim();
       if (text) {
         const d = detectFromInput(text);
-        addItem({
-          type: d.type,
-          title: d.title,
-          source: d.source,
-          url: /^https?:/i.test(text) ? text : undefined,
-          media: d.type === 'image' || d.type === 'gif' ? text : undefined,
-          code: d.type === 'code' ? text : undefined,
-          projectIds: targetCollection,
-        });
+        const url = /^https?:/i.test(text) ? text : undefined;
+        const media = d.type === 'image' || d.type === 'gif' ? text : undefined;
+        const code = d.type === 'code' ? text : undefined;
+        if (findDuplicate({ url, media, code })) {
+          toast('Already in your library');
+          return;
+        }
+        addItem({ type: d.type, title: d.title, source: d.source, url, media, code, projectIds: targetCollection });
       }
     };
     window.addEventListener('paste', onPaste);
@@ -107,6 +112,11 @@ function Workspace() {
   useEffect(() => {
     const p = consumeShareUrl();
     if (p) {
+      if (findDuplicate({ url: p.url, media: p.media })) {
+        setView({ kind: 'library', tab: 'all' });
+        toast(`“${p.title}” is already in your library`);
+        return;
+      }
       const created = addItem(p);
       setView({ kind: 'library', tab: 'all' });
       toast(`Saved “${created.title}” to Forage`);
@@ -114,6 +124,23 @@ function Workspace() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Keep the semantic-search embedding index warm in the background (only when an
+  // AI endpoint is configured). Embeds a few stale items at a time to avoid jank.
+  useEffect(() => {
+    if (!aiEnabled()) return;
+    let stop = false;
+    const run = async () => {
+      if (stop) return;
+      const n = await indexItems(items, 6);
+      if (!stop && n > 0) setTimeout(run, 400);
+    };
+    const t = setTimeout(run, 1200);
+    return () => {
+      stop = true;
+      clearTimeout(t);
+    };
+  }, [items]);
 
   const open = (item: Item) => {
     setSelected(item);

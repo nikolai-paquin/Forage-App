@@ -9,6 +9,28 @@ import {
 import type { FilterEntry, Item, Project, SortBy, Space, SpaceElement, TypeFilter, View } from '../types';
 import { sampleItems, sampleProjects } from '../data/sample';
 import { sourceLabel, uid } from './util';
+import { findDuplicate, type DupeCandidate } from './dedupe';
+import {
+  getAutoSync,
+  getLastSyncedAt,
+  getSyncEndpoint,
+  getSyncKey,
+  mergeById,
+  mergeSnapshots,
+  pullSnapshot,
+  pushSnapshot,
+  setAutoSync,
+  setLastSyncedAt,
+  setSyncEndpoint,
+  setSyncKey,
+  syncConfigured,
+} from './sync';
+
+export interface SyncCfg {
+  endpoint: string;
+  key: string;
+  auto: boolean;
+}
 
 const STORE_KEY = 'forage.items.v2';
 const TYPES_KEY = 'forage.fileTypes.v1';
@@ -110,6 +132,7 @@ interface ForageStore {
   deleteSelectedForever: () => void;
   projectById: (id: string) => Project | undefined;
   itemById: (id: string) => Item | undefined;
+  findDuplicate: (c: DupeCandidate) => Item | undefined;
   projectItemCount: (id: string) => number;
   visibleItems: Item[];
   unsortedCount: number;
@@ -123,6 +146,12 @@ interface ForageStore {
   addSpaceElement: (spaceId: string, el: SpaceElement) => void;
   updateSpaceElement: (spaceId: string, elId: string, patch: Partial<SpaceElement>) => void;
   removeSpaceElement: (spaceId: string, elId: string) => void;
+  // sync
+  syncCfg: SyncCfg;
+  syncBusy: boolean;
+  lastSyncedAt: number;
+  updateSyncCfg: (patch: Partial<SyncCfg>) => void;
+  syncNow: () => Promise<void>;
 }
 
 const Ctx = createContext<ForageStore | null>(null);
@@ -152,6 +181,13 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   );
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [spaces, setSpaces] = useState<Space[]>(() => loadJSON(SPACES_KEY, []));
+  const [syncCfg, setSyncCfg] = useState<SyncCfg>(() => ({
+    endpoint: getSyncEndpoint(),
+    key: getSyncKey(),
+    auto: getAutoSync(),
+  }));
+  const [syncBusy, setSyncBusy] = useState(false);
+  const [lastSyncedAt, setLastSyncedState] = useState<number>(() => getLastSyncedAt());
 
   useEffect(() => {
     try {
@@ -184,11 +220,50 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   // selection is per-view
   useEffect(() => setSelectedIds([]), [view]);
 
+  // Auto-sync: debounced push when local data changes.
+  useEffect(() => {
+    if (!syncCfg.auto || !syncConfigured()) return;
+    const t = setTimeout(() => {
+      pushSnapshot({ v: 1, updatedAt: Date.now(), items, spaces })
+        .then(() => {
+          const n = Date.now();
+          setLastSyncedAt(n);
+          setLastSyncedState(n);
+        })
+        .catch(() => {});
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [items, spaces, syncCfg]);
+
+  // Auto-sync: pull + merge on mount/config change, then periodically.
+  useEffect(() => {
+    if (!syncCfg.auto || !syncConfigured()) return;
+    let cancelled = false;
+    const doPull = async () => {
+      try {
+        const remote = await pullSnapshot();
+        if (cancelled || !remote) return;
+        setItems((prev) => mergeById(prev, remote.items));
+        setSpaces((prev) => mergeById(prev, remote.spaces));
+      } catch {
+        /* offline — try again next tick */
+      }
+    };
+    doPull();
+    const iv = setInterval(doPull, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(iv);
+    };
+  }, [syncCfg]);
+
   const patchSpace = (spaceId: string, fn: (s: Space) => Space) =>
-    setSpaces((prev) => prev.map((s) => (s.id === spaceId ? fn(s) : s)));
+    setSpaces((prev) =>
+      prev.map((s) => (s.id === spaceId ? { ...fn(s), updatedAt: Date.now() } : s)),
+    );
 
   const patch = (id: string, fn: (i: Item) => Item) =>
-    setItems((prev) => prev.map((i) => (i.id === id ? fn(i) : i)));
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...fn(i), updatedAt: Date.now() } : i)));
 
   const registerSource = (src?: string) => {
     if (!src) return;
@@ -294,6 +369,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           tags: input.tags ?? [],
           projectIds: input.projectIds ?? [],
           createdAt: Date.now(),
+          updatedAt: Date.now(),
           lastSeenAt: Date.now(),
         };
         setItems((prev) => [item, ...prev]);
@@ -332,15 +408,19 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       clearSelection: () => setSelectedIds([]),
       trashSelected: () => {
         const ids = new Set(selectedIds);
-        setItems((prev) => prev.map((i) => (ids.has(i.id) ? { ...i, deletedAt: Date.now() } : i)));
+        const now = Date.now();
+        setItems((prev) =>
+          prev.map((i) => (ids.has(i.id) ? { ...i, deletedAt: now, updatedAt: now } : i)),
+        );
         setSelectedIds([]);
       },
       assignSelectedTo: (projectId) => {
         const ids = new Set(selectedIds);
+        const now = Date.now();
         setItems((prev) =>
           prev.map((i) =>
             ids.has(i.id) && !i.projectIds.includes(projectId)
-              ? { ...i, projectIds: [...i.projectIds, projectId] }
+              ? { ...i, projectIds: [...i.projectIds, projectId], updatedAt: now }
               : i,
           ),
         );
@@ -348,7 +428,10 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       },
       restoreSelected: () => {
         const ids = new Set(selectedIds);
-        setItems((prev) => prev.map((i) => (ids.has(i.id) ? { ...i, deletedAt: undefined } : i)));
+        const now = Date.now();
+        setItems((prev) =>
+          prev.map((i) => (ids.has(i.id) ? { ...i, deletedAt: undefined, updatedAt: now } : i)),
+        );
         setSelectedIds([]);
       },
       deleteSelectedForever: () => {
@@ -358,6 +441,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       },
       projectById,
       itemById,
+      findDuplicate: (c) => findDuplicate(items, c),
       projectItemCount: (id) => items.filter((i) => !i.deletedAt && i.projectIds.includes(id)).length,
       visibleItems,
       unsortedCount: items.filter((i) => !i.deletedAt && i.projectIds.length === 0).length,
@@ -365,7 +449,13 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       spaces,
       spaceById: (id) => spaces.find((s) => s.id === id),
       createSpace: () => {
-        const s: Space = { id: uid(), name: 'Untitled space', elements: [], createdAt: Date.now() };
+        const s: Space = {
+          id: uid(),
+          name: 'Untitled space',
+          elements: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
         setSpaces((prev) => [s, ...prev]);
         setView({ kind: 'space', id: s.id });
       },
@@ -383,9 +473,44 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         })),
       removeSpaceElement: (spaceId, elId) =>
         patchSpace(spaceId, (s) => ({ ...s, elements: s.elements.filter((e) => e.id !== elId) })),
+      syncCfg,
+      syncBusy,
+      lastSyncedAt,
+      updateSyncCfg: (p) => {
+        const next = { ...syncCfg, ...p };
+        if (p.endpoint !== undefined) setSyncEndpoint(p.endpoint);
+        if (p.key !== undefined) setSyncKey(p.key);
+        if (p.auto !== undefined) setAutoSync(p.auto);
+        setSyncCfg(next);
+      },
+      syncNow: async () => {
+        if (!syncConfigured() || syncBusy) return;
+        setSyncBusy(true);
+        try {
+          const remote = await pullSnapshot();
+          let mergedItems = items;
+          let mergedSpaces = spaces;
+          if (remote) {
+            const merged = mergeSnapshots(
+              { v: 1, updatedAt: Date.now(), items, spaces },
+              remote,
+            );
+            mergedItems = merged.items;
+            mergedSpaces = merged.spaces;
+            setItems(mergedItems);
+            setSpaces(mergedSpaces);
+          }
+          await pushSnapshot({ v: 1, updatedAt: Date.now(), items: mergedItems, spaces: mergedSpaces });
+          const t = Date.now();
+          setLastSyncedAt(t);
+          setLastSyncedState(t);
+        } finally {
+          setSyncBusy(false);
+        }
+      },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, projects, view, query, typeFilter, sourceFilter, tagFilter, sortBy, fileTypes, sources, selectedIds, spaces]);
+  }, [items, projects, view, query, typeFilter, sourceFilter, tagFilter, sortBy, fileTypes, sources, selectedIds, spaces, syncCfg, syncBusy, lastSyncedAt]);
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }

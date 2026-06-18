@@ -13,7 +13,8 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-Other scripts: `npm run build` (type-check + production build), `npm run preview`.
+Other scripts: `npm run build` (type-check + production build), `npm run preview`,
+`npm test` (Vitest unit suite for the core logic).
 
 ## What's here (and what it demonstrates)
 
@@ -27,8 +28,13 @@ Other scripts: `npm run build` (type-check + production build), `npm run preview
 | **Storyboard mode** — drag-to-reorder frames, editable shot beats, per-frame AI prompt, frame picker, export shot list | `components/StoryboardView.tsx` | F11 |
 | Light/dark theming as first-class equals, system-aware, no-flash | `index.css`, `lib/theme.ts` | F5 |
 | **Command palette (⌘K)** — full-text search across saves + jump-to-view + run-command, keyboard navigable | `components/SearchOverlay.tsx` | F6 |
+| **Semantic search (optional)** — embeddings-based "find by vibe", blended over keyword results, cached per-item | `lib/semantic.ts`, `../server/worker.js` | F6 |
+| **Virtualized masonry** — exact-offset windowing for 10k+ saves (kicks in past 80 items) | `components/MasonryGrid.tsx` | F2 |
+| **Duplicate detection** — capture flows skip URLs/images already saved | `lib/dedupe.ts` | F1 |
+| **Cross-device sync (optional)** — per-item last-write-wins merge against a KV Worker; auto or manual | `lib/sync.ts`, `../server/sync-worker.js` | §0 |
 | **Backup & restore** — export/import the whole library as portable JSON | `lib/backup.ts`, `components/SettingsModal.tsx` (Data) | §0 |
 | **Real AI backend (optional)** — point at a Cloudflare Worker for Claude-powered auto-tag/prompts; falls back to on-device heuristics | `lib/ai.ts`, `../server/` | F10 |
+| **Unit tests** — Vitest coverage of dedupe, sync merge, and semantic math | `lib/__tests__/logic.test.ts` | — |
 | **PWA** — installable, offline app-shell caching, mobile share target | `public/sw.js`, `public/manifest.webmanifest`, `lib/pwa.ts` | §10 |
 | **First-run onboarding** | `components/Onboarding.tsx` | — |
 | Local-first persistence (localStorage stands in for the SQLite source of truth) | `lib/store.tsx` | §0 |
@@ -54,9 +60,8 @@ back to heuristics if the endpoint is unreachable.
 
 ## Not yet built (next milestones)
 
-Virtualized grid for 10k+ items, real cross-device sync, embeddings-based semantic search, the
-Forage Digest surface, and a signed/auto-updating Tauri release (built/verified on a Mac). See the
-PRD roadmap (§12).
+The Forage Digest surface, in-grid keyboard navigation/multi-select, and a signed/auto-updating
+Tauri release (built/verified on a Mac). See the PRD roadmap (§12).
 
 ## Notes
 
