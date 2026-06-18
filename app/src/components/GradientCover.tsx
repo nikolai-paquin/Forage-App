@@ -25,11 +25,13 @@ export function GradientCover({
   const x2 = 70 - ((seed * 17) % 30);
   const y2 = 75 - ((seed * 29) % 30);
 
+  // The project's own colour leads; a warm highlight adds depth (Mercury-like),
+  // with no green forced in — keeps covers varied rather than uniformly olive.
   const mesh = `
-    radial-gradient(120% 120% at ${x1}% ${y1}%, ${hexA(color, 0.95)} 0%, transparent 55%),
-    radial-gradient(90% 90% at ${x2}% ${y2}%, var(--accent) 0%, transparent 50%),
-    radial-gradient(100% 100% at 85% 15%, ${hexA(color, 0.6)} 0%, transparent 60%),
-    linear-gradient(135deg, ${hexA(color, 0.85)}, ${hexA(color, 0.35)})
+    radial-gradient(120% 120% at ${x1}% ${y1}%, ${hexA(color, 0.95)} 0%, transparent 58%),
+    radial-gradient(85% 85% at ${x2}% ${y2}%, rgba(255, 248, 238, 0.28) 0%, transparent 52%),
+    radial-gradient(110% 110% at 88% 12%, ${hexA(color, 0.55)} 0%, transparent 62%),
+    linear-gradient(135deg, ${hexA(color, 0.88)}, ${hexA(color, 0.3)})
   `;
 
   return (

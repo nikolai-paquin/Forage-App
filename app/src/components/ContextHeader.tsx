@@ -27,14 +27,14 @@ function FilterChips() {
             key={f.id}
             onClick={() => setTypeFilter(f.id)}
             className={`relative rounded-full px-3 py-1 text-[12.5px] transition-colors ${
-              active ? 'text-accent-ink' : 'text-muted hover:text-ink'
+              active ? 'text-ink' : 'text-muted hover:text-ink'
             }`}
           >
             {active && (
               <motion.span
                 layoutId="filter-active"
-                className="absolute inset-0 z-0 rounded-full"
-                style={{ background: 'var(--accent)' }}
+                className="absolute inset-0 z-0 rounded-full border border-border bg-surface"
+                style={{ boxShadow: 'var(--shadow-tile)' }}
                 transition={{ type: 'spring', stiffness: 500, damping: 38 }}
               />
             )}
@@ -118,7 +118,7 @@ export function ContextHeader({ onOpen }: { onOpen: (i: Item) => void }) {
 
   return (
     <div className="relative isolate px-5 pb-3 pt-5">
-      <DitherGlow className="-left-10 -top-8 h-44 w-72 opacity-50" />
+      <DitherGlow className="-left-10 -top-8 h-44 w-72 opacity-25" />
       <div className="flex items-center gap-2.5">
         {accent && (
           <span className="h-3 w-3 rounded-full" style={{ background: accent }} />

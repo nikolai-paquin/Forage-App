@@ -61,12 +61,21 @@ export function Toolbar({
         </button>
 
         <motion.button
+          initial="rest"
+          animate="rest"
+          whileHover="hover"
           whileTap={{ scale: 0.96 }}
           onClick={onCapture}
           className="flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-[13px] font-medium text-accent-ink"
           style={{ background: 'var(--accent)' }}
         >
-          <Plus width={16} height={16} />
+          <motion.span
+            variants={{ rest: { rotate: 0 }, hover: { rotate: 90 } }}
+            transition={{ type: 'spring', stiffness: 360, damping: 14 }}
+            className="inline-flex"
+          >
+            <Plus width={16} height={16} />
+          </motion.span>
           Add
           <span className="ml-0.5 rounded bg-black/15 px-1 text-[10px] opacity-80">⌘N</span>
         </motion.button>

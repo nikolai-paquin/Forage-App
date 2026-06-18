@@ -17,8 +17,12 @@ function NavRow({
   badge?: number;
 }) {
   return (
-    <button
+    <motion.button
       onClick={onClick}
+      initial="rest"
+      animate="rest"
+      whileHover="hover"
+      whileTap={{ scale: 0.985 }}
       className={`relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition-colors ${
         active ? 'text-ink' : 'text-muted hover:text-ink'
       }`}
@@ -30,14 +34,20 @@ function NavRow({
           transition={{ type: 'spring', stiffness: 500, damping: 40 }}
         />
       )}
-      <span className={`relative z-[1] ${active ? 'text-accent' : ''}`}>{icon}</span>
+      <motion.span
+        variants={{ rest: { scale: 1, rotate: 0 }, hover: { scale: 1.16, rotate: -6 } }}
+        transition={{ type: 'spring', stiffness: 420, damping: 12 }}
+        className={`relative z-[1] inline-flex ${active ? 'text-accent' : ''}`}
+      >
+        {icon}
+      </motion.span>
       <span className="relative z-[1] flex-1 text-left">{label}</span>
       {badge ? (
         <span className="relative z-[1] rounded-full bg-surface-2 px-1.5 text-[11px] tabular-nums text-muted">
           {badge}
         </span>
       ) : null}
-    </button>
+    </motion.button>
   );
 }
 

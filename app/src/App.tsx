@@ -17,7 +17,7 @@ import { Basket, Plus } from './components/icons';
 function EmptyState({ onCapture }: { onCapture: () => void }) {
   return (
     <div className="relative isolate flex flex-col items-center justify-center px-6 py-24 text-center">
-      <DitherGlow className="left-1/2 top-10 h-64 w-64 -translate-x-1/2 opacity-70" />
+      <DitherGlow className="left-1/2 top-10 h-64 w-64 -translate-x-1/2 opacity-40" />
       <div className="glass mb-4 grid h-16 w-16 place-items-center rounded-2xl text-accent">
         <Basket width={28} height={28} />
       </div>
@@ -70,8 +70,8 @@ function Workspace() {
   return (
     <div className="relative isolate flex h-screen overflow-hidden bg-canvas text-ink">
       {/* Ambient olive dither-glow — premium, calm, never busy */}
-      <DitherGlow className="-left-20 -top-20 h-[420px] w-[420px] opacity-60" />
-      <DitherGlow className="-bottom-24 right-10 h-[360px] w-[360px] opacity-40" />
+      <DitherGlow className="-left-20 -top-20 h-[420px] w-[420px] opacity-30" />
+      <DitherGlow className="-bottom-24 right-10 h-[360px] w-[360px] opacity-20" />
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Toolbar onCapture={() => setCapture(true)} onCommand={() => setCmdk(true)} />

@@ -174,7 +174,7 @@ export function CommandPalette({
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 420, damping: 30 }}
             onKeyDown={onKey}
-            className="glass relative w-full max-w-xl overflow-hidden rounded-2xl"
+            className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-border-strong bg-elevated"
             style={{ boxShadow: 'var(--shadow-pop)' }}
           >
             <div className="noise pointer-events-none absolute inset-0 opacity-[0.06] mix-blend-soft-light" />
@@ -211,12 +211,12 @@ export function CommandPalette({
                       onMouseMove={() => setActive(i)}
                       onClick={() => c.run()}
                       className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors ${
-                        i === active ? 'bg-accent text-accent-ink' : 'text-ink'
+                        i === active ? 'bg-surface-2 text-ink' : 'text-ink'
                       }`}
                     >
                       <span
                         className={`grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-lg ${
-                          i === active ? 'bg-black/10' : 'bg-surface-2'
+                          i === active ? 'bg-accent/15 text-accent' : 'bg-surface-2'
                         }`}
                       >
                         {c.thumb ? (
@@ -230,7 +230,7 @@ export function CommandPalette({
                         {c.sub && (
                           <span
                             className={`block truncate text-[11.5px] ${
-                              i === active ? 'text-accent-ink/70' : 'text-faint'
+                              i === active ? 'text-muted' : 'text-faint'
                             }`}
                           >
                             {c.sub}

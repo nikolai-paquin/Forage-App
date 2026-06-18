@@ -94,11 +94,11 @@ export function HomeView({
 
   return (
     <div className="relative isolate mx-auto max-w-6xl px-6 pb-28 pt-10">
-      <DitherGlow className="-top-6 left-10 h-56 w-[460px] opacity-70" />
+      <DitherGlow className="-top-6 left-10 h-56 w-[460px] opacity-35" />
 
       {/* Greeting */}
       <motion.div {...fadeUp} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
-        <p className="text-[12px] font-medium uppercase tracking-[0.2em] text-accent">
+        <p className="text-[12px] font-medium uppercase tracking-[0.2em] text-muted">
           {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
         </p>
         <h1 className="display mt-2 text-[40px] text-ink sm:text-[52px]">
