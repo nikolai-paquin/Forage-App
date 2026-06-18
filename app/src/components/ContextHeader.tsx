@@ -3,6 +3,7 @@ import { useForage } from '../lib/store';
 import type { Item, TypeFilter } from '../types';
 import { Clock, Layers } from './icons';
 import { DitherGlow } from './DitherGlow';
+import { SoftWash } from './SoftWash';
 import { timeAgo } from '../lib/util';
 
 const FILTERS: { id: TypeFilter; label: string }[] = [
@@ -118,6 +119,7 @@ export function ContextHeader({ onOpen }: { onOpen: (i: Item) => void }) {
 
   return (
     <div className="relative isolate px-5 pb-3 pt-5">
+      <SoftWash className="-top-10 h-48 opacity-70" blur={44} />
       <DitherGlow className="-left-10 -top-8 h-44 w-72 opacity-25" />
       <div className="flex items-center gap-2.5">
         {accent && (

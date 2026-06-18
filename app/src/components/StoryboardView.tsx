@@ -3,6 +3,7 @@ import { AnimatePresence, motion, Reorder } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Frame, Item, Storyboard } from '../types';
 import { Close, Layers, Play, Plus, Sparkle } from './icons';
+import { SoftWash } from './SoftWash';
 
 function Thumb({ item }: { item: Item | undefined }) {
   if (!item)
@@ -176,7 +177,8 @@ export function StoryboardView({ storyboard }: { storyboard: Storyboard }) {
   };
 
   return (
-    <div className="px-5 pb-24 pt-5">
+    <div className="relative isolate px-5 pb-24 pt-5">
+      <SoftWash className="-top-10 h-48 opacity-70" blur={44} />
       <div className="flex flex-wrap items-center gap-2.5">
         <Layers width={20} height={20} className="text-accent" />
         <h1 className="text-[22px] font-semibold tracking-tight">{storyboard.title}</h1>

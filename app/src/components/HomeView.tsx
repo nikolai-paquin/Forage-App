@@ -3,6 +3,7 @@ import { useForage } from '../lib/store';
 import type { Item, Project } from '../types';
 import { GradientCover } from './GradientCover';
 import { DitherGlow } from './DitherGlow';
+import { SoftWash } from './SoftWash';
 import { Clock, Plus, Sparkle } from './icons';
 import { timeAgo } from '../lib/util';
 
@@ -94,6 +95,7 @@ export function HomeView({
 
   return (
     <div className="relative isolate mx-auto max-w-6xl px-6 pb-28 pt-10">
+      <SoftWash className="-top-24 h-[560px] opacity-90" blur={56} />
       <DitherGlow className="-top-6 left-10 h-56 w-[460px] opacity-35" />
 
       {/* Greeting */}
