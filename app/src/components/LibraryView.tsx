@@ -5,7 +5,6 @@ import type { Item, LibraryTab } from '../types';
 import { MasonryGrid } from './MasonryGrid';
 import { CollectionCover } from './CollectionCover';
 import { FilterMenu, type Option } from './FilterMenu';
-import { sourceLabel } from '../lib/util';
 import type { ItemType } from '../types';
 import {
   Bookmark,
@@ -23,16 +22,15 @@ import {
   Trash2,
 } from './icons';
 
-const TYPE_OPTIONS: { value: ItemType | 'all'; label: string; icon: React.ReactNode }[] = [
-  { value: 'all', label: 'All types', icon: <ImageIcon size={14} /> },
-  { value: 'image', label: 'Images', icon: <ImageIcon size={14} /> },
-  { value: 'video', label: 'Video', icon: <Play size={14} /> },
-  { value: 'link', label: 'Links', icon: <Link size={14} /> },
-  { value: 'gif', label: 'GIFs', icon: <ImageIcon size={14} /> },
-  { value: 'ai_asset', label: 'AI assets', icon: <Sparkle size={14} /> },
-  { value: 'vector', label: 'Vectors', icon: <Layers size={14} /> },
-  { value: 'code', label: 'Code', icon: <Code size={14} /> },
-];
+const TYPE_ICON: Record<string, React.ReactNode> = {
+  image: <ImageIcon size={14} />,
+  video: <Play size={14} />,
+  link: <Link size={14} />,
+  gif: <ImageIcon size={14} />,
+  ai_asset: <Sparkle size={14} />,
+  vector: <Layers size={14} />,
+  code: <Code size={14} />,
+};
 
 const TABS: { id: LibraryTab; label: string; icon: React.ReactNode }[] = [
   { id: 'all', label: 'All', icon: <ImageIcon size={15} /> },
@@ -63,17 +61,21 @@ function Empty({
 }
 
 export function LibraryView({ onOpen, onCapture }: { onOpen: (i: Item) => void; onCapture: () => void }) {
-  const { view, setView, visibleItems, projects, items, typeFilter, setTypeFilter, sourceFilter, setSourceFilter } =
+  const { view, setView, visibleItems, projects, fileTypes, sources, typeFilter, setTypeFilter, sourceFilter, setSourceFilter } =
     useForage();
   const [density, setDensity] = useState(235);
   if (view.kind !== 'library') return null;
   const tab = view.tab;
 
+  const typeOptions: Option[] = [
+    { value: 'all', label: 'All types', icon: <ImageIcon size={14} /> },
+    ...fileTypes
+      .filter((t) => t.enabled)
+      .map((t) => ({ value: t.value, label: t.label, icon: TYPE_ICON[t.value] ?? <Layers size={14} /> })),
+  ];
   const sourceOptions: Option[] = [
     { value: 'all', label: 'All sources', icon: <Compass size={14} /> },
-    ...Array.from(new Set(items.map((i) => i.source).filter(Boolean) as string[]))
-      .map((s) => ({ value: s, label: sourceLabel(s) }))
-      .sort((a, b) => a.label.localeCompare(b.label)),
+    ...sources.filter((s) => s.enabled).map((s) => ({ value: s.value, label: s.label })),
   ];
 
   return (
@@ -125,7 +127,7 @@ export function LibraryView({ onOpen, onCapture }: { onOpen: (i: Item) => void; 
             <>
               <FilterMenu
                 icon={<ImageIcon size={14} className="text-faint" />}
-                options={TYPE_OPTIONS}
+                options={typeOptions}
                 value={typeFilter}
                 onChange={(v) => setTypeFilter(v as ItemType | 'all')}
               />

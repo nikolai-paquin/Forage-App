@@ -42,4 +42,6 @@ export {
   Database,
   Library as LibraryIcon,
   Frame,
+  SlidersHorizontal as Filter,
+  GripVertical,
 } from 'lucide-react';

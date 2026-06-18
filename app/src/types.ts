@@ -66,6 +66,13 @@ export type View =
 
 export type TypeFilter = ItemType | 'all';
 
+/** A user-managed entry in the Type or Source filter lists. */
+export interface FilterEntry {
+  value: string;
+  label: string;
+  enabled: boolean;
+}
+
 // ---- Storyboard (PRD §8.4) ----
 // An ordered sequence of frames built from Items, for AI video & sequenced design work.
 

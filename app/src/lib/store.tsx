@@ -6,11 +6,47 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { Item, Project, TypeFilter, View } from '../types';
+import type { FilterEntry, Item, Project, TypeFilter, View } from '../types';
 import { sampleItems, sampleProjects } from '../data/sample';
-import { uid } from './util';
+import { sourceLabel, uid } from './util';
 
 const STORE_KEY = 'forage.items.v2';
+const TYPES_KEY = 'forage.fileTypes.v1';
+const SOURCES_KEY = 'forage.sources.v1';
+
+const DEFAULT_TYPES: FilterEntry[] = [
+  { value: 'image', label: 'Images', enabled: true },
+  { value: 'video', label: 'Video', enabled: true },
+  { value: 'link', label: 'Links', enabled: true },
+  { value: 'gif', label: 'GIFs', enabled: true },
+  { value: 'ai_asset', label: 'AI assets', enabled: true },
+  { value: 'vector', label: 'Vectors', enabled: true },
+  { value: 'code', label: 'Code', enabled: true },
+];
+
+const slug = (s: string) => s.trim().toLowerCase().replace(/\s+/g, '_');
+
+function loadJSON<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) return JSON.parse(raw) as T;
+  } catch {
+    /* seed */
+  }
+  return fallback;
+}
+
+function deriveSources(items: Item[]): FilterEntry[] {
+  const seen = new Set<string>();
+  const out: FilterEntry[] = [];
+  for (const it of items) {
+    if (it.source && !seen.has(it.source)) {
+      seen.add(it.source);
+      out.push({ value: it.source, label: sourceLabel(it.source), enabled: true });
+    }
+  }
+  return out.sort((a, b) => a.label.localeCompare(b.label));
+}
 
 interface NewItemInput {
   type: Item['type'];
@@ -30,10 +66,18 @@ interface ForageStore {
   query: string;
   typeFilter: TypeFilter;
   sourceFilter: string;
+  fileTypes: FilterEntry[];
+  sources: FilterEntry[];
   setView: (v: View) => void;
   setQuery: (q: string) => void;
   setTypeFilter: (t: TypeFilter) => void;
   setSourceFilter: (s: string) => void;
+  addFileType: (label: string) => void;
+  removeFileType: (value: string) => void;
+  toggleFileType: (value: string) => void;
+  addSource: (value: string) => void;
+  removeSource: (value: string) => void;
+  toggleSource: (value: string) => void;
   addItem: (input: NewItemInput) => Item;
   toggleFavorite: (id: string) => void;
   markSeen: (id: string) => void;
@@ -66,6 +110,10 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [fileTypes, setFileTypes] = useState<FilterEntry[]>(() => loadJSON(TYPES_KEY, DEFAULT_TYPES));
+  const [sources, setSources] = useState<FilterEntry[]>(() =>
+    loadJSON(SOURCES_KEY, deriveSources(load())),
+  );
 
   useEffect(() => {
     try {
@@ -74,6 +122,20 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       /* non-fatal */
     }
   }, [items]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(TYPES_KEY, JSON.stringify(fileTypes));
+    } catch {
+      /* non-fatal */
+    }
+  }, [fileTypes]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(SOURCES_KEY, JSON.stringify(sources));
+    } catch {
+      /* non-fatal */
+    }
+  }, [sources]);
 
   const store = useMemo<ForageStore>(() => {
     const projectById = (id: string) => projects.find((p) => p.id === id);
@@ -110,10 +172,32 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       query,
       typeFilter,
       sourceFilter,
+      fileTypes,
+      sources,
       setView,
       setQuery,
       setTypeFilter,
       setSourceFilter,
+      addFileType: (label) => {
+        const v = slug(label);
+        if (!label.trim()) return;
+        setFileTypes((prev) =>
+          prev.some((t) => t.value === v) ? prev : [...prev, { value: v, label: label.trim(), enabled: true }],
+        );
+      },
+      removeFileType: (value) => setFileTypes((prev) => prev.filter((t) => t.value !== value)),
+      toggleFileType: (value) =>
+        setFileTypes((prev) => prev.map((t) => (t.value === value ? { ...t, enabled: !t.enabled } : t))),
+      addSource: (value) => {
+        const v = value.trim();
+        if (!v) return;
+        setSources((prev) =>
+          prev.some((s) => s.value === v) ? prev : [...prev, { value: v, label: sourceLabel(v), enabled: true }],
+        );
+      },
+      removeSource: (value) => setSources((prev) => prev.filter((s) => s.value !== value)),
+      toggleSource: (value) =>
+        setSources((prev) => prev.map((s) => (s.value === value ? { ...s, enabled: !s.enabled } : s))),
       projectById,
       itemById,
       projectItemCount: (id) => items.filter((i) => i.projectIds.includes(id)).length,
@@ -136,6 +220,14 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           lastSeenAt: Date.now(),
         };
         setItems((prev) => [item, ...prev]);
+        if (item.source) {
+          const src = item.source;
+          setSources((prev) =>
+            prev.some((s) => s.value === src)
+              ? prev
+              : [...prev, { value: src, label: sourceLabel(src), enabled: true }],
+          );
+        }
         return item;
       },
       toggleFavorite: (id) =>
@@ -159,7 +251,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           ),
         ),
     };
-  }, [items, projects, view, query, typeFilter, sourceFilter]);
+  }, [items, projects, view, query, typeFilter, sourceFilter, fileTypes, sources]);
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }
