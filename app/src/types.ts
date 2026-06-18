@@ -41,6 +41,8 @@ export interface Item {
   note?: string;
   summary?: string;
   ai?: AiMeta;
+  /** The save this one was made/derived from (input→output graph). */
+  derivedFrom?: string;
   favorite?: boolean;
   /** ms epoch — sync-ready timestamps from day one (PRD §0). */
   createdAt: number;

@@ -88,6 +88,9 @@ interface ForageStore {
   removeFromProject: (itemId: string, projectId: string) => void;
   addTag: (itemId: string, tag: string) => void;
   removeTag: (itemId: string, tag: string) => void;
+  setDerivedFrom: (itemId: string, sourceId?: string) => void;
+  outputsOf: (itemId: string) => Item[];
+  resurfaceList: Item[];
   // trash
   trashItem: (id: string) => void;
   restoreItem: (id: string) => void;
@@ -286,6 +289,15 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           i.tags.includes(tag) || !tag.trim() ? i : { ...i, tags: [...i.tags, tag.trim()] },
         ),
       removeTag: (itemId, tag) => patch(itemId, (i) => ({ ...i, tags: i.tags.filter((t) => t !== tag) })),
+      setDerivedFrom: (itemId, sourceId) => patch(itemId, (i) => ({ ...i, derivedFrom: sourceId })),
+      outputsOf: (itemId) =>
+        items.filter(
+          (i) => !i.deletedAt && (i.derivedFrom === itemId || i.ai?.sourceRefId === itemId),
+        ),
+      resurfaceList: [...items]
+        .filter((i) => !i.deletedAt)
+        .sort((a, b) => a.lastSeenAt - b.lastSeenAt)
+        .slice(0, 6),
       trashItem: (id) => patch(id, (i) => ({ ...i, deletedAt: Date.now() })),
       restoreItem: (id) => patch(id, (i) => ({ ...i, deletedAt: undefined })),
       deleteForever: (id) => setItems((prev) => prev.filter((i) => i.id !== id)),

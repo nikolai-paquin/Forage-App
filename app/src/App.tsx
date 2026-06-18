@@ -10,6 +10,7 @@ import { SpaceCanvas } from './components/SpaceCanvas';
 import { ItemDetail } from './components/ItemDetail';
 import { CaptureDialog } from './components/CaptureDialog';
 import { SearchOverlay } from './components/SearchOverlay';
+import { ResurfacePanel } from './components/ResurfacePanel';
 import { SettingsModal } from './components/SettingsModal';
 import { Fab } from './components/Fab';
 import { BulkBar } from './components/BulkBar';
@@ -22,6 +23,7 @@ function Workspace() {
   const [capture, setCapture] = useState(false);
   const [search, setSearch] = useState(false);
   const [settings, setSettings] = useState(false);
+  const [resurface, setResurface] = useState(false);
   const [dragging, setDragging] = useState(false);
 
   const targetCollection = view.kind === 'collection' ? [view.id] : [];
@@ -105,7 +107,11 @@ function Workspace() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-canvas text-ink">
-      <TopBar onSearch={() => setSearch(true)} onSettings={() => setSettings(true)} />
+      <TopBar
+        onSearch={() => setSearch(true)}
+        onSettings={() => setSettings(true)}
+        onResurface={() => setResurface(true)}
+      />
       <main
         className="relative min-h-0 flex-1 overflow-y-auto"
         onDragOver={(e) => {
@@ -148,6 +154,7 @@ function Workspace() {
       <ItemDetail item={selected} onClose={() => setSelected(null)} onOpen={open} />
       <CaptureDialog open={capture} onClose={() => setCapture(false)} />
       <SearchOverlay open={search} onClose={() => setSearch(false)} onOpenItem={open} />
+      <ResurfacePanel open={resurface} onClose={() => setResurface(false)} onOpenItem={open} />
       <SettingsModal open={settings} onClose={() => setSettings(false)} />
     </div>
   );

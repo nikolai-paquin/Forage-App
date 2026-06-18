@@ -44,9 +44,62 @@ import {
   Hash,
   Info,
   Pipette,
+  Plus,
   Sparkle,
   Trash2,
 } from './icons';
+
+function SourcePicker({
+  items,
+  excludeId,
+  onPick,
+  onClose,
+}: {
+  items: Item[];
+  excludeId: string;
+  onPick: (id: string) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="absolute inset-0 z-[60] flex items-center justify-center p-8">
+      <div className="absolute inset-0 bg-black/55" onClick={onClose} />
+      <div
+        className="relative max-h-[72vh] w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-elevated text-ink"
+        style={{ boxShadow: 'var(--shadow-pop)' }}
+      >
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <p className="text-[14px] font-semibold">Link the source inspiration</p>
+          <button onClick={onClose} className="text-muted hover:text-ink">
+            <Close size={16} />
+          </button>
+        </div>
+        <div className="grid max-h-[60vh] grid-cols-3 gap-2.5 overflow-auto p-4 sm:grid-cols-4">
+          {items
+            .filter((i) => i.id !== excludeId && !i.deletedAt)
+            .map((i) => {
+              const src = i.type === 'video' ? i.poster : i.media;
+              return (
+                <button
+                  key={i.id}
+                  onClick={() => onPick(i.id)}
+                  title={i.title}
+                  className="aspect-square overflow-hidden rounded-lg border border-border bg-surface-2 transition hover:-translate-y-0.5"
+                >
+                  {src ? (
+                    <img src={src} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="grid h-full place-items-center px-1 text-center text-[10px] text-faint">
+                      {i.title}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const EXT: Record<Item['type'], string> = {
   image: 'JPEG',
@@ -116,13 +169,18 @@ export function ItemDetail({
   onClose: () => void;
   onOpen: (i: Item) => void;
 }) {
-  const { visibleItems, projectById, removeFromProject, updateItem, addTag, removeTag, trashItem } =
+  const { visibleItems, items, itemById, projectById, removeFromProject, updateItem, addTag, removeTag, trashItem, setDerivedFrom, outputsOf } =
     useForage();
+  const [linking, setLinking] = useState(false);
 
   const list = visibleItems.length ? visibleItems : item ? [item] : [];
   const idx = item ? list.findIndex((i) => i.id === item.id) : -1;
   const prev = idx > 0 ? list[idx - 1] : null;
   const next = idx >= 0 && idx < list.length - 1 ? list[idx + 1] : null;
+
+  const sourceId = item ? item.derivedFrom ?? item.ai?.sourceRefId : undefined;
+  const srcItem = sourceId ? itemById(sourceId) : undefined;
+  const outputs = item ? outputsOf(item.id).filter((o) => o.id !== item.id) : [];
 
   return (
     <AnimatePresence>
@@ -315,9 +373,74 @@ export function ItemDetail({
                     <button className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[12px] text-white/60 hover:text-white">Auto-tag</button>
                   </div>
                 </div>
+
+                <div className="border-t border-white/10 pt-4">
+                  <p className="mb-2 flex items-center gap-1.5 text-[12px] text-white/45">
+                    <Sparkle size={13} /> Derived from
+                  </p>
+                  {srcItem ? (
+                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 p-1.5 pr-2">
+                      <button onClick={() => onOpen(srcItem)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                        <span className="h-9 w-9 shrink-0 overflow-hidden rounded-md bg-white/10">
+                          {thumb(srcItem) && <img src={thumb(srcItem)} alt="" className="h-full w-full object-cover" />}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-[12.5px] text-white">{srcItem.title}</span>
+                          <span className="block text-[11px] text-white/40">the inspiration</span>
+                        </span>
+                      </button>
+                      <button onClick={() => setDerivedFrom(item.id, undefined)} className="text-white/40 hover:text-white">
+                        <Close size={13} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setLinking(true)}
+                      className="flex items-center gap-1.5 rounded-lg border border-dashed border-white/20 px-3 py-1.5 text-[13px] text-white/55 hover:text-white"
+                    >
+                      <Plus size={13} /> Link a source
+                    </button>
+                  )}
+                </div>
+
+                {outputs.length > 0 && (
+                  <div>
+                    <p className="mb-2 flex items-center gap-1.5 text-[12px] text-white/45">
+                      <Sparkle size={13} /> Made from this
+                    </p>
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {outputs.map((o) => (
+                        <button
+                          key={o.id}
+                          onClick={() => onOpen(o)}
+                          title={o.title}
+                          className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-white/10 ring-1 ring-white/10 transition hover:-translate-y-0.5"
+                        >
+                          {thumb(o) ? (
+                            <img src={thumb(o)} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <span className="grid h-full place-items-center px-1 text-center text-[9px] text-white/50">{o.title}</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </aside>
           </div>
+
+          {linking && (
+            <SourcePicker
+              items={items}
+              excludeId={item.id}
+              onPick={(id) => {
+                setDerivedFrom(item.id, id);
+                setLinking(false);
+              }}
+              onClose={() => setLinking(false)}
+            />
+          )}
         </motion.div>
       )}
     </AnimatePresence>

@@ -31,9 +31,11 @@ function modeOf(view: View): Mode {
 export function TopBar({
   onSearch,
   onSettings,
+  onResurface,
 }: {
   onSearch: () => void;
   onSettings: () => void;
+  onResurface: () => void;
 }) {
   const { view, setView } = useForage();
   const { dark, toggle } = useTheme();
@@ -108,7 +110,7 @@ export function TopBar({
             ⌘K
           </span>
         </button>
-        <button className={iconBtn} title="Explore">
+        <button onClick={onResurface} className={iconBtn} title="Resurface">
           <Compass size={18} />
         </button>
         <button onClick={toggle} className={iconBtn} title="Theme">
