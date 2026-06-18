@@ -15,7 +15,7 @@ function TypeBadge({ item }: { item: Item }) {
   const b = map[item.type];
   if (!b) return null;
   return (
-    <span className="pointer-events-none absolute left-2.5 top-2.5 z-10 flex items-center gap-1 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/95 backdrop-blur-md">
+    <span className="pointer-events-none absolute left-2.5 top-2.5 z-10 flex items-center gap-1 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/95 opacity-0 backdrop-blur-md transition-opacity duration-200 group-hover:opacity-100">
       {b.icon}
       {b.label}
     </span>
@@ -97,20 +97,16 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
       initial={{ opacity: 0, y: 14, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: 'spring', stiffness: 380, damping: 32, mass: 0.7 }}
-      whileHover={{ y: -4 }}
-      whileTap={{ scale: 0.985 }}
-      className="group relative mb-4 block w-full overflow-hidden rounded-2xl border border-border bg-surface text-left outline-none"
-      style={{ boxShadow: 'var(--shadow-tile)' }}
+      whileHover={{ y: -3 }}
+      whileTap={{ scale: 0.99 }}
+      className="group relative mb-3 block w-full overflow-hidden rounded-xl bg-surface-2 text-left outline-none transition-shadow duration-300 hover:shadow-[var(--shadow-tile)]"
     >
-      {/* palette-aware focus glow on hover */}
-      <span
-        className="pointer-events-none absolute inset-0 z-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-        style={{ boxShadow: `0 0 0 1.5px ${item.palette[0]}55, 0 10px 30px ${item.palette[0]}33` }}
-      />
+      {/* subtle neutral ring on hover (Cosmos-clean, no colour glow) */}
+      <span className="pointer-events-none absolute inset-0 z-[2] rounded-xl opacity-0 ring-1 ring-inset ring-white/15 transition-opacity duration-300 group-hover:opacity-100" />
       <TypeBadge item={item} />
 
       <div
-        className="relative z-[1] w-full overflow-hidden rounded-2xl"
+        className="relative z-[1] w-full overflow-hidden rounded-xl"
         style={{ aspectRatio: String(item.ratio) }}
       >
         {item.type === 'vector' ? (

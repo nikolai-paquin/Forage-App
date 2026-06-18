@@ -2,38 +2,11 @@ import { motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item, Project } from '../types';
 import { GradientCover } from './GradientCover';
-import { SoftWash } from './SoftWash';
-import { ActivityGrid, PixelBars, dailyCounts } from './Pixels';
-import { Clock, Plus, Sparkle } from './icons';
-import { timeAgo } from '../lib/util';
-
-const norm = (arr: number[]) => {
-  const m = Math.max(1, ...arr);
-  return arr.map((v) => v / m);
-};
-
-function StatCard({
-  label,
-  value,
-  data,
-}: {
-  label: string;
-  value: number;
-  data: number[];
-}) {
-  return (
-    <div className="rounded-2xl border border-border bg-surface/60 p-4 backdrop-blur-sm">
-      <p className="text-[11px] font-medium uppercase tracking-wider text-faint">{label}</p>
-      <div className="mt-2 flex items-end justify-between gap-2">
-        <span className="display tnum text-[30px] leading-none text-ink">{value}</span>
-        <PixelBars data={data} className="pb-0.5" />
-      </div>
-    </div>
-  );
-}
+import { MasonryGrid } from './MasonryGrid';
+import { Clock, Plus } from './icons';
 
 const fadeUp = {
-  initial: { opacity: 0, y: 18 },
+  initial: { opacity: 0, y: 16 },
   animate: { opacity: 1, y: 0 },
 };
 
@@ -44,11 +17,15 @@ function greeting() {
   return 'Good evening';
 }
 
-function thumb(i: Item) {
-  return i.type === 'video' ? i.poster : i.media;
+const thumb = (i: Item) => (i.type === 'video' ? i.poster : i.media);
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="text-[11px] font-medium uppercase tracking-[0.18em] text-faint">{children}</h3>
+  );
 }
 
-function ProjectCard({
+function ClusterCard({
   project,
   items,
   seed,
@@ -60,40 +37,41 @@ function ProjectCard({
   onOpen: () => void;
 }) {
   const inProj = items.filter((i) => i.projectIds.includes(project.id));
-  const thumbs = inProj.filter((i) => thumb(i)).slice(0, 3);
+  const thumbs = inProj.map(thumb).filter(Boolean) as string[];
 
   return (
     <motion.button
-      whileHover={{ y: -5 }}
+      whileHover={{ y: -4 }}
       whileTap={{ scale: 0.99 }}
       onClick={onOpen}
-      className="group w-[280px] shrink-0 text-left"
+      className="group w-[230px] shrink-0 text-left"
     >
-      <GradientCover
-        color={project.color}
-        seed={seed}
-        className="flex h-44 flex-col justify-between rounded-3xl p-4"
-      >
-        <div className="flex items-start justify-between">
-          <span className="tnum rounded-full bg-black/25 px-2.5 py-1 text-[11px] font-medium text-white/95 backdrop-blur-md">
-            {inProj.length} items
-          </span>
-          <div className="flex -space-x-2">
-            {thumbs.map((t) => (
-              <span
-                key={t.id}
-                className="h-8 w-8 overflow-hidden rounded-full border-2 border-white/70 shadow"
-              >
-                <img src={thumb(t)} alt="" className="h-full w-full object-cover" />
-              </span>
-            ))}
+      <div className="relative aspect-[5/4] overflow-hidden rounded-xl bg-surface-2">
+        {thumbs.length > 0 ? (
+          <div className="grid h-full w-full grid-cols-2 grid-rows-2 gap-[2px]">
+            {Array.from({ length: 4 }).map((_, i) => {
+              const t = thumbs[i % thumbs.length];
+              return (
+                <div key={i} className="overflow-hidden bg-surface-2">
+                  <img
+                    src={t}
+                    alt=""
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                  />
+                </div>
+              );
+            })}
           </div>
-        </div>
-        <div>
-          <h3 className="display text-[22px] text-white drop-shadow-sm">{project.name}</h3>
-          <p className="mt-0.5 line-clamp-1 text-[12px] text-white/75">{project.brief}</p>
-        </div>
-      </GradientCover>
+        ) : (
+          <GradientCover color={project.color} seed={seed} className="h-full w-full" />
+        )}
+        <span className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-white/10" />
+      </div>
+      <div className="mt-2.5 flex items-center gap-2">
+        <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: project.color }} />
+        <span className="flex-1 truncate text-[13px] text-ink">{project.name}</span>
+        <span className="tnum text-[12px] text-faint">{inProj.length}</span>
+      </div>
     </motion.button>
   );
 }
@@ -107,131 +85,40 @@ export function HomeView({
 }) {
   const { items, projects, setView } = useForage();
 
-  const weekAgo = Date.now() - 7 * 86_400_000;
-  const newThisWeek = items.filter((i) => i.createdAt > weekAgo).length;
-
-  // Hero: a striking favorite to resurface, else the most recent with media.
-  const withMedia = items.filter((i) => thumb(i));
-  const featured =
-    withMedia.find((i) => i.favorite) ??
-    [...withMedia].sort((a, b) => b.createdAt - a.createdAt)[0];
-
-  const recent = [...items].sort((a, b) => b.createdAt - a.createdAt).slice(0, 7);
-
-  const favCount = items.filter((i) => i.favorite).length;
-  const findsBars = norm(dailyCounts(items, 12));
-  const weekBars = norm(dailyCounts(items, 7));
-  const projBars = norm(projects.map((p) => items.filter((i) => i.projectIds.includes(p.id)).length));
-  const favBars = norm(dailyCounts(items.filter((i) => i.favorite), 12));
+  const feed = [...items].sort((a, b) => b.createdAt - a.createdAt);
+  const revisit = items
+    .filter((i) => thumb(i))
+    .sort((a, b) => a.lastSeenAt - b.lastSeenAt)
+    .slice(0, 6);
 
   return (
-    <div className="relative isolate mx-auto max-w-6xl px-6 pb-28 pt-10">
-      <SoftWash className="-top-24 h-[520px] opacity-70" blur={60} />
-
-      {/* Greeting */}
+    <div className="mx-auto max-w-[1500px] px-6 pb-28 pt-8">
+      {/* Quiet greeting — the gallery is the star */}
       <motion.div {...fadeUp} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
-        <p className="text-[12px] font-medium uppercase tracking-[0.2em] text-muted">
-          {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
-        </p>
-        <h1 className="display mt-2 text-[40px] text-ink sm:text-[52px]">
-          {greeting()}, Nikolai.
+        <h1 className="text-[21px] tracking-tight text-ink">
+          {greeting()}, Nikolai.{' '}
+          <span className="text-muted">Here's what you're foraging.</span>
         </h1>
-        <p className="mt-2 text-[15px] text-muted">
-          <span className="tnum text-ink">{items.length}</span> finds across{' '}
-          <span className="tnum text-ink">{projects.length}</span> projects
-          {newThisWeek > 0 && (
-            <>
-              {' '}· <span className="tnum text-accent">{newThisWeek}</span> foraged this week
-            </>
-          )}
-        </p>
       </motion.div>
 
-      {/* Stat cards with pixel charts */}
-      <motion.div
+      {/* Clusters — projects as image mosaics */}
+      <motion.section
         {...fadeUp}
         transition={{ duration: 0.45, delay: 0.04, ease: [0.22, 1, 0.36, 1] }}
-        className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4"
+        className="mt-8"
       >
-        <StatCard label="Total finds" value={items.length} data={findsBars} />
-        <StatCard label="Projects" value={projects.length} data={projBars} />
-        <StatCard label="This week" value={newThisWeek} data={weekBars} />
-        <StatCard label="Favorites" value={favCount} data={favBars} />
-      </motion.div>
-
-      {/* Foraging activity heatmap (dithered squares) */}
-      <motion.div
-        {...fadeUp}
-        transition={{ duration: 0.45, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-        className="mt-3 rounded-2xl border border-border bg-surface/60 p-5 backdrop-blur-sm"
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="display text-[15px] text-ink">Foraging activity</h3>
-          <div className="flex items-center gap-1.5 text-[11px] text-faint">
-            Less
-            <span className="h-[10px] w-[10px] rounded-[2px] bg-surface-2" />
-            <span className="h-[10px] w-[10px] rounded-[2px] bg-accent/25" />
-            <span className="h-[10px] w-[10px] rounded-[2px] bg-accent/45" />
-            <span className="h-[10px] w-[10px] rounded-[2px] bg-accent/70" />
-            <span className="h-[10px] w-[10px] rounded-[2px] bg-accent" />
-            More
-          </div>
-        </div>
-        <div className="mt-4 overflow-x-auto pb-1">
-          <ActivityGrid items={items} weeks={14} />
-        </div>
-      </motion.div>
-
-      {/* Hero — featured resurfacing */}
-      {featured && (
-        <motion.button
-          {...fadeUp}
-          transition={{ duration: 0.5, delay: 0.06, ease: [0.22, 1, 0.36, 1] }}
-          whileHover={{ y: -4 }}
-          onClick={() => onOpen(featured)}
-          className="group relative mt-8 block h-[320px] w-full overflow-hidden rounded-[28px] text-left"
-          style={{ boxShadow: 'var(--shadow-pop)' }}
-        >
-          <img
-            src={thumb(featured)}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
-          <div className="noise absolute inset-0 opacity-[0.18] mix-blend-soft-light" />
-          <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-7">
-            <div className="max-w-2xl">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wider text-white backdrop-blur-md">
-                <Clock width={12} height={12} /> Worth a second look
-              </span>
-              <h2 className="display mt-3 text-[30px] text-white sm:text-[36px]">
-                {featured.title}
-              </h2>
-              <p className="mt-1.5 text-[13px] text-white/80">
-                {featured.source} · saved {timeAgo(featured.createdAt)}
-              </p>
-            </div>
-            <span className="hidden shrink-0 items-center gap-1.5 rounded-full bg-white/90 px-4 py-2 text-[13px] font-medium text-black transition group-hover:gap-2.5 sm:inline-flex">
-              Open →
-            </span>
-          </div>
-        </motion.button>
-      )}
-
-      {/* Projects */}
-      <div className="mt-12">
-        <div className="mb-4 flex items-baseline justify-between">
-          <h3 className="display text-[20px] text-ink">Your projects</h3>
+        <div className="mb-3 flex items-baseline justify-between">
+          <SectionLabel>Clusters</SectionLabel>
           <button
             onClick={() => setView({ kind: 'library' })}
-            className="text-[13px] text-muted transition hover:text-accent"
+            className="text-[12px] text-muted transition hover:text-ink"
           >
-            See everything →
+            All finds →
           </button>
         </div>
-        <div className="flex gap-4 overflow-x-auto pb-3">
+        <div className="flex gap-3 overflow-x-auto pb-2">
           {projects.map((p, i) => (
-            <ProjectCard
+            <ClusterCard
               key={p.id}
               project={p}
               items={items}
@@ -241,50 +128,56 @@ export function HomeView({
           ))}
           <button
             onClick={onCapture}
-            className="flex h-44 w-[160px] shrink-0 flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-border-strong text-muted transition hover:border-accent hover:text-accent"
+            className="flex aspect-[5/4] w-[120px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border-strong text-muted transition hover:border-accent hover:text-accent"
           >
-            <Plus width={22} height={22} />
-            <span className="text-[13px]">New find</span>
+            <Plus width={20} height={20} />
+            <span className="text-[12px]">New</span>
           </button>
         </div>
-      </div>
+      </motion.section>
 
-      {/* Recently foraged */}
-      <div className="mt-12">
-        <h3 className="display mb-4 text-[20px] text-ink">Recently foraged</h3>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-          {recent.map((it) => (
-            <motion.button
-              key={it.id}
-              whileHover={{ y: -4 }}
-              onClick={() => onOpen(it)}
-              className="group relative aspect-square overflow-hidden rounded-2xl border border-border"
-              style={{ background: it.palette[1] }}
-              title={it.title}
-            >
-              {thumb(it) ? (
+      {/* Worth revisiting — resurfacing, kept subtle */}
+      {revisit.length >= 2 && (
+        <motion.section
+          {...fadeUp}
+          transition={{ duration: 0.45, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-9"
+        >
+          <div className="mb-3 flex items-center gap-1.5">
+            <Clock width={13} height={13} className="text-accent" />
+            <SectionLabel>Worth revisiting</SectionLabel>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {revisit.map((it) => (
+              <motion.button
+                key={it.id}
+                whileHover={{ y: -4 }}
+                onClick={() => onOpen(it)}
+                title={it.title}
+                className="group h-32 w-44 shrink-0 overflow-hidden rounded-xl bg-surface-2"
+              >
                 <img
                   src={thumb(it)}
                   alt=""
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                 />
-              ) : (
-                <span
-                  className="flex h-full w-full items-center justify-center"
-                  style={{
-                    background: `linear-gradient(140deg, ${it.palette[0]}, ${it.palette[1]})`,
-                  }}
-                >
-                  <Sparkle width={18} height={18} className="text-white/80" />
-                </span>
-              )}
-              <span className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/70 to-transparent px-2 pb-1.5 pt-6 text-[10.5px] font-medium text-white opacity-0 transition group-hover:opacity-100">
-                {it.title}
-              </span>
-            </motion.button>
-          ))}
+              </motion.button>
+            ))}
+          </div>
+        </motion.section>
+      )}
+
+      {/* The feed — the gallery */}
+      <motion.section
+        {...fadeUp}
+        transition={{ duration: 0.5, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+        className="mt-10"
+      >
+        <div className="mb-4">
+          <SectionLabel>Recently foraged</SectionLabel>
         </div>
-      </div>
+        <MasonryGrid items={feed} onOpen={onOpen} />
+      </motion.section>
     </div>
   );
 }

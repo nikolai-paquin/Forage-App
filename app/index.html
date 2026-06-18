@@ -10,8 +10,7 @@
       (function () {
         try {
           var saved = localStorage.getItem('forage.theme');
-          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          var dark = saved ? saved === 'dark' : prefersDark;
+          var dark = saved ? saved === 'dark' : true; // gallery-dark by default
           if (dark) document.documentElement.classList.add('dark');
         } catch (e) {}
       })();

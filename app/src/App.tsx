@@ -71,9 +71,6 @@ function Workspace() {
 
   return (
     <div className="relative isolate flex h-screen overflow-hidden bg-canvas text-ink">
-      {/* Soft colour whisper + editorial Swiss grid */}
-      <SoftWash className="opacity-50" blur={56} />
-      <div aria-hidden className="grid-bg absolute inset-0 -z-10" />
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Toolbar onCapture={() => setCapture(true)} onCommand={() => setCmdk(true)} />

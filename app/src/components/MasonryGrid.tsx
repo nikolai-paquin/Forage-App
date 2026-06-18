@@ -30,7 +30,7 @@ export function MasonryGrid({
     if (!el) return;
     const ro = new ResizeObserver(([entry]) => {
       const w = entry.contentRect.width;
-      setCols(Math.max(2, Math.min(6, Math.floor(w / 290))));
+      setCols(Math.max(2, Math.min(7, Math.floor(w / 235))));
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -39,7 +39,7 @@ export function MasonryGrid({
   const columns = useMemo(() => packColumns(items, cols), [items, cols]);
 
   return (
-    <div ref={ref} className="flex gap-4">
+    <div ref={ref} className="flex gap-3">
       {columns.map((col, i) => (
         <div key={i} className="flex min-w-0 flex-1 flex-col">
           {col.map((item) => (
