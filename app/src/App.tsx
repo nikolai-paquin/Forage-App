@@ -8,6 +8,7 @@ import { MasonryGrid } from './components/MasonryGrid';
 import { StoryboardView } from './components/StoryboardView';
 import { ItemDetail } from './components/ItemDetail';
 import { CaptureDialog } from './components/CaptureDialog';
+import { CommandPalette } from './components/CommandPalette';
 import { HomeView } from './components/HomeView';
 import { DitherGlow } from './components/DitherGlow';
 import type { Item } from './types';
@@ -40,9 +41,14 @@ function Workspace() {
   const { visibleItems, markSeen, view, storyboardById } = useForage();
   const [selected, setSelected] = useState<Item | null>(null);
   const [capture, setCapture] = useState(false);
+  const [cmdk, setCmdk] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCmdk((v) => !v);
+      }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n') {
         e.preventDefault();
         setCapture(true);
@@ -68,7 +74,7 @@ function Workspace() {
       <DitherGlow className="-bottom-24 right-10 h-[360px] w-[360px] opacity-40" />
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Toolbar onCapture={() => setCapture(true)} />
+        <Toolbar onCapture={() => setCapture(true)} onCommand={() => setCmdk(true)} />
         <main className="flex-1 overflow-y-auto">
           {/* re-key on view so the header + grid animate in on navigation */}
           <motion.div
@@ -113,6 +119,12 @@ function Workspace() {
 
       <ItemDetail item={selected} onClose={() => setSelected(null)} onOpen={open} />
       <CaptureDialog open={capture} onClose={() => setCapture(false)} />
+      <CommandPalette
+        open={cmdk}
+        onClose={() => setCmdk(false)}
+        onOpenItem={open}
+        onCapture={() => setCapture(true)}
+      />
 
       {/* Global filmic grain over everything (below modals) */}
       <div className="noise grain-overlay" aria-hidden />

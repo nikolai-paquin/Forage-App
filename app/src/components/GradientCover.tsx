@@ -38,11 +38,11 @@ export function GradientCover({
       {/* soft inner light for depth */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-white/10" />
       {/* filmic grain */}
-      <div className="noise absolute inset-0 opacity-[0.22] mix-blend-soft-light" />
+      <div className="noise absolute inset-0 opacity-[0.34] mix-blend-soft-light" />
       {/* refined dither sheen */}
       <div
-        className="dither-glow absolute inset-0 opacity-30"
-        style={{ ['--glow' as string]: hexA(color, 0.6) }}
+        className="dither-glow absolute inset-0 opacity-[0.45]"
+        style={{ ['--glow' as string]: hexA(color, 0.7) }}
       />
       <div className="relative">{children}</div>
     </div>

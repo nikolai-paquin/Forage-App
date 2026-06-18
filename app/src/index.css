@@ -25,7 +25,7 @@
   --accent-bright: #818b4c;
   --accent-ink: #f7f8ef;
   --accent-soft: rgba(108, 116, 64, 0.13);
-  --glow: rgba(108, 116, 64, 0.5);
+  --glow: rgba(108, 116, 64, 0.66);
 
   --glass-bg: rgba(250, 249, 243, 0.62);
   --glass-brd: rgba(255, 255, 255, 0.7);
@@ -55,7 +55,7 @@
   --accent-bright: #bcc97a;
   --accent-ink: #13140d;
   --accent-soft: rgba(174, 189, 106, 0.16);
-  --glow: rgba(174, 189, 106, 0.4);
+  --glow: rgba(174, 189, 106, 0.55);
 
   --glass-bg: rgba(22, 23, 15, 0.55);
   --glass-brd: rgba(255, 255, 255, 0.08);
@@ -150,11 +150,11 @@ body {
   inset: 0;
   z-index: 40;
   pointer-events: none;
-  opacity: 0.05;
+  opacity: 0.09;
   mix-blend-mode: soft-light;
 }
 .dark .grain-overlay {
-  opacity: 0.08;
+  opacity: 0.14;
   mix-blend-mode: overlay;
 }
 

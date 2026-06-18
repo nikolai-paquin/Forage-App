@@ -153,6 +153,8 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
             loading="lazy"
           />
         )}
+        {/* filmic grain over the media */}
+        <div className="noise pointer-events-none absolute inset-0 opacity-[0.1] mix-blend-soft-light" />
       </div>
 
       {/* caption: title slides up on hover for image-like tiles */}

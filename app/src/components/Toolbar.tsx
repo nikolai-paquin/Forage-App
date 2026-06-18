@@ -3,7 +3,13 @@ import { useForage } from '../lib/store';
 import { useTheme } from '../lib/theme';
 import { Moon, Plus, Search, Sun } from './icons';
 
-export function Toolbar({ onCapture }: { onCapture: () => void }) {
+export function Toolbar({
+  onCapture,
+  onCommand,
+}: {
+  onCapture: () => void;
+  onCommand: () => void;
+}) {
   const { query, setQuery } = useForage();
   const { dark, toggle } = useTheme();
 
@@ -20,12 +26,20 @@ export function Toolbar({ onCapture }: { onCapture: () => void }) {
           placeholder="Search everything…"
           className="w-full bg-transparent text-[13px] text-ink outline-none placeholder:text-faint"
         />
-        {query && (
+        {query ? (
           <button
             onClick={() => setQuery('')}
             className="text-[11px] text-faint hover:text-muted"
           >
             clear
+          </button>
+        ) : (
+          <button
+            onClick={onCommand}
+            title="Command palette"
+            className="rounded-md border border-border px-1.5 py-0.5 font-mono text-[10px] text-faint transition hover:text-muted"
+          >
+            ⌘K
           </button>
         )}
       </label>
