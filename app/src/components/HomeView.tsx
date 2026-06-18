@@ -2,10 +2,35 @@ import { motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item, Project } from '../types';
 import { GradientCover } from './GradientCover';
-import { DitherGlow } from './DitherGlow';
 import { SoftWash } from './SoftWash';
+import { ActivityGrid, PixelBars, dailyCounts } from './Pixels';
 import { Clock, Plus, Sparkle } from './icons';
 import { timeAgo } from '../lib/util';
+
+const norm = (arr: number[]) => {
+  const m = Math.max(1, ...arr);
+  return arr.map((v) => v / m);
+};
+
+function StatCard({
+  label,
+  value,
+  data,
+}: {
+  label: string;
+  value: number;
+  data: number[];
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-surface/60 p-4 backdrop-blur-sm">
+      <p className="text-[11px] font-medium uppercase tracking-wider text-faint">{label}</p>
+      <div className="mt-2 flex items-end justify-between gap-2">
+        <span className="display tnum text-[30px] leading-none text-ink">{value}</span>
+        <PixelBars data={data} className="pb-0.5" />
+      </div>
+    </div>
+  );
+}
 
 const fadeUp = {
   initial: { opacity: 0, y: 18 },
@@ -93,10 +118,15 @@ export function HomeView({
 
   const recent = [...items].sort((a, b) => b.createdAt - a.createdAt).slice(0, 7);
 
+  const favCount = items.filter((i) => i.favorite).length;
+  const findsBars = norm(dailyCounts(items, 12));
+  const weekBars = norm(dailyCounts(items, 7));
+  const projBars = norm(projects.map((p) => items.filter((i) => i.projectIds.includes(p.id)).length));
+  const favBars = norm(dailyCounts(items.filter((i) => i.favorite), 12));
+
   return (
     <div className="relative isolate mx-auto max-w-6xl px-6 pb-28 pt-10">
-      <SoftWash className="-top-24 h-[560px] opacity-90" blur={56} />
-      <DitherGlow className="-top-6 left-10 h-56 w-[460px] opacity-35" />
+      <SoftWash className="-top-24 h-[520px] opacity-70" blur={60} />
 
       {/* Greeting */}
       <motion.div {...fadeUp} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
@@ -115,6 +145,41 @@ export function HomeView({
             </>
           )}
         </p>
+      </motion.div>
+
+      {/* Stat cards with pixel charts */}
+      <motion.div
+        {...fadeUp}
+        transition={{ duration: 0.45, delay: 0.04, ease: [0.22, 1, 0.36, 1] }}
+        className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4"
+      >
+        <StatCard label="Total finds" value={items.length} data={findsBars} />
+        <StatCard label="Projects" value={projects.length} data={projBars} />
+        <StatCard label="This week" value={newThisWeek} data={weekBars} />
+        <StatCard label="Favorites" value={favCount} data={favBars} />
+      </motion.div>
+
+      {/* Foraging activity heatmap (dithered squares) */}
+      <motion.div
+        {...fadeUp}
+        transition={{ duration: 0.45, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+        className="mt-3 rounded-2xl border border-border bg-surface/60 p-5 backdrop-blur-sm"
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="display text-[15px] text-ink">Foraging activity</h3>
+          <div className="flex items-center gap-1.5 text-[11px] text-faint">
+            Less
+            <span className="h-[10px] w-[10px] rounded-[2px] bg-surface-2" />
+            <span className="h-[10px] w-[10px] rounded-[2px] bg-accent/25" />
+            <span className="h-[10px] w-[10px] rounded-[2px] bg-accent/45" />
+            <span className="h-[10px] w-[10px] rounded-[2px] bg-accent/70" />
+            <span className="h-[10px] w-[10px] rounded-[2px] bg-accent" />
+            More
+          </div>
+        </div>
+        <div className="mt-4 overflow-x-auto pb-1">
+          <ActivityGrid items={items} weeks={14} />
+        </div>
       </motion.div>
 
       {/* Hero — featured resurfacing */}

@@ -71,10 +71,9 @@ function Workspace() {
 
   return (
     <div className="relative isolate flex h-screen overflow-hidden bg-canvas text-ink">
-      {/* Mercury-style soft gradient wash + signature olive dither dots */}
-      <SoftWash className="opacity-60" blur={52} />
-      <DitherGlow className="-left-20 -top-20 h-[420px] w-[420px] opacity-25" />
-      <DitherGlow className="-bottom-24 right-10 h-[360px] w-[360px] opacity-[0.18]" />
+      {/* Soft colour whisper + editorial Swiss grid */}
+      <SoftWash className="opacity-50" blur={56} />
+      <div aria-hidden className="grid-bg absolute inset-0 -z-10" />
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Toolbar onCapture={() => setCapture(true)} onCommand={() => setCmdk(true)} />
