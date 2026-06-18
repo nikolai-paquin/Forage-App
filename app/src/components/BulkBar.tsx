@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
+import { toast } from '../lib/toast';
 import { Close, Folder, Plus, RotateCcw, Trash2 } from './icons';
 
 export function BulkBar() {
@@ -38,10 +39,10 @@ export function BulkBar() {
 
           {isTrash ? (
             <>
-              <button onClick={restoreSelected} className={btn}>
+              <button onClick={() => { const c = n; restoreSelected(); toast(`Restored ${c} save${c > 1 ? 's' : ''}`); }} className={btn}>
                 <RotateCcw size={15} /> Restore
               </button>
-              <button onClick={deleteSelectedForever} className={`${btn} hover:bg-red-500/80`}>
+              <button onClick={() => { const c = n; deleteSelectedForever(); toast(`Deleted ${c} save${c > 1 ? 's' : ''}`); }} className={`${btn} hover:bg-red-500/80`}>
                 <Trash2 size={15} /> Delete
               </button>
             </>
@@ -64,8 +65,10 @@ export function BulkBar() {
                         <button
                           key={p.id}
                           onClick={() => {
+                            const c = n;
                             assignSelectedTo(p.id);
                             setMenu(false);
+                            toast(`Added ${c} to ${p.name}`);
                           }}
                           className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[13px] text-white/85 transition hover:bg-white/10"
                         >
@@ -80,7 +83,7 @@ export function BulkBar() {
                   )}
                 </AnimatePresence>
               </div>
-              <button onClick={trashSelected} className={btn}>
+              <button onClick={() => { const c = n; trashSelected(); toast(`Moved ${c} to Trash`); }} className={btn}>
                 <Trash2 size={15} /> Trash
               </button>
             </>

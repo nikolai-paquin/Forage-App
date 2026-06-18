@@ -17,6 +17,8 @@ import { BulkBar } from './components/BulkBar';
 import { detectFromInput } from './lib/util';
 import { extractPalette } from './lib/color';
 import { consumeShareUrl } from './lib/ingest';
+import { toast } from './lib/toast';
+import { Toaster } from './components/Toaster';
 import type { Item } from './types';
 
 function Workspace() {
@@ -103,7 +105,7 @@ function Workspace() {
     if (p) {
       const created = addItem(p);
       setView({ kind: 'library', tab: 'all' });
-      setSelected(created);
+      toast(`Saved “${created.title}” to Forage`);
       if (p.media) extractPalette(p.media).then((pal) => pal.length && updateItem(created.id, { palette: pal }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -167,6 +169,7 @@ function Workspace() {
 
       <Fab onClick={() => setCapture(true)} />
       <BulkBar />
+      <Toaster />
 
       <ItemDetail item={selected} onClose={() => setSelected(null)} onOpen={open} />
       <CaptureDialog open={capture} onClose={() => setCapture(false)} />

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import { detectFromInput } from '../lib/util';
+import { toast } from '../lib/toast';
 import { Code, Image, Link, Sparkle } from './icons';
 
 const TYPE_META: Record<string, { label: string; icon: React.ReactNode }> = {
@@ -47,6 +48,7 @@ export function CaptureDialog({ open, onClose }: { open: boolean; onClose: () =>
         .filter(Boolean),
       projectIds: projectId ? [projectId] : [],
     });
+    toast('Saved to Forage');
     onClose();
   };
 

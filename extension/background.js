@@ -11,8 +11,17 @@ function hostOf(u) {
 }
 
 function openForage(payload) {
-  const url = APP_URL + '?forage=' + encodeURIComponent(JSON.stringify(payload));
-  chrome.tabs.create({ url });
+  const target = APP_URL + '?forage=' + encodeURIComponent(JSON.stringify(payload));
+  // Reuse an existing Forage tab so saves don't pile up new tabs.
+  chrome.tabs.query({}, (tabs) => {
+    const existing = tabs.find((t) => t.url && t.url.startsWith(APP_URL));
+    if (existing && existing.id != null) {
+      chrome.tabs.update(existing.id, { url: target, active: true });
+      if (existing.windowId != null) chrome.windows.update(existing.windowId, { focused: true });
+    } else {
+      chrome.tabs.create({ url: target });
+    }
+  });
 }
 
 chrome.runtime.onInstalled.addListener(() => {

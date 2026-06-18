@@ -25,8 +25,23 @@ The target app URL is set at the top of `background.js` and `popup.js`
 (`APP_URL`). Point it at your own deployment or `http://localhost:5173/` for
 local dev.
 
+## Use (more)
+
+- The popup also has a **"forage any link / image URL"** field — paste a URL,
+  hit Add.
+- Saves **reuse an open Forage tab** instead of opening a new one each time, and
+  the app shows a **toast** when the save lands.
+
+## Firefox
+
+Firefox needs a slightly different manifest (background `scripts` instead of a
+`service_worker`). A ready-made one is included:
+
+1. Rename `manifest.firefox.json` → `manifest.json` (back up the Chrome one first)
+2. Go to `about:debugging` → **This Firefox** → **Load Temporary Add-on** →
+   pick any file in this folder
+
 ## Notes
 
-- This is a Manifest V3 extension. It only needs `contextMenus` + `activeTab`.
-- A Firefox build needs minor manifest tweaks (background `scripts` instead of
-  `service_worker`).
+- Manifest V3, permissions: `contextMenus`, `activeTab`, `tabs` (the last is for
+  reusing an existing Forage tab).

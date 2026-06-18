@@ -20,6 +20,10 @@
         margin-top: 14px; width: 100%; padding: 9px; border: 0; border-radius: 999px;
         background: #16171b; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
       }
+      .row { display: flex; gap: 6px; margin-top: 12px; }
+      input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid #e5e7e9; border-radius: 8px; font-size: 12px; background: #fff; color: #16171b; }
+      .ghost { padding: 8px 10px; border: 1px solid #e5e7e9; border-radius: 8px; background: #fff; color: #16171b; font-size: 12px; cursor: pointer; width: auto; margin: 0; }
+      .sep { margin-top: 12px; border-top: 1px solid #e5e7e9; padding-top: 10px; font-size: 11px; color: #9a9ea5; }
       .open { display: block; margin-top: 10px; text-align: center; font-size: 12px; color: #696c73; text-decoration: none; }
       @media (prefers-color-scheme: dark) {
         body { background: #151619; color: #f2f3f5; }
@@ -34,6 +38,11 @@
       <div id="title" class="t"></div>
       <div id="url" class="u"></div>
       <button id="save">Forage this page</button>
+      <div class="sep">Or forage any link / image URL</div>
+      <div class="row">
+        <input id="link" type="text" placeholder="https://…" />
+        <button id="saveLink" class="ghost">Add</button>
+      </div>
       <a id="open" class="open" href="#" target="_blank">Open library</a>
     </div>
     <script src="popup.js"></script>
