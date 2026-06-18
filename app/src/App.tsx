@@ -16,10 +16,11 @@ import { Fab } from './components/Fab';
 import { BulkBar } from './components/BulkBar';
 import { detectFromInput } from './lib/util';
 import { extractPalette } from './lib/color';
+import { consumeShareUrl } from './lib/ingest';
 import type { Item } from './types';
 
 function Workspace() {
-  const { view, markSeen, addItem, updateItem } = useForage();
+  const { view, markSeen, addItem, updateItem, setView } = useForage();
   const [selected, setSelected] = useState<Item | null>(null);
   const [capture, setCapture] = useState(false);
   const [search, setSearch] = useState(false);
@@ -94,6 +95,18 @@ function Workspace() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Ingest a capture handed off from the extension or mobile share sheet.
+  useEffect(() => {
+    const p = consumeShareUrl();
+    if (p) {
+      const created = addItem(p);
+      setView({ kind: 'library', tab: 'all' });
+      setSelected(created);
+      if (p.media) extractPalette(p.media).then((pal) => pal.length && updateItem(created.id, { palette: pal }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const open = (item: Item) => {
