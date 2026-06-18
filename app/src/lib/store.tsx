@@ -6,13 +6,14 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { FilterEntry, Item, Project, TypeFilter, View } from '../types';
+import type { FilterEntry, Item, Project, Space, SpaceElement, TypeFilter, View } from '../types';
 import { sampleItems, sampleProjects } from '../data/sample';
 import { sourceLabel, uid } from './util';
 
 const STORE_KEY = 'forage.items.v2';
 const TYPES_KEY = 'forage.fileTypes.v1';
 const SOURCES_KEY = 'forage.sources.v1';
+const SPACES_KEY = 'forage.spaces.v1';
 
 const DEFAULT_TYPES: FilterEntry[] = [
   { value: 'image', label: 'Images', enabled: true },
@@ -105,6 +106,15 @@ interface ForageStore {
   visibleItems: Item[];
   unsortedCount: number;
   trashCount: number;
+  // spaces
+  spaces: Space[];
+  spaceById: (id: string) => Space | undefined;
+  createSpace: () => void;
+  renameSpace: (id: string, name: string) => void;
+  deleteSpace: (id: string) => void;
+  addSpaceElement: (spaceId: string, el: SpaceElement) => void;
+  updateSpaceElement: (spaceId: string, elId: string, patch: Partial<SpaceElement>) => void;
+  removeSpaceElement: (spaceId: string, elId: string) => void;
 }
 
 const Ctx = createContext<ForageStore | null>(null);
@@ -131,6 +141,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
     loadJSON(SOURCES_KEY, deriveSources(load())),
   );
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [spaces, setSpaces] = useState<Space[]>(() => loadJSON(SPACES_KEY, []));
 
   useEffect(() => {
     try {
@@ -153,8 +164,18 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       /* non-fatal */
     }
   }, [sources]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(SPACES_KEY, JSON.stringify(spaces));
+    } catch {
+      /* non-fatal */
+    }
+  }, [spaces]);
   // selection is per-view
   useEffect(() => setSelectedIds([]), [view]);
+
+  const patchSpace = (spaceId: string, fn: (s: Space) => Space) =>
+    setSpaces((prev) => prev.map((s) => (s.id === spaceId ? fn(s) : s)));
 
   const patch = (id: string, fn: (i: Item) => Item) =>
     setItems((prev) => prev.map((i) => (i.id === id ? fn(i) : i)));
@@ -304,9 +325,30 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       visibleItems,
       unsortedCount: items.filter((i) => !i.deletedAt && i.projectIds.length === 0).length,
       trashCount: items.filter((i) => i.deletedAt).length,
+      spaces,
+      spaceById: (id) => spaces.find((s) => s.id === id),
+      createSpace: () => {
+        const s: Space = { id: uid(), name: 'Untitled space', elements: [], createdAt: Date.now() };
+        setSpaces((prev) => [s, ...prev]);
+        setView({ kind: 'space', id: s.id });
+      },
+      renameSpace: (id, name) => patchSpace(id, (s) => ({ ...s, name })),
+      deleteSpace: (id) => {
+        setSpaces((prev) => prev.filter((s) => s.id !== id));
+        setView({ kind: 'spaces' });
+      },
+      addSpaceElement: (spaceId, el) =>
+        patchSpace(spaceId, (s) => ({ ...s, elements: [...s.elements, el] })),
+      updateSpaceElement: (spaceId, elId, p) =>
+        patchSpace(spaceId, (s) => ({
+          ...s,
+          elements: s.elements.map((e) => (e.id === elId ? { ...e, ...p } : e)),
+        })),
+      removeSpaceElement: (spaceId, elId) =>
+        patchSpace(spaceId, (s) => ({ ...s, elements: s.elements.filter((e) => e.id !== elId) })),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, projects, view, query, typeFilter, sourceFilter, fileTypes, sources, selectedIds]);
+  }, [items, projects, view, query, typeFilter, sourceFilter, fileTypes, sources, selectedIds, spaces]);
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }

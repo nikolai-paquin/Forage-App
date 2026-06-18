@@ -64,7 +64,28 @@ export type View =
   | { kind: 'library'; tab: LibraryTab }
   | { kind: 'collections' }
   | { kind: 'collection'; id: string }
-  | { kind: 'spaces' };
+  | { kind: 'spaces' }
+  | { kind: 'space'; id: string };
+
+// ---- Spaces: freeform infinite canvas ----
+export interface SpaceElement {
+  id: string;
+  kind: 'item' | 'note';
+  itemId?: string; // for kind 'item'
+  text?: string; // for kind 'note'
+  color?: string; // note background
+  x: number;
+  y: number;
+  w: number;
+  z: number;
+}
+
+export interface Space {
+  id: string;
+  name: string;
+  elements: SpaceElement[];
+  createdAt: number;
+}
 
 export type TypeFilter = ItemType | 'all';
 

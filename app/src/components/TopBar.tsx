@@ -24,7 +24,7 @@ const MODES: { id: Mode; label: string; icon: React.ReactNode }[] = [
 
 function modeOf(view: View): Mode {
   if (view.kind === 'collections' || view.kind === 'collection') return 'collections';
-  if (view.kind === 'spaces') return 'spaces';
+  if (view.kind === 'spaces' || view.kind === 'space') return 'spaces';
   return 'library';
 }
 

@@ -47,4 +47,8 @@ export {
   RotateCcw,
   Tag,
   Upload,
+  ZoomIn,
+  ZoomOut,
+  StickyNote,
+  Minus,
 } from 'lucide-react';
