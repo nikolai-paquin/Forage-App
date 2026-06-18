@@ -91,6 +91,8 @@ export interface Space {
 
 export type TypeFilter = ItemType | 'all';
 
+export type SortBy = 'recent' | 'oldest' | 'name' | 'type';
+
 /** A user-managed entry in the Type or Source filter lists. */
 export interface FilterEntry {
   value: string;

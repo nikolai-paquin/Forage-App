@@ -3,13 +3,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item, SpaceElement } from '../types';
 import { uid } from '../lib/util';
-import { ArrowLeft, Close, Image as ImageIcon, StickyNote, Trash2, ZoomIn, ZoomOut } from './icons';
+import { ArrowLeft, Close, Image as ImageIcon, Maximize2, StickyNote, Trash2, ZoomIn, ZoomOut } from './icons';
 
 const thumb = (i?: Item) => (i ? (i.type === 'video' ? i.poster : i.media) : undefined);
 const NOTE_COLORS = ['#fde68a', '#bbf7d0', '#bfdbfe', '#fbcfe8', '#e9d5ff'];
 
 interface DragState {
-  type: 'pan' | 'el';
+  type: 'pan' | 'el' | 'resize';
   id?: string;
   sx: number;
   sy: number;
@@ -37,6 +37,7 @@ export function SpaceCanvas() {
   const [pan, setPan] = useState({ x: 120, y: 120 });
   const [zoom, setZoom] = useState(1);
   const [picker, setPicker] = useState(false);
+  const [presenting, setPresenting] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const drag = useRef<DragState | null>(null);
 
@@ -46,6 +47,10 @@ export function SpaceCanvas() {
       if (!d) return;
       if (d.type === 'pan') {
         setPan({ x: d.ox + (e.clientX - d.sx), y: d.oy + (e.clientY - d.sy) });
+      } else if (d.type === 'resize' && d.id) {
+        updateSpaceElement(spaceId, d.id, {
+          w: Math.max(80, d.ox + (e.clientX - d.sx) / zoom),
+        });
       } else if (d.id) {
         updateSpaceElement(spaceId, d.id, {
           x: d.ox + (e.clientX - d.sx) / zoom,
@@ -64,6 +69,13 @@ export function SpaceCanvas() {
     };
   }, [spaceId, zoom, updateSpaceElement]);
 
+  useEffect(() => {
+    if (!presenting) return;
+    const h = (e: KeyboardEvent) => e.key === 'Escape' && setPresenting(false);
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [presenting]);
+
   if (!space) return null;
 
   const nextZ = () => Math.max(0, ...space.elements.map((e) => e.z)) + 1;
@@ -75,6 +87,29 @@ export function SpaceCanvas() {
     e.stopPropagation();
     updateSpaceElement(spaceId, el.id, { z: nextZ() });
     drag.current = { type: 'el', id: el.id, sx: e.clientX, sy: e.clientY, ox: el.x, oy: el.y };
+  };
+  const startResize = (e: React.PointerEvent, el: SpaceElement) => {
+    e.stopPropagation();
+    drag.current = { type: 'resize', id: el.id, sx: e.clientX, sy: e.clientY, ox: el.w, oy: 0 };
+  };
+
+  // Fit-to-content transform for present mode.
+  const fitView = () => {
+    const el = containerRef.current;
+    const vw = el?.clientWidth ?? window.innerWidth;
+    const vh = (el?.clientHeight ?? window.innerHeight) || window.innerHeight;
+    if (space.elements.length === 0) return { x: vw / 2, y: vh / 2, z: 1 };
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const e2 of space.elements) {
+      minX = Math.min(minX, e2.x);
+      minY = Math.min(minY, e2.y);
+      maxX = Math.max(maxX, e2.x + e2.w);
+      maxY = Math.max(maxY, e2.y + e2.w * 0.85);
+    }
+    const cw = maxX - minX || 1;
+    const ch = maxY - minY || 1;
+    const z = Math.min((vw * 0.85) / cw, (vh * 0.85) / ch, 1.5);
+    return { x: vw / 2 - (minX + cw / 2) * z, y: vh / 2 - (minY + ch / 2) * z, z };
   };
 
   const centerCoord = () => {
@@ -146,6 +181,13 @@ export function SpaceCanvas() {
             </button>
           </div>
           <button
+            onClick={() => setPresenting(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-muted transition hover:text-ink"
+            title="Present full-screen"
+          >
+            <Maximize2 size={14} /> Present
+          </button>
+          <button
             onClick={() => deleteSpace(space.id)}
             className="grid h-9 w-9 place-items-center rounded-lg text-muted transition hover:bg-surface-2 hover:text-red-500"
             title="Delete space"
@@ -204,6 +246,10 @@ export function SpaceCanvas() {
                   >
                     <Close size={13} />
                   </button>
+                  <span
+                    onPointerDown={(e) => startResize(e, el)}
+                    className="absolute -bottom-1.5 -right-1.5 hidden h-4 w-4 cursor-nwse-resize rounded-sm border-2 border-[#1b1c1f] bg-white group-hover:block"
+                  />
                 </div>
               );
             }
@@ -235,11 +281,65 @@ export function SpaceCanvas() {
                 >
                   <Close size={13} />
                 </button>
+                <span
+                  onPointerDown={(e) => startResize(e, el)}
+                  className="absolute -bottom-1.5 -right-1.5 hidden h-4 w-4 cursor-nwse-resize rounded-sm border-2 border-[#1b1c1f] bg-white group-hover:block"
+                />
               </div>
             );
           })}
         </div>
       </div>
+
+      {/* present mode */}
+      {presenting &&
+        (() => {
+          const f = fitView();
+          return (
+            <div className="fixed inset-0 z-[55] overflow-hidden bg-canvas">
+              <button
+                onClick={() => setPresenting(false)}
+                className="absolute right-5 top-5 z-10 grid h-10 w-10 place-items-center rounded-full bg-surface-2 text-muted shadow-lg transition hover:text-ink"
+                title="Exit (Esc)"
+              >
+                <Close size={18} />
+              </button>
+              <div
+                className="absolute left-0 top-0"
+                style={{ transform: `translate(${f.x}px, ${f.y}px) scale(${f.z})`, transformOrigin: '0 0' }}
+              >
+                {[...space.elements]
+                  .sort((a, b) => a.z - b.z)
+                  .map((el) => {
+                    if (el.kind === 'item') {
+                      const it = itemById(el.itemId!);
+                      const src = thumb(it);
+                      return (
+                        <div key={el.id} className="absolute" style={{ left: el.x, top: el.y, width: el.w }}>
+                          <div className="overflow-hidden rounded-lg bg-surface shadow-xl ring-1 ring-black/5">
+                            {src ? (
+                              <img src={src} alt="" draggable={false} className="block w-full" />
+                            ) : (
+                              <div className="grid h-32 place-items-center bg-surface-2 text-[12px] text-faint">
+                                {it?.title ?? 'Missing'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={el.id} className="absolute" style={{ left: el.x, top: el.y, width: el.w }}>
+                        <div className="overflow-hidden rounded-lg p-2.5 text-[13px] text-[#1b1c1f] shadow-xl" style={{ background: el.color }}>
+                          {el.text}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          );
+        })()}
 
       {/* picker */}
       <AnimatePresence>

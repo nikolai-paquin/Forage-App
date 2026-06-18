@@ -5,13 +5,14 @@ import type { Item, LibraryTab } from '../types';
 import { MasonryGrid } from './MasonryGrid';
 import { CollectionCover } from './CollectionCover';
 import { FilterMenu, type Option } from './FilterMenu';
-import type { ItemType } from '../types';
+import type { ItemType, SortBy } from '../types';
 import {
   Bookmark,
   Clock,
   Code,
   Compass,
   Grid,
+  Hash,
   Image as ImageIcon,
   Inbox,
   Layers,
@@ -21,6 +22,13 @@ import {
   Sparkle,
   Trash2,
 } from './icons';
+
+const SORT_OPTIONS: Option[] = [
+  { value: 'recent', label: 'Most recent' },
+  { value: 'oldest', label: 'Oldest' },
+  { value: 'name', label: 'Name A–Z' },
+  { value: 'type', label: 'Type' },
+];
 
 const TYPE_ICON: Record<string, React.ReactNode> = {
   image: <ImageIcon size={14} />,
@@ -61,11 +69,34 @@ function Empty({
 }
 
 export function LibraryView({ onOpen, onCapture }: { onOpen: (i: Item) => void; onCapture: () => void }) {
-  const { view, setView, visibleItems, projects, fileTypes, sources, typeFilter, setTypeFilter, sourceFilter, setSourceFilter, emptyTrash } =
-    useForage();
+  const {
+    view,
+    setView,
+    visibleItems,
+    projects,
+    items,
+    fileTypes,
+    sources,
+    typeFilter,
+    setTypeFilter,
+    sourceFilter,
+    setSourceFilter,
+    tagFilter,
+    setTagFilter,
+    sortBy,
+    setSortBy,
+    emptyTrash,
+  } = useForage();
   const [density, setDensity] = useState(235);
   if (view.kind !== 'library') return null;
   const tab = view.tab;
+
+  const tagOptions: Option[] = [
+    { value: 'all', label: 'All tags', icon: <Hash size={14} /> },
+    ...Array.from(new Set(items.filter((i) => !i.deletedAt).flatMap((i) => i.tags)))
+      .sort()
+      .map((t) => ({ value: t, label: `#${t}` })),
+  ];
 
   const typeOptions: Option[] = [
     { value: 'all', label: 'All types', icon: <ImageIcon size={14} /> },
@@ -137,12 +168,23 @@ export function LibraryView({ onOpen, onCapture }: { onOpen: (i: Item) => void; 
                 value={sourceFilter}
                 onChange={setSourceFilter}
               />
+              {tagOptions.length > 1 && (
+                <FilterMenu
+                  icon={<Hash size={14} className="text-faint" />}
+                  options={tagOptions}
+                  value={tagFilter}
+                  onChange={setTagFilter}
+                />
+              )}
             </>
           )}
-          <button className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-muted transition hover:text-ink">
-            <Clock size={14} />
-            Most recent
-          </button>
+          <FilterMenu
+            neutral
+            icon={<Clock size={14} className="text-faint" />}
+            options={SORT_OPTIONS}
+            value={sortBy}
+            onChange={(v) => setSortBy(v as SortBy)}
+          />
         </div>
       </div>
 

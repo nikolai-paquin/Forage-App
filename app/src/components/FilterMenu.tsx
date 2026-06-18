@@ -13,11 +13,13 @@ export function FilterMenu({
   options,
   value,
   onChange,
+  neutral = false,
 }: {
   icon?: React.ReactNode;
   options: Option[];
   value: string;
   onChange: (v: string) => void;
+  neutral?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -37,7 +39,7 @@ export function FilterMenu({
       <button
         onClick={() => setOpen((v) => !v)}
         className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[13px] transition ${
-          value !== 'all'
+          value !== 'all' && !neutral
             ? 'border-border-strong bg-surface-2 text-ink'
             : 'border-border bg-surface text-muted hover:text-ink'
         }`}

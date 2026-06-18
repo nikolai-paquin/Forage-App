@@ -136,6 +136,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   const [active, setActive] = useState('account');
   const { dark, toggle } = useTheme();
   const {
+    items,
     fileTypes,
     sources,
     addFileType,
@@ -144,7 +145,16 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
     addSource,
     removeSource,
     toggleSource,
+    removeTagEverywhere,
+    setTagFilter,
+    setView,
   } = useForage();
+
+  const tagCounts = new Map<string, number>();
+  items
+    .filter((i) => !i.deletedAt)
+    .forEach((i) => i.tags.forEach((t) => tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1)));
+  const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
 
   return (
     <AnimatePresence>
@@ -194,7 +204,45 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 <Close size={16} />
               </button>
 
-              {active === 'filters' ? (
+              {active === 'tags' ? (
+                <>
+                  <h2 className="text-[24px] font-semibold tracking-tight">Tags</h2>
+                  <p className="mt-2 mb-6 max-w-md text-[13.5px] text-muted">
+                    Every tag across your library. Click one to filter, or remove it everywhere.
+                  </p>
+                  {tags.length === 0 ? (
+                    <p className="text-[13.5px] text-faint">No tags yet — add some from a save's detail panel.</p>
+                  ) : (
+                    <div className="overflow-hidden rounded-xl border border-border">
+                      {tags.map(([tag, count], i) => (
+                        <div
+                          key={tag}
+                          className={`flex items-center gap-3 px-3 py-2 ${i > 0 ? 'border-t border-border' : ''}`}
+                        >
+                          <button
+                            onClick={() => {
+                              setTagFilter(tag);
+                              setView({ kind: 'library', tab: 'all' });
+                              onClose();
+                            }}
+                            className="flex-1 text-left text-[13.5px] text-ink hover:text-accent"
+                          >
+                            #{tag}
+                          </button>
+                          <span className="tnum text-[12.5px] text-faint">{count}</span>
+                          <button
+                            onClick={() => removeTagEverywhere(tag)}
+                            className="grid h-7 w-7 place-items-center rounded-md text-faint transition hover:bg-surface-2 hover:text-red-500"
+                            title="Remove from all saves"
+                          >
+                            <Close size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : active === 'filters' ? (
                 <>
                   <h2 className="text-[24px] font-semibold tracking-tight">Filters</h2>
                   <p className="mt-2 mb-6 max-w-md text-[13.5px] text-muted">

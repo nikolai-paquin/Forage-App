@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { FilterEntry, Item, Project, Space, SpaceElement, TypeFilter, View } from '../types';
+import type { FilterEntry, Item, Project, SortBy, Space, SpaceElement, TypeFilter, View } from '../types';
 import { sampleItems, sampleProjects } from '../data/sample';
 import { sourceLabel, uid } from './util';
 
@@ -67,6 +67,8 @@ interface ForageStore {
   query: string;
   typeFilter: TypeFilter;
   sourceFilter: string;
+  tagFilter: string;
+  sortBy: SortBy;
   fileTypes: FilterEntry[];
   sources: FilterEntry[];
   selectedIds: string[];
@@ -74,6 +76,9 @@ interface ForageStore {
   setQuery: (q: string) => void;
   setTypeFilter: (t: TypeFilter) => void;
   setSourceFilter: (s: string) => void;
+  setTagFilter: (t: string) => void;
+  setSortBy: (s: SortBy) => void;
+  removeTagEverywhere: (tag: string) => void;
   addFileType: (label: string) => void;
   removeFileType: (value: string) => void;
   toggleFileType: (value: string) => void;
@@ -139,6 +144,8 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [tagFilter, setTagFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<SortBy>('recent');
   const [fileTypes, setFileTypes] = useState<FilterEntry[]>(() => loadJSON(TYPES_KEY, DEFAULT_TYPES));
   const [sources, setSources] = useState<FilterEntry[]>(() =>
     loadJSON(SOURCES_KEY, deriveSources(load())),
@@ -213,6 +220,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
     const visibleItems = inView
       .filter((it) => typeFilter === 'all' || it.type === typeFilter)
       .filter((it) => sourceFilter === 'all' || it.source === sourceFilter)
+      .filter((it) => tagFilter === 'all' || it.tags.includes(tagFilter))
       .filter((it) => {
         if (!q) return true;
         const hay = [it.title, it.source, it.note, it.summary, ...it.tags]
@@ -221,7 +229,18 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           .toLowerCase();
         return hay.includes(q);
       })
-      .sort((a, b) => (b.deletedAt ?? b.createdAt) - (a.deletedAt ?? a.createdAt));
+      .sort((a, b) => {
+        switch (sortBy) {
+          case 'oldest':
+            return a.createdAt - b.createdAt;
+          case 'name':
+            return a.title.localeCompare(b.title);
+          case 'type':
+            return a.type.localeCompare(b.type) || b.createdAt - a.createdAt;
+          default:
+            return (b.deletedAt ?? b.createdAt) - (a.deletedAt ?? a.createdAt);
+        }
+      });
 
     return {
       items,
@@ -230,6 +249,8 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       query,
       typeFilter,
       sourceFilter,
+      tagFilter,
+      sortBy,
       fileTypes,
       sources,
       selectedIds,
@@ -237,6 +258,10 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       setQuery,
       setTypeFilter,
       setSourceFilter,
+      setTagFilter,
+      setSortBy,
+      removeTagEverywhere: (tag) =>
+        setItems((prev) => prev.map((i) => ({ ...i, tags: i.tags.filter((t) => t !== tag) }))),
       addFileType: (label) => {
         const v = slug(label);
         if (!label.trim()) return;
@@ -360,7 +385,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         patchSpace(spaceId, (s) => ({ ...s, elements: s.elements.filter((e) => e.id !== elId) })),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, projects, view, query, typeFilter, sourceFilter, fileTypes, sources, selectedIds, spaces]);
+  }, [items, projects, view, query, typeFilter, sourceFilter, tagFilter, sortBy, fileTypes, sources, selectedIds, spaces]);
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }
