@@ -1,6 +1,38 @@
+import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item } from '../types';
+
+function TagAdder({ onAdd }: { onAdd: (t: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [v, setV] = useState('');
+  if (!open)
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="rounded-full border border-dashed border-white/20 px-2.5 py-1 text-[12px] text-white/50 hover:text-white"
+      >
+        + Add
+      </button>
+    );
+  return (
+    <input
+      autoFocus
+      value={v}
+      onChange={(e) => setV(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && v.trim()) {
+          onAdd(v);
+          setV('');
+        }
+        if (e.key === 'Escape') setOpen(false);
+      }}
+      onBlur={() => setOpen(false)}
+      placeholder="tag…"
+      className="w-24 rounded-full bg-white/10 px-2.5 py-1 text-[12px] text-white outline-none placeholder:text-white/30"
+    />
+  );
+}
 import {
   ArrowLeft,
   ChevronLeft,
@@ -84,7 +116,8 @@ export function ItemDetail({
   onClose: () => void;
   onOpen: (i: Item) => void;
 }) {
-  const { visibleItems, projectById, removeFromProject } = useForage();
+  const { visibleItems, projectById, removeFromProject, updateItem, addTag, removeTag, trashItem } =
+    useForage();
 
   const list = visibleItems.length ? visibleItems : item ? [item] : [];
   const idx = item ? list.findIndex((i) => i.id === item.id) : -1;
@@ -127,8 +160,26 @@ export function ItemDetail({
                   <ExternalLink size={17} />
                 </a>
               )}
-              <button className={iconBtn} title="Download"><Download size={17} /></button>
-              <button className={iconBtn} title="Delete"><Trash2 size={17} /></button>
+              <a
+                href={item.media ?? item.url ?? '#'}
+                download={item.title}
+                target="_blank"
+                rel="noreferrer"
+                className={iconBtn}
+                title="Download"
+              >
+                <Download size={17} />
+              </a>
+              <button
+                onClick={() => {
+                  trashItem(item.id);
+                  onClose();
+                }}
+                className={iconBtn}
+                title="Move to Trash"
+              >
+                <Trash2 size={17} />
+              </button>
               <button onClick={onClose} className={iconBtn} title="Close"><Close size={18} /></button>
             </div>
           </div>
@@ -182,25 +233,31 @@ export function ItemDetail({
               <div className="flex flex-col gap-4">
                 <Field label="Name">
                   <input
+                    key={`name-${item.id}`}
                     defaultValue={item.title}
+                    onChange={(e) => updateItem(item.id, { title: e.target.value })}
                     className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[13.5px] text-white outline-none focus:border-white/25"
                   />
                 </Field>
                 <Field label="URL">
                   <input
+                    key={`url-${item.id}`}
                     defaultValue={item.url ?? ''}
+                    onChange={(e) => updateItem(item.id, { url: e.target.value })}
                     placeholder="https://…"
                     className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[13.5px] text-white outline-none placeholder:text-white/30 focus:border-white/25"
                   />
                 </Field>
-
-                {item.note ? (
-                  <Field label="Note">
-                    <p className="text-[13px] italic text-white/70">"{item.note}"</p>
-                  </Field>
-                ) : (
-                  <button className="self-start text-[13px] text-white/55 transition hover:text-white">+ Add a note</button>
-                )}
+                <Field label="Note">
+                  <textarea
+                    key={`note-${item.id}`}
+                    defaultValue={item.note ?? ''}
+                    onChange={(e) => updateItem(item.id, { note: e.target.value })}
+                    placeholder="Add a note…"
+                    rows={2}
+                    className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[13.5px] text-white outline-none placeholder:text-white/30 focus:border-white/25"
+                  />
+                </Field>
 
                 <div>
                   <p className="mb-2 flex items-center gap-1.5 text-[12px] text-white/45">
@@ -242,11 +299,19 @@ export function ItemDetail({
                   <p className="mb-2 flex items-center gap-1.5 text-[12px] text-white/45">
                     <Hash size={13} /> Tags
                   </p>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     {item.tags.map((t) => (
-                      <span key={t} className="rounded-full bg-white/8 px-2.5 py-1 text-[12px] text-white/85">#{t}</span>
+                      <span
+                        key={t}
+                        className="flex items-center gap-1.5 rounded-full bg-white/8 px-2.5 py-1 text-[12px] text-white/85"
+                      >
+                        #{t}
+                        <button onClick={() => removeTag(item.id, t)} className="text-white/40 hover:text-white">
+                          <Close size={11} />
+                        </button>
+                      </span>
                     ))}
-                    <button className="rounded-full border border-dashed border-white/20 px-2.5 py-1 text-[12px] text-white/50 hover:text-white">+ Add</button>
+                    <TagAdder onAdd={(t) => addTag(item.id, t)} />
                     <button className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[12px] text-white/60 hover:text-white">Auto-tag</button>
                   </div>
                 </div>

@@ -61,13 +61,14 @@ interface NewItemInput {
 
 interface ForageStore {
   items: Item[];
-  projects: Project[]; // "Collections" in the UI
+  projects: Project[];
   view: View;
   query: string;
   typeFilter: TypeFilter;
   sourceFilter: string;
   fileTypes: FilterEntry[];
   sources: FilterEntry[];
+  selectedIds: string[];
   setView: (v: View) => void;
   setQuery: (q: string) => void;
   setTypeFilter: (t: TypeFilter) => void;
@@ -79,16 +80,31 @@ interface ForageStore {
   removeSource: (value: string) => void;
   toggleSource: (value: string) => void;
   addItem: (input: NewItemInput) => Item;
+  updateItem: (id: string, patch: Partial<Item>) => void;
   toggleFavorite: (id: string) => void;
   markSeen: (id: string) => void;
   assignToProject: (itemId: string, projectId: string) => void;
   removeFromProject: (itemId: string, projectId: string) => void;
+  addTag: (itemId: string, tag: string) => void;
+  removeTag: (itemId: string, tag: string) => void;
+  // trash
+  trashItem: (id: string) => void;
+  restoreItem: (id: string) => void;
+  deleteForever: (id: string) => void;
+  emptyTrash: () => void;
+  // selection + bulk
+  toggleSelect: (id: string) => void;
+  clearSelection: () => void;
+  trashSelected: () => void;
+  assignSelectedTo: (projectId: string) => void;
+  restoreSelected: () => void;
+  deleteSelectedForever: () => void;
   projectById: (id: string) => Project | undefined;
   itemById: (id: string) => Item | undefined;
   projectItemCount: (id: string) => number;
-  /** Items for the current view after search + type filtering + sort. */
   visibleItems: Item[];
   unsortedCount: number;
+  trashCount: number;
 }
 
 const Ctx = createContext<ForageStore | null>(null);
@@ -114,6 +130,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   const [sources, setSources] = useState<FilterEntry[]>(() =>
     loadJSON(SOURCES_KEY, deriveSources(load())),
   );
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
     try {
@@ -136,6 +153,20 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       /* non-fatal */
     }
   }, [sources]);
+  // selection is per-view
+  useEffect(() => setSelectedIds([]), [view]);
+
+  const patch = (id: string, fn: (i: Item) => Item) =>
+    setItems((prev) => prev.map((i) => (i.id === id ? fn(i) : i)));
+
+  const registerSource = (src?: string) => {
+    if (!src) return;
+    setSources((prev) =>
+      prev.some((s) => s.value === src)
+        ? prev
+        : [...prev, { value: src, label: sourceLabel(src), enabled: true }],
+    );
+  };
 
   const store = useMemo<ForageStore>(() => {
     const projectById = (id: string) => projects.find((p) => p.id === id);
@@ -143,12 +174,15 @@ export function ForageProvider({ children }: { children: ReactNode }) {
 
     let inView: Item[] = [];
     if (view.kind === 'library') {
-      if (view.tab === 'all') inView = items;
-      else if (view.tab === 'unsorted') inView = items.filter((i) => i.projectIds.length === 0);
-      else if (view.tab === 'bookmarks') inView = items.filter((i) => i.type === 'link');
-      else inView = []; // trash
+      if (view.tab === 'trash') inView = items.filter((i) => i.deletedAt);
+      else {
+        const live = items.filter((i) => !i.deletedAt);
+        if (view.tab === 'all') inView = live;
+        else if (view.tab === 'unsorted') inView = live.filter((i) => i.projectIds.length === 0);
+        else inView = live.filter((i) => i.type === 'link');
+      }
     } else if (view.kind === 'collection') {
-      inView = items.filter((i) => i.projectIds.includes(view.id));
+      inView = items.filter((i) => !i.deletedAt && i.projectIds.includes(view.id));
     }
 
     const q = query.trim().toLowerCase();
@@ -163,7 +197,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           .toLowerCase();
         return hay.includes(q);
       })
-      .sort((a, b) => b.createdAt - a.createdAt);
+      .sort((a, b) => (b.deletedAt ?? b.createdAt) - (a.deletedAt ?? a.createdAt));
 
     return {
       items,
@@ -174,6 +208,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       sourceFilter,
       fileTypes,
       sources,
+      selectedIds,
       setView,
       setQuery,
       setTypeFilter,
@@ -191,18 +226,11 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       addSource: (value) => {
         const v = value.trim();
         if (!v) return;
-        setSources((prev) =>
-          prev.some((s) => s.value === v) ? prev : [...prev, { value: v, label: sourceLabel(v), enabled: true }],
-        );
+        registerSource(v);
       },
       removeSource: (value) => setSources((prev) => prev.filter((s) => s.value !== value)),
       toggleSource: (value) =>
         setSources((prev) => prev.map((s) => (s.value === value ? { ...s, enabled: !s.enabled } : s))),
-      projectById,
-      itemById,
-      projectItemCount: (id) => items.filter((i) => i.projectIds.includes(id)).length,
-      visibleItems,
-      unsortedCount: items.filter((i) => i.projectIds.length === 0).length,
       addItem: (input) => {
         const item: Item = {
           id: uid(),
@@ -220,38 +248,65 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           lastSeenAt: Date.now(),
         };
         setItems((prev) => [item, ...prev]);
-        if (item.source) {
-          const src = item.source;
-          setSources((prev) =>
-            prev.some((s) => s.value === src)
-              ? prev
-              : [...prev, { value: src, label: sourceLabel(src), enabled: true }],
-          );
-        }
+        registerSource(item.source);
         return item;
       },
-      toggleFavorite: (id) =>
-        setItems((prev) => prev.map((i) => (i.id === id ? { ...i, favorite: !i.favorite } : i))),
-      markSeen: (id) =>
-        setItems((prev) => prev.map((i) => (i.id === id ? { ...i, lastSeenAt: Date.now() } : i))),
+      updateItem: (id, p) => patch(id, (i) => ({ ...i, ...p })),
+      toggleFavorite: (id) => patch(id, (i) => ({ ...i, favorite: !i.favorite })),
+      markSeen: (id) => patch(id, (i) => ({ ...i, lastSeenAt: Date.now() })),
       assignToProject: (itemId, projectId) =>
+        patch(itemId, (i) =>
+          i.projectIds.includes(projectId) ? i : { ...i, projectIds: [...i.projectIds, projectId] },
+        ),
+      removeFromProject: (itemId, projectId) =>
+        patch(itemId, (i) => ({ ...i, projectIds: i.projectIds.filter((p) => p !== projectId) })),
+      addTag: (itemId, tag) =>
+        patch(itemId, (i) =>
+          i.tags.includes(tag) || !tag.trim() ? i : { ...i, tags: [...i.tags, tag.trim()] },
+        ),
+      removeTag: (itemId, tag) => patch(itemId, (i) => ({ ...i, tags: i.tags.filter((t) => t !== tag) })),
+      trashItem: (id) => patch(id, (i) => ({ ...i, deletedAt: Date.now() })),
+      restoreItem: (id) => patch(id, (i) => ({ ...i, deletedAt: undefined })),
+      deleteForever: (id) => setItems((prev) => prev.filter((i) => i.id !== id)),
+      emptyTrash: () => setItems((prev) => prev.filter((i) => !i.deletedAt)),
+      toggleSelect: (id) =>
+        setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])),
+      clearSelection: () => setSelectedIds([]),
+      trashSelected: () => {
+        const ids = new Set(selectedIds);
+        setItems((prev) => prev.map((i) => (ids.has(i.id) ? { ...i, deletedAt: Date.now() } : i)));
+        setSelectedIds([]);
+      },
+      assignSelectedTo: (projectId) => {
+        const ids = new Set(selectedIds);
         setItems((prev) =>
           prev.map((i) =>
-            i.id === itemId && !i.projectIds.includes(projectId)
+            ids.has(i.id) && !i.projectIds.includes(projectId)
               ? { ...i, projectIds: [...i.projectIds, projectId] }
               : i,
           ),
-        ),
-      removeFromProject: (itemId, projectId) =>
-        setItems((prev) =>
-          prev.map((i) =>
-            i.id === itemId
-              ? { ...i, projectIds: i.projectIds.filter((p) => p !== projectId) }
-              : i,
-          ),
-        ),
+        );
+        setSelectedIds([]);
+      },
+      restoreSelected: () => {
+        const ids = new Set(selectedIds);
+        setItems((prev) => prev.map((i) => (ids.has(i.id) ? { ...i, deletedAt: undefined } : i)));
+        setSelectedIds([]);
+      },
+      deleteSelectedForever: () => {
+        const ids = new Set(selectedIds);
+        setItems((prev) => prev.filter((i) => !ids.has(i.id)));
+        setSelectedIds([]);
+      },
+      projectById,
+      itemById,
+      projectItemCount: (id) => items.filter((i) => !i.deletedAt && i.projectIds.includes(id)).length,
+      visibleItems,
+      unsortedCount: items.filter((i) => !i.deletedAt && i.projectIds.length === 0).length,
+      trashCount: items.filter((i) => i.deletedAt).length,
     };
-  }, [items, projects, view, query, typeFilter, sourceFilter, fileTypes, sources]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, projects, view, query, typeFilter, sourceFilter, fileTypes, sources, selectedIds]);
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }

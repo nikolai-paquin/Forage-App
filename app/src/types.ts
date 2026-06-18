@@ -46,6 +46,8 @@ export interface Item {
   createdAt: number;
   /** Powers resurfacing: how long since it was last seen. */
   lastSeenAt: number;
+  /** Soft-delete timestamp; set when moved to Trash. */
+  deletedAt?: number;
 }
 
 export interface Project {

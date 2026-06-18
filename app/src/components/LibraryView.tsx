@@ -61,7 +61,7 @@ function Empty({
 }
 
 export function LibraryView({ onOpen, onCapture }: { onOpen: (i: Item) => void; onCapture: () => void }) {
-  const { view, setView, visibleItems, projects, fileTypes, sources, typeFilter, setTypeFilter, sourceFilter, setSourceFilter } =
+  const { view, setView, visibleItems, projects, fileTypes, sources, typeFilter, setTypeFilter, sourceFilter, setSourceFilter, emptyTrash } =
     useForage();
   const [density, setDensity] = useState(235);
   if (view.kind !== 'library') return null;
@@ -148,11 +148,25 @@ export function LibraryView({ onOpen, onCapture }: { onOpen: (i: Item) => void; 
 
       {/* body */}
       {tab === 'trash' ? (
-        <Empty
-          icon={<Trash2 size={34} strokeWidth={1.5} />}
-          title="Trash is empty"
-          sub="Deleted saves land here. Empty Trash to remove for good."
-        />
+        visibleItems.length === 0 ? (
+          <Empty
+            icon={<Trash2 size={34} strokeWidth={1.5} />}
+            title="Trash is empty"
+            sub="Deleted saves land here. Empty Trash to remove for good."
+          />
+        ) : (
+          <>
+            <div className="mb-4 flex justify-end">
+              <button
+                onClick={emptyTrash}
+                className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-muted transition hover:border-red-300 hover:text-red-500"
+              >
+                <Trash2 size={14} /> Empty Trash
+              </button>
+            </div>
+            <MasonryGrid items={visibleItems} onOpen={onOpen} targetWidth={density} />
+          </>
+        )
       ) : tab === 'bookmarks' && visibleItems.length === 0 ? (
         <Empty
           icon={<Bookmark size={34} strokeWidth={1.5} />}

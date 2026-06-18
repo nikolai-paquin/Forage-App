@@ -44,4 +44,7 @@ export {
   Frame,
   SlidersHorizontal as Filter,
   GripVertical,
+  RotateCcw,
+  Tag,
+  Upload,
 } from 'lucide-react';

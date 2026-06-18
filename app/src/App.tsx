@@ -11,14 +11,63 @@ import { CaptureDialog } from './components/CaptureDialog';
 import { SearchOverlay } from './components/SearchOverlay';
 import { SettingsModal } from './components/SettingsModal';
 import { Fab } from './components/Fab';
+import { BulkBar } from './components/BulkBar';
+import { detectFromInput } from './lib/util';
 import type { Item } from './types';
 
 function Workspace() {
-  const { view, markSeen } = useForage();
+  const { view, markSeen, addItem } = useForage();
   const [selected, setSelected] = useState<Item | null>(null);
   const [capture, setCapture] = useState(false);
   const [search, setSearch] = useState(false);
   const [settings, setSettings] = useState(false);
+  const [dragging, setDragging] = useState(false);
+
+  const targetCollection = view.kind === 'collection' ? [view.id] : [];
+
+  const addFiles = (files: FileList | File[]) => {
+    Array.from(files).forEach((file) => {
+      if (!file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = () =>
+        addItem({
+          type: file.type === 'image/gif' ? 'gif' : 'image',
+          title: file.name.replace(/\.[^.]+$/, ''),
+          media: String(reader.result),
+          source: 'upload',
+          projectIds: targetCollection,
+        });
+      reader.readAsDataURL(file);
+    });
+  };
+
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && /^(INPUT|TEXTAREA)$/.test(t.tagName)) return; // don't hijack form fields
+      const files = e.clipboardData?.files;
+      if (files && files.length) {
+        addFiles(files);
+        return;
+      }
+      const text = e.clipboardData?.getData('text')?.trim();
+      if (text) {
+        const d = detectFromInput(text);
+        addItem({
+          type: d.type,
+          title: d.title,
+          source: d.source,
+          url: /^https?:/i.test(text) ? text : undefined,
+          media: d.type === 'image' || d.type === 'gif' ? text : undefined,
+          code: d.type === 'code' ? text : undefined,
+          projectIds: targetCollection,
+        });
+      }
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -51,7 +100,26 @@ function Workspace() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-canvas text-ink">
       <TopBar onSearch={() => setSearch(true)} onSettings={() => setSettings(true)} />
-      <main className="min-h-0 flex-1 overflow-y-auto">
+      <main
+        className="relative min-h-0 flex-1 overflow-y-auto"
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (!dragging) setDragging(true);
+        }}
+        onDragLeave={(e) => {
+          if (e.relatedTarget === null) setDragging(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+        }}
+      >
+        {dragging && (
+          <div className="pointer-events-none absolute inset-3 z-50 grid place-items-center rounded-2xl border-2 border-dashed border-ink/40 bg-canvas/70 backdrop-blur-sm">
+            <p className="text-[15px] font-medium text-ink">Drop to forage</p>
+          </div>
+        )}
         <motion.div
           key={viewKey}
           initial={{ opacity: 0, y: 6 }}
@@ -68,6 +136,7 @@ function Workspace() {
       </main>
 
       <Fab onClick={() => setCapture(true)} />
+      <BulkBar />
 
       <ItemDetail item={selected} onClose={() => setSelected(null)} onOpen={open} />
       <CaptureDialog open={capture} onClose={() => setCapture(false)} />
