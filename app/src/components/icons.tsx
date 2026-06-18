@@ -1,5 +1,5 @@
-// Lucide icons, re-exported under the names the app already uses.
-// https://lucide.dev/icons/ — clean, consistent, animation-friendly.
+// Lucide icons, re-exported under the names the app uses.
+// https://lucide.dev/icons/
 export {
   Search,
   Plus,
@@ -14,7 +14,32 @@ export {
   Sparkles as Sparkle,
   X as Close,
   LayoutGrid as Grid,
-  ShoppingBasket as Basket,
   House as Home,
   Link2 as Link,
+  Settings,
+  Compass,
+  ChevronsUpDown,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ArrowLeft,
+  Download,
+  ExternalLink,
+  Pipette,
+  Trash2,
+  Maximize2,
+  Bookmark,
+  Inbox,
+  Folder,
+  Hash,
+  Circle,
+  CheckCircle2,
+  Info,
+  User,
+  Palette,
+  Camera,
+  Volume2,
+  Database,
+  Library as LibraryIcon,
+  Frame,
 } from 'lucide-react';

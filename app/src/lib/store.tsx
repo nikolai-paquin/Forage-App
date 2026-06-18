@@ -6,12 +6,11 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { Frame, Item, Project, Storyboard, TypeFilter, View } from '../types';
-import { sampleItems, sampleProjects, sampleStoryboards } from '../data/sample';
+import type { Item, Project, TypeFilter, View } from '../types';
+import { sampleItems, sampleProjects } from '../data/sample';
 import { uid } from './util';
 
-const STORE_KEY = 'forage.items.v1';
-const SB_KEY = 'forage.storyboards.v1';
+const STORE_KEY = 'forage.items.v2';
 
 interface NewItemInput {
   type: Item['type'];
@@ -26,8 +25,7 @@ interface NewItemInput {
 
 interface ForageStore {
   items: Item[];
-  projects: Project[];
-  storyboards: Storyboard[];
+  projects: Project[]; // "Collections" in the UI
   view: View;
   query: string;
   typeFilter: TypeFilter;
@@ -38,66 +36,55 @@ interface ForageStore {
   toggleFavorite: (id: string) => void;
   markSeen: (id: string) => void;
   assignToProject: (itemId: string, projectId: string) => void;
+  removeFromProject: (itemId: string, projectId: string) => void;
   projectById: (id: string) => Project | undefined;
   itemById: (id: string) => Item | undefined;
-  storyboardById: (id: string) => Storyboard | undefined;
-  reorderFrames: (storyboardId: string, frames: Frame[]) => void;
-  addFrame: (storyboardId: string, itemId: string) => void;
-  removeFrame: (storyboardId: string, frameId: string) => void;
-  updateFrameBeat: (storyboardId: string, frameId: string, beat: string) => void;
-  /** Items in the current view, after search + type filtering. */
+  projectItemCount: (id: string) => number;
+  /** Items for the current view after search + type filtering + sort. */
   visibleItems: Item[];
-  basketCount: number;
+  unsortedCount: number;
 }
 
 const Ctx = createContext<ForageStore | null>(null);
 
-function loadJSON<T>(key: string, fallback: T): T {
+function load(): Item[] {
   try {
-    const raw = localStorage.getItem(key);
-    if (raw) return JSON.parse(raw) as T;
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) return JSON.parse(raw) as Item[];
   } catch {
-    /* fall through to seed */
+    /* seed */
   }
-  return fallback;
+  return sampleItems;
 }
 
 export function ForageProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<Item[]>(() => loadJSON(STORE_KEY, sampleItems));
+  const [items, setItems] = useState<Item[]>(load);
   const [projects] = useState<Project[]>(sampleProjects);
-  const [storyboards, setStoryboards] = useState<Storyboard[]>(() =>
-    loadJSON(SB_KEY, sampleStoryboards),
-  );
-  const [view, setView] = useState<View>({ kind: 'home' });
+  const [view, setView] = useState<View>({ kind: 'library', tab: 'all' });
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
 
-  // Local-first persistence (stands in for the SQLite source of truth).
   useEffect(() => {
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify(items));
     } catch {
-      /* storage full / disabled — non-fatal in the prototype */
-    }
-  }, [items]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(SB_KEY, JSON.stringify(storyboards));
-    } catch {
       /* non-fatal */
     }
-  }, [storyboards]);
+  }, [items]);
 
   const store = useMemo<ForageStore>(() => {
     const projectById = (id: string) => projects.find((p) => p.id === id);
     const itemById = (id: string) => items.find((i) => i.id === id);
 
-    const inView = items.filter((it) => {
-      if (view.kind === 'basket') return it.projectIds.length === 0;
-      if (view.kind === 'project') return it.projectIds.includes(view.projectId);
-      return true; // library
-    });
+    let inView: Item[] = [];
+    if (view.kind === 'library') {
+      if (view.tab === 'all') inView = items;
+      else if (view.tab === 'unsorted') inView = items.filter((i) => i.projectIds.length === 0);
+      else if (view.tab === 'bookmarks') inView = items.filter((i) => i.type === 'link');
+      else inView = []; // trash
+    } else if (view.kind === 'collection') {
+      inView = items.filter((i) => i.projectIds.includes(view.id));
+    }
 
     const q = query.trim().toLowerCase();
     const visibleItems = inView
@@ -115,7 +102,6 @@ export function ForageProvider({ children }: { children: ReactNode }) {
     return {
       items,
       projects,
-      storyboards,
       view,
       query,
       typeFilter,
@@ -124,35 +110,9 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       setTypeFilter,
       projectById,
       itemById,
-      storyboardById: (id) => storyboards.find((s) => s.id === id),
+      projectItemCount: (id) => items.filter((i) => i.projectIds.includes(id)).length,
       visibleItems,
-      basketCount: items.filter((i) => i.projectIds.length === 0).length,
-      reorderFrames: (sbId, frames) =>
-        setStoryboards((prev) =>
-          prev.map((s) => (s.id === sbId ? { ...s, frames } : s)),
-        ),
-      addFrame: (sbId, itemId) =>
-        setStoryboards((prev) =>
-          prev.map((s) =>
-            s.id === sbId
-              ? { ...s, frames: [...s.frames, { id: uid(), itemId, beat: '' }] }
-              : s,
-          ),
-        ),
-      removeFrame: (sbId, frameId) =>
-        setStoryboards((prev) =>
-          prev.map((s) =>
-            s.id === sbId ? { ...s, frames: s.frames.filter((f) => f.id !== frameId) } : s,
-          ),
-        ),
-      updateFrameBeat: (sbId, frameId, beat) =>
-        setStoryboards((prev) =>
-          prev.map((s) =>
-            s.id === sbId
-              ? { ...s, frames: s.frames.map((f) => (f.id === frameId ? { ...f, beat } : f)) }
-              : s,
-          ),
-        ),
+      unsortedCount: items.filter((i) => i.projectIds.length === 0).length,
       addItem: (input) => {
         const item: Item = {
           id: uid(),
@@ -162,8 +122,8 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           url: input.url,
           media: input.media,
           code: input.code,
-          ratio: input.type === 'link' ? 1.9 : 0.85 + Math.random() * 0.5,
-          palette: ['#c2603f', '#e9e2d4', '#2c2622'],
+          ratio: input.type === 'link' ? 1.6 : 0.7 + Math.random() * 0.7,
+          palette: ['#3b3b3b', '#9a9a9a', '#e6e6e6'],
           tags: input.tags ?? [],
           projectIds: input.projectIds ?? [],
           createdAt: Date.now(),
@@ -173,13 +133,9 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         return item;
       },
       toggleFavorite: (id) =>
-        setItems((prev) =>
-          prev.map((i) => (i.id === id ? { ...i, favorite: !i.favorite } : i)),
-        ),
+        setItems((prev) => prev.map((i) => (i.id === id ? { ...i, favorite: !i.favorite } : i))),
       markSeen: (id) =>
-        setItems((prev) =>
-          prev.map((i) => (i.id === id ? { ...i, lastSeenAt: Date.now() } : i)),
-        ),
+        setItems((prev) => prev.map((i) => (i.id === id ? { ...i, lastSeenAt: Date.now() } : i))),
       assignToProject: (itemId, projectId) =>
         setItems((prev) =>
           prev.map((i) =>
@@ -188,8 +144,16 @@ export function ForageProvider({ children }: { children: ReactNode }) {
               : i,
           ),
         ),
+      removeFromProject: (itemId, projectId) =>
+        setItems((prev) =>
+          prev.map((i) =>
+            i.id === itemId
+              ? { ...i, projectIds: i.projectIds.filter((p) => p !== projectId) }
+              : i,
+          ),
+        ),
     };
-  }, [items, projects, storyboards, view, query, typeFilter]);
+  }, [items, projects, view, query, typeFilter]);
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }

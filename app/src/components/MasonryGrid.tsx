@@ -18,9 +18,11 @@ function packColumns(items: Item[], cols: number): Item[][] {
 export function MasonryGrid({
   items,
   onOpen,
+  targetWidth = 235,
 }: {
   items: Item[];
   onOpen: (item: Item) => void;
+  targetWidth?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [cols, setCols] = useState(4);
@@ -30,16 +32,16 @@ export function MasonryGrid({
     if (!el) return;
     const ro = new ResizeObserver(([entry]) => {
       const w = entry.contentRect.width;
-      setCols(Math.max(2, Math.min(7, Math.floor(w / 235))));
+      setCols(Math.max(2, Math.min(8, Math.round(w / targetWidth))));
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [targetWidth]);
 
   const columns = useMemo(() => packColumns(items, cols), [items, cols]);
 
   return (
-    <div ref={ref} className="flex gap-3">
+    <div ref={ref} className="flex gap-2.5">
       {columns.map((col, i) => (
         <div key={i} className="flex min-w-0 flex-1 flex-col">
           {col.map((item) => (

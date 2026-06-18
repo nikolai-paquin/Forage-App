@@ -1,8 +1,32 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item } from '../types';
-import { Close, Heart, Link as LinkIcon, Sparkle } from './icons';
-import { timeAgo } from '../lib/util';
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Close,
+  Download,
+  ExternalLink,
+  Folder,
+  Hash,
+  Info,
+  Pipette,
+  Sparkle,
+  Trash2,
+} from './icons';
+
+const EXT: Record<Item['type'], string> = {
+  image: 'JPEG',
+  ai_asset: 'PNG',
+  video: 'MP4',
+  gif: 'GIF',
+  vector: 'SVG',
+  link: 'LINK',
+  code: 'CODE',
+};
+
+const thumb = (i: Item) => (i.type === 'video' ? i.poster : i.media);
 
 function Media({ item }: { item: Item }) {
   if (item.type === 'video')
@@ -15,49 +39,41 @@ function Media({ item }: { item: Item }) {
         muted
         loop
         playsInline
-        className="max-h-[68vh] w-full bg-black object-contain"
+        className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
       />
     );
   if (item.type === 'code')
     return (
-      <pre className="max-h-[68vh] overflow-auto bg-[#14150f] p-5 font-mono text-[12.5px] leading-relaxed text-[#cdd4b8]">
+      <pre className="max-h-full max-w-full overflow-auto rounded-lg bg-[#0e0f12] p-6 font-mono text-[13px] leading-relaxed text-[#c9cdd6] shadow-2xl">
         <code>{item.code}</code>
       </pre>
     );
-  if (item.type === 'vector')
+  if (thumb(item))
     return (
-      <div
-        className="grid aspect-video w-full place-items-center"
-        style={{ background: `linear-gradient(145deg, ${item.palette[1]}, ${item.palette[0]}22)` }}
-      >
-        <svg viewBox="0 0 100 100" className="h-2/5" style={{ color: item.palette[0] }}>
-          <path
-            d="M50 8C50 32 38 44 20 50c18 6 30 18 30 42 0-24 12-36 30-42-18-6-30-18-30-42Z"
-            fill="currentColor"
-          />
-        </svg>
-      </div>
+      <img
+        src={thumb(item)}
+        alt={item.title}
+        className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
+      />
     );
-  if ((item.type === 'link' && !item.media))
-    return (
-      <div
-        className="grid aspect-video w-full place-items-center text-white/90"
-        style={{ background: `linear-gradient(150deg, ${item.palette[0]}, ${item.palette[1]})` }}
-      >
-        <LinkIcon width={28} height={28} />
-      </div>
-    );
-  return <img src={item.media} alt={item.title} className="max-h-[68vh] w-full object-contain" />;
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1">
-      <p className="text-[11px] font-medium uppercase tracking-wider text-faint">{label}</p>
-      <div className="text-[13.5px] text-ink">{children}</div>
+    <div className="grid aspect-video w-2/3 place-items-center rounded-lg bg-white/5 text-white/40">
+      <ExternalLink size={28} />
     </div>
   );
 }
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-1.5 text-[12px] text-white/45">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+const iconBtn =
+  'grid h-9 w-9 place-items-center rounded-lg text-white/60 transition hover:bg-white/10 hover:text-white';
 
 export function ItemDetail({
   item,
@@ -68,206 +84,175 @@ export function ItemDetail({
   onClose: () => void;
   onOpen: (i: Item) => void;
 }) {
-  const { items, projectById, toggleFavorite, itemById } = useForage();
+  const { visibleItems, projectById, removeFromProject } = useForage();
 
-  const related = item
-    ? items
-        .filter((i) => i.id !== item.id && i.tags.some((t) => item.tags.includes(t)))
-        .slice(0, 5)
-    : [];
-  const sourceRef = item?.ai?.sourceRefId ? itemById(item.ai.sourceRefId) : undefined;
+  const list = visibleItems.length ? visibleItems : item ? [item] : [];
+  const idx = item ? list.findIndex((i) => i.id === item.id) : -1;
+  const prev = idx > 0 ? list[idx - 1] : null;
+  const next = idx >= 0 && idx < list.length - 1 ? list[idx + 1] : null;
 
   return (
     <AnimatePresence>
       {item && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8"
+          className="fixed inset-0 z-50 flex flex-col bg-[#0a0a0b] text-white"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowLeft' && prev) onOpen(prev);
+            if (e.key === 'ArrowRight' && next) onOpen(next);
+            if (e.key === 'Escape') onClose();
+          }}
+          tabIndex={-1}
         >
-          <div className="absolute inset-0 bg-black/55 backdrop-blur-md" onClick={onClose} />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: 10 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-            className="relative grid max-h-full w-full max-w-4xl grid-rows-[auto] overflow-hidden rounded-2xl border border-border-strong bg-elevated md:grid-cols-[1.55fr_1fr]"
-            style={{ boxShadow: 'var(--shadow-pop)' }}
-          >
-            <button
-              onClick={onClose}
-              className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-black/35 text-white backdrop-blur-md transition hover:bg-black/55"
-            >
-              <Close width={16} height={16} />
-            </button>
+          {/* top toolbar */}
+          <div className="flex h-14 shrink-0 items-center justify-between px-4">
+            <div className="flex items-center gap-3">
+              <button onClick={onClose} className="grid h-9 w-9 place-items-center rounded-lg bg-white/10 text-white transition hover:bg-white/15">
+                <ArrowLeft size={17} />
+              </button>
+              {idx >= 0 && (
+                <span className="tnum text-[13px] text-white/50">
+                  {idx + 1} / {list.length}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="mr-2 text-[13px] tabular-nums text-white/50">100%</span>
+              <input type="range" min={50} max={150} defaultValue={100} className="mr-3 h-1 w-28 accent-white" />
+              <button className={iconBtn} title="Pick colour"><Pipette size={17} /></button>
+              {item.url && (
+                <a href={item.url} target="_blank" rel="noreferrer" className={iconBtn} title="Open source">
+                  <ExternalLink size={17} />
+                </a>
+              )}
+              <button className={iconBtn} title="Download"><Download size={17} /></button>
+              <button className={iconBtn} title="Delete"><Trash2 size={17} /></button>
+              <button onClick={onClose} className={iconBtn} title="Close"><Close size={18} /></button>
+            </div>
+          </div>
 
-            <div className="flex items-center justify-center overflow-hidden bg-surface-2 md:max-h-[82vh]">
+          {/* body */}
+          <div className="flex min-h-0 flex-1">
+            <div className="relative grid min-w-0 flex-1 place-items-center p-8">
               <Media item={item} />
+              {prev && (
+                <button
+                  onClick={() => onOpen(prev)}
+                  className="absolute left-4 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+              )}
+              {next && (
+                <button
+                  onClick={() => onOpen(next)}
+                  className="absolute right-4 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              )}
             </div>
 
-            <div className="flex max-h-[82vh] flex-col gap-5 overflow-auto p-5">
-              <div>
-                <div className="flex items-start gap-2">
-                  <h2 className="flex-1 text-[18px] font-semibold leading-snug tracking-tight">
-                    {item.title}
-                  </h2>
-                  <button
-                    onClick={() => toggleFavorite(item.id)}
-                    className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border border-border transition ${
-                      item.favorite ? 'text-accent' : 'text-muted hover:text-ink'
-                    }`}
-                  >
-                    <Heart width={16} height={16} fill={item.favorite ? 'currentColor' : 'none'} />
-                  </button>
-                </div>
-                {item.source && (
-                  <p className="mt-1 text-[12.5px] text-muted">
-                    {item.url ? (
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="hover:text-accent"
-                      >
-                        {item.source} ↗
-                      </a>
-                    ) : (
-                      item.source
-                    )}
-                    <span className="text-faint">
-                      {' '}
-                      · saved {timeAgo(item.createdAt)} · seen {timeAgo(item.lastSeenAt)}
-                    </span>
-                  </p>
-                )}
+            {/* details panel */}
+            <aside className="w-[360px] shrink-0 overflow-auto border-l border-white/10 bg-[#141416] p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-[15px] font-semibold">Details</h2>
+                <Info size={16} className="text-white/40" />
               </div>
 
-              {item.note && (
-                <Row label="Note">
-                  <p className="italic text-muted">“{item.note}”</p>
-                </Row>
-              )}
+              <div className="relative mb-4 overflow-hidden rounded-xl border border-white/10 bg-black/30">
+                {thumb(item) ? (
+                  <img src={thumb(item)} alt="" className="max-h-52 w-full object-contain" />
+                ) : (
+                  <div className="grid h-40 place-items-center text-white/30">{EXT[item.type]}</div>
+                )}
+                <span className="absolute right-2 top-2 rounded-md bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-md">
+                  {EXT[item.type]}
+                </span>
+              </div>
 
-              {item.summary && (
-                <Row label="AI summary">
-                  <p className="leading-relaxed text-muted">{item.summary}</p>
-                </Row>
-              )}
+              <div className="mb-5 flex gap-2">
+                {item.palette.map((c) => (
+                  <span key={c} className="h-5 w-5 rounded-full ring-1 ring-white/15" style={{ background: c }} />
+                ))}
+              </div>
 
-              {item.ai && (
-                <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface/60 p-3">
-                  <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-accent">
-                    <Sparkle width={13} height={13} /> Generated asset
+              <div className="flex flex-col gap-4">
+                <Field label="Name">
+                  <input
+                    defaultValue={item.title}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[13.5px] text-white outline-none focus:border-white/25"
+                  />
+                </Field>
+                <Field label="URL">
+                  <input
+                    defaultValue={item.url ?? ''}
+                    placeholder="https://…"
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[13.5px] text-white outline-none placeholder:text-white/30 focus:border-white/25"
+                  />
+                </Field>
+
+                {item.note ? (
+                  <Field label="Note">
+                    <p className="text-[13px] italic text-white/70">"{item.note}"</p>
+                  </Field>
+                ) : (
+                  <button className="self-start text-[13px] text-white/55 transition hover:text-white">+ Add a note</button>
+                )}
+
+                <div>
+                  <p className="mb-2 flex items-center gap-1.5 text-[12px] text-white/45">
+                    <Sparkle size={13} /> Image Prompt
                   </p>
-                  <p className="text-[12.5px] leading-relaxed text-ink">“{item.ai.prompt}”</p>
-                  <p className="text-[12px] text-muted">model: {item.ai.model}</p>
-                  {sourceRef && (
-                    <button
-                      onClick={() => onOpen(sourceRef)}
-                      className="mt-1 flex items-center gap-2 rounded-lg border border-border bg-surface p-1.5 pr-3 text-left transition hover:-translate-y-0.5"
-                    >
-                      <span
-                        className="h-8 w-8 overflow-hidden rounded-md"
-                        style={{ background: sourceRef.palette[1] }}
-                      >
-                        {sourceRef.media && (
-                          <img src={sourceRef.media} alt="" className="h-full w-full object-cover" />
-                        )}
-                      </span>
-                      <span className="text-[12px]">
-                        <span className="block text-faint">derived from</span>
-                        <span className="text-ink">{sourceRef.title}</span>
-                      </span>
+                  {item.ai ? (
+                    <p className="rounded-lg border border-white/10 bg-white/5 p-2.5 text-[12.5px] leading-relaxed text-white/80">
+                      {item.ai.prompt}
+                    </p>
+                  ) : (
+                    <button className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[13px] text-white/70 transition hover:text-white">
+                      Generate prompt
                     </button>
                   )}
                 </div>
-              )}
 
-              <div className="flex flex-wrap gap-4">
-                <Row label="Palette">
-                  <div className="flex gap-1.5">
-                    {item.palette.map((c) => (
-                      <span
-                        key={c}
-                        className="h-6 w-6 rounded-md border border-border"
-                        style={{ background: c }}
-                        title={c}
-                      />
-                    ))}
+                <div>
+                  <p className="mb-2 flex items-center gap-1.5 text-[12px] text-white/45">
+                    <Folder size={13} /> Collections
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.projectIds.map((pid) => {
+                      const p = projectById(pid);
+                      if (!p) return null;
+                      return (
+                        <span key={pid} className="flex items-center gap-1.5 rounded-full bg-white/8 px-2.5 py-1 text-[12px] text-white/85">
+                          <Folder size={12} /> {p.name}
+                          <button onClick={() => removeFromProject(item.id, pid)} className="text-white/40 hover:text-white">
+                            <Close size={12} />
+                          </button>
+                        </span>
+                      );
+                    })}
+                    <button className="rounded-full border border-dashed border-white/20 px-2.5 py-1 text-[12px] text-white/50 hover:text-white">+ Add</button>
                   </div>
-                </Row>
-                {item.projectIds.length > 0 && (
-                  <Row label="In projects">
-                    <div className="flex flex-wrap gap-1.5">
-                      {item.projectIds.map((pid) => {
-                        const p = projectById(pid);
-                        if (!p) return null;
-                        return (
-                          <span
-                            key={pid}
-                            className="flex items-center gap-1.5 rounded-full bg-surface-2 px-2 py-0.5 text-[12px]"
-                          >
-                            <span
-                              className="h-2 w-2 rounded-full"
-                              style={{ background: p.color }}
-                            />
-                            {p.name}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </Row>
-                )}
-              </div>
+                </div>
 
-              {item.tags.length > 0 && (
-                <Row label="Tags">
+                <div>
+                  <p className="mb-2 flex items-center gap-1.5 text-[12px] text-white/45">
+                    <Hash size={13} /> Tags
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
                     {item.tags.map((t) => (
-                      <span
-                        key={t}
-                        className="rounded-full bg-surface-2 px-2 py-0.5 text-[12px] text-muted"
-                      >
-                        #{t}
-                      </span>
+                      <span key={t} className="rounded-full bg-white/8 px-2.5 py-1 text-[12px] text-white/85">#{t}</span>
                     ))}
+                    <button className="rounded-full border border-dashed border-white/20 px-2.5 py-1 text-[12px] text-white/50 hover:text-white">+ Add</button>
+                    <button className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[12px] text-white/60 hover:text-white">Auto-tag</button>
                   </div>
-                </Row>
-              )}
-
-              {related.length > 0 && (
-                <Row label="Related · semantic">
-                  <div className="flex gap-2 overflow-x-auto pb-1">
-                    {related.map((r) => (
-                      <button
-                        key={r.id}
-                        onClick={() => onOpen(r)}
-                        title={r.title}
-                        className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border transition hover:-translate-y-0.5"
-                        style={{ background: r.palette[1] }}
-                      >
-                        {(r.media || r.poster) && r.type !== 'code' ? (
-                          <img
-                            src={r.type === 'video' ? r.poster : r.media}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <span
-                            className="block h-full w-full"
-                            style={{
-                              background: `linear-gradient(140deg, ${r.palette[0]}, ${r.palette[1]})`,
-                            }}
-                          />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </Row>
-              )}
-            </div>
-          </motion.div>
+                </div>
+              </div>
+            </aside>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

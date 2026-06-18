@@ -10,7 +10,7 @@
       (function () {
         try {
           var saved = localStorage.getItem('forage.theme');
-          var dark = saved ? saved === 'dark' : true; // gallery-dark by default
+          var dark = saved === 'dark'; // light by default (GatherOS-style)
           if (dark) document.documentElement.classList.add('dark');
         } catch (e) {}
       })();

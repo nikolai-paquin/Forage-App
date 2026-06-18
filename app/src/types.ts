@@ -56,12 +56,13 @@ export interface Project {
   status: 'active' | 'archived';
 }
 
+export type LibraryTab = 'all' | 'bookmarks' | 'unsorted' | 'trash';
+
 export type View =
-  | { kind: 'home' }
-  | { kind: 'library' }
-  | { kind: 'basket' }
-  | { kind: 'project'; projectId: string }
-  | { kind: 'storyboard'; storyboardId: string };
+  | { kind: 'library'; tab: LibraryTab }
+  | { kind: 'collections' }
+  | { kind: 'collection'; id: string }
+  | { kind: 'spaces' };
 
 export type TypeFilter = ItemType | 'all';
 

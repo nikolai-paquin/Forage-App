@@ -7,78 +7,64 @@
 /* Enable class-based dark mode (toggled on <html class="dark">). */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ---- Design tokens: warm bone (light) & premium near-black (dark) ---- */
-/* Accent: warm olive green — a nod to "Forage". */
+/* ---- Design tokens: GatherOS-style neutral monochrome (black is the accent) ---- */
 :root {
-  --canvas: #f1f0e8;
-  --surface: #faf9f3;
-  --elevated: #fdfcf7;
-  --surface-2: #e7e5d8;
-  --border: #e0ddce;
-  --border-strong: #cdc9b6;
-  --ink: #1c1d16;
-  --muted: #706f60;
-  --faint: #a8a593;
+  --canvas: #f4f5f6;
+  --surface: #ffffff;
+  --elevated: #ffffff;
+  --surface-2: #eef0f1;
+  --border: #e5e7e9;
+  --border-strong: #d4d7da;
+  --ink: #16171b;
+  --muted: #696c73;
+  --faint: #9a9ea5;
 
-  --accent: #6c7440;
-  --accent-2: #9a8f43; /* warmer khaki/gold gradient partner */
-  --accent-bright: #818b4c;
-  --accent-ink: #f7f8ef;
-  --accent-soft: rgba(108, 116, 64, 0.13);
-  --glow: rgba(108, 116, 64, 0.4);
+  --accent: #16171b;
+  --accent-2: #16171b;
+  --accent-bright: #2b2c31;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(20, 21, 26, 0.06);
+  --glow: rgba(20, 21, 26, 0.18);
 
-  --glass-bg: rgba(250, 249, 243, 0.62);
-  --glass-brd: rgba(255, 255, 255, 0.7);
-  --glass-edge: rgba(28, 29, 22, 0.07);
+  --glass-bg: rgba(255, 255, 255, 0.82);
+  --glass-brd: rgba(255, 255, 255, 0.9);
+  --glass-edge: rgba(20, 21, 26, 0.06);
+  --dither-ink: rgba(20, 21, 26, 0.4);
 
-  --dither-ink: rgba(28, 29, 22, 0.5);
-
-  --shadow-tile: 0 1px 2px rgba(28, 29, 22, 0.05), 0 10px 28px rgba(28, 29, 22, 0.07);
-  --shadow-pop: 0 18px 60px rgba(28, 29, 22, 0.2);
-  --toolbar: rgba(241, 240, 232, 0.7);
-  /* Mercury-style soft gradient wash — muted, warm, restrained. */
-  --wash:
-    radial-gradient(55% 55% at 12% 8%, rgba(214, 162, 120, 0.2), transparent 70%),
-    radial-gradient(50% 50% at 88% 12%, rgba(170, 150, 205, 0.16), transparent 70%),
-    radial-gradient(55% 60% at 78% 88%, rgba(150, 178, 200, 0.15), transparent 72%),
-    radial-gradient(48% 52% at 22% 92%, rgba(150, 160, 100, 0.12), transparent 72%);
-  --grid-line: rgba(28, 29, 22, 0.05);
+  --shadow-tile: 0 1px 2px rgba(16, 17, 21, 0.04), 0 6px 20px rgba(16, 17, 21, 0.06);
+  --shadow-pop: 0 18px 56px rgba(16, 17, 21, 0.18);
+  --shadow-bar: 0 2px 18px rgba(16, 17, 21, 0.1);
+  --toolbar: rgba(244, 245, 246, 0.8);
   color-scheme: light;
 }
 
 .dark {
-  --canvas: #0a0a0b;
-  --surface: #141416;
-  --elevated: #1a1a1d;
-  --surface-2: #202024;
-  --border: #232327;
-  --border-strong: #34343b;
-  --ink: #f3f3f1;
-  --muted: #9d9da2;
-  --faint: #5c5c63;
+  --canvas: #0c0d0f;
+  --surface: #151619;
+  --elevated: #1a1b1e;
+  --surface-2: #202225;
+  --border: #26282c;
+  --border-strong: #34373c;
+  --ink: #f2f3f5;
+  --muted: #9a9da3;
+  --faint: #62656c;
 
-  --accent: #b7c578;
-  --accent-2: #cabf6f;
-  --accent-bright: #c4d089;
-  --accent-ink: #111210;
-  --accent-soft: rgba(183, 197, 120, 0.15);
-  --glow: rgba(183, 197, 120, 0.3);
+  --accent: #f2f3f5;
+  --accent-2: #f2f3f5;
+  --accent-bright: #ffffff;
+  --accent-ink: #15161a;
+  --accent-soft: rgba(242, 243, 245, 0.08);
+  --glow: rgba(242, 243, 245, 0.14);
 
-  --glass-bg: rgba(20, 20, 22, 0.62);
+  --glass-bg: rgba(21, 22, 25, 0.82);
   --glass-brd: rgba(255, 255, 255, 0.06);
   --glass-edge: rgba(0, 0, 0, 0.5);
+  --dither-ink: rgba(242, 243, 245, 0.4);
 
-  --dither-ink: rgba(243, 243, 241, 0.4);
-
-  --shadow-tile: 0 1px 2px rgba(0, 0, 0, 0.5), 0 12px 32px rgba(0, 0, 0, 0.55);
-  --shadow-pop: 0 24px 80px rgba(0, 0, 0, 0.7);
-  --toolbar: rgba(10, 10, 11, 0.68);
-  --wash:
-    radial-gradient(55% 55% at 12% 8%, rgba(150, 110, 78, 0.16), transparent 70%),
-    radial-gradient(50% 50% at 88% 12%, rgba(120, 105, 152, 0.14), transparent 70%),
-    radial-gradient(55% 60% at 78% 88%, rgba(92, 120, 142, 0.13), transparent 72%),
-    radial-gradient(48% 52% at 22% 92%, rgba(112, 122, 76, 0.11), transparent 72%);
-  --grid-line: rgba(237, 238, 226, 0.045);
+  --shadow-tile: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-pop: 0 22px 64px rgba(0, 0, 0, 0.66);
+  --shadow-bar: 0 2px 18px rgba(0, 0, 0, 0.5);
+  --toolbar: rgba(12, 13, 15, 0.8);
   color-scheme: dark;
 }
 
