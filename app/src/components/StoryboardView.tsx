@@ -111,7 +111,7 @@ function FramePicker({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.98 }}
         transition={{ type: 'spring', stiffness: 360, damping: 30 }}
-        className="relative max-h-[70vh] w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-elevated"
+        className="glass relative max-h-[70vh] w-full max-w-2xl overflow-hidden rounded-2xl"
         style={{ boxShadow: 'var(--shadow-pop)' }}
       >
         <div className="flex items-center justify-between border-b border-border px-4 py-3">

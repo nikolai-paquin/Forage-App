@@ -26,14 +26,14 @@ function NavRow({
       {active && (
         <motion.span
           layoutId="nav-active"
-          className="absolute inset-0 -z-10 rounded-lg bg-surface-2"
+          className="absolute inset-0 z-0 rounded-lg bg-surface-2"
           transition={{ type: 'spring', stiffness: 500, damping: 40 }}
         />
       )}
-      <span className={active ? 'text-accent' : ''}>{icon}</span>
-      <span className="flex-1 text-left">{label}</span>
+      <span className={`relative z-[1] ${active ? 'text-accent' : ''}`}>{icon}</span>
+      <span className="relative z-[1] flex-1 text-left">{label}</span>
       {badge ? (
-        <span className="rounded-full bg-surface-2 px-1.5 text-[11px] tabular-nums text-muted">
+        <span className="relative z-[1] rounded-full bg-surface-2 px-1.5 text-[11px] tabular-nums text-muted">
           {badge}
         </span>
       ) : null}

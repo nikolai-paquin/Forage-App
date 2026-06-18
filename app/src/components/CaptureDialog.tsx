@@ -68,7 +68,7 @@ export function CaptureDialog({ open, onClose }: { open: boolean; onClose: () =>
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 420, damping: 30 }}
-            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-elevated"
+            className="glass relative w-full max-w-lg overflow-hidden rounded-2xl"
             style={{ boxShadow: 'var(--shadow-pop)' }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit();

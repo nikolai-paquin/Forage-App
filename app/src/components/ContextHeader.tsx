@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item, TypeFilter } from '../types';
 import { Clock, Layers } from './icons';
+import { DitherGlow } from './DitherGlow';
 import { timeAgo } from '../lib/util';
 
 const FILTERS: { id: TypeFilter; label: string }[] = [
@@ -32,12 +33,12 @@ function FilterChips() {
             {active && (
               <motion.span
                 layoutId="filter-active"
-                className="absolute inset-0 -z-10 rounded-full"
+                className="absolute inset-0 z-0 rounded-full"
                 style={{ background: 'var(--accent)' }}
                 transition={{ type: 'spring', stiffness: 500, damping: 38 }}
               />
             )}
-            {f.label}
+            <span className="relative z-[1]">{f.label}</span>
           </button>
         );
       })}
@@ -55,7 +56,7 @@ function ResurfacedStrip({
   const picks = [...items].sort((a, b) => a.lastSeenAt - b.lastSeenAt).slice(0, 3);
   if (picks.length < 2) return null;
   return (
-    <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-surface/60 px-3.5 py-2.5">
+    <div className="glass mt-4 flex items-center gap-3 rounded-xl px-3.5 py-2.5">
       <Clock width={16} height={16} className="shrink-0 text-accent" />
       <div className="min-w-0">
         <p className="text-[12.5px] font-medium text-ink">Resurfaced for you</p>
@@ -116,7 +117,8 @@ export function ContextHeader({ onOpen }: { onOpen: (i: Item) => void }) {
       : [];
 
   return (
-    <div className="px-5 pb-3 pt-5">
+    <div className="relative isolate px-5 pb-3 pt-5">
+      <DitherGlow className="-left-10 -top-8 h-44 w-72 opacity-50" />
       <div className="flex items-center gap-2.5">
         {accent && (
           <span className="h-3 w-3 rounded-full" style={{ background: accent }} />

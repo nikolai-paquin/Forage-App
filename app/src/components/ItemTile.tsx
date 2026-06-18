@@ -40,8 +40,8 @@ function VectorArt({ palette }: { palette: string[] }) {
 
 function CodeArt({ item }: { item: Item }) {
   return (
-    <div className="h-full w-full overflow-hidden bg-[#16161c] p-3.5">
-      <pre className="text-[10.5px] leading-[1.5] text-[#c7d0e0]">
+    <div className="h-full w-full overflow-hidden bg-[#14150f] p-3.5">
+      <pre className="font-mono text-[10.5px] leading-[1.5] text-[#cdd4b8]">
         <code>{item.code?.split('\n').slice(0, 9).join('\n')}</code>
       </pre>
     </div>
@@ -171,7 +171,7 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
         }}
         className={`absolute right-2.5 top-2.5 z-[3] grid h-7 w-7 place-items-center rounded-full backdrop-blur-md transition ${
           item.favorite
-            ? 'bg-white/90 text-[#c2603f]'
+            ? 'bg-white/90 text-accent'
             : 'bg-black/35 text-white opacity-0 group-hover:opacity-100'
         }`}
       >

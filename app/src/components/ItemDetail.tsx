@@ -20,7 +20,7 @@ function Media({ item }: { item: Item }) {
     );
   if (item.type === 'code')
     return (
-      <pre className="max-h-[68vh] overflow-auto bg-[#16161c] p-5 text-[12.5px] leading-relaxed text-[#c7d0e0]">
+      <pre className="max-h-[68vh] overflow-auto bg-[#14150f] p-5 font-mono text-[12.5px] leading-relaxed text-[#cdd4b8]">
         <code>{item.code}</code>
       </pre>
     );
@@ -92,7 +92,7 @@ export function ItemDetail({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 10 }}
             transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-            className="relative grid max-h-full w-full max-w-4xl grid-rows-[auto] overflow-hidden rounded-2xl border border-border bg-elevated md:grid-cols-[1.55fr_1fr]"
+            className="glass relative grid max-h-full w-full max-w-4xl grid-rows-[auto] overflow-hidden rounded-2xl md:grid-cols-[1.55fr_1fr]"
             style={{ boxShadow: 'var(--shadow-pop)' }}
           >
             <button

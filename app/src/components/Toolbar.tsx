@@ -9,8 +9,8 @@ export function Toolbar({ onCapture }: { onCapture: () => void }) {
 
   return (
     <div
-      className="sticky top-0 z-30 flex items-center gap-3 border-b border-border px-5 py-2.5 backdrop-blur-xl"
-      style={{ background: 'var(--toolbar)' }}
+      className="sticky top-0 z-30 flex items-center gap-3 border-b border-border px-5 py-2.5 backdrop-blur-2xl backdrop-saturate-150"
+      style={{ background: 'var(--glass-bg)' }}
     >
       <label className="group flex h-9 max-w-md flex-1 items-center gap-2 rounded-xl border border-border bg-surface px-3 transition focus-within:border-border-strong">
         <Search width={16} height={16} className="text-faint" />
