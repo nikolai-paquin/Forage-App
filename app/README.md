@@ -26,7 +26,11 @@ Other scripts: `npm run build` (type-check + production build), `npm run preview
 | Projects with brief + **"Resurfaced for you"** strip | `components/ContextHeader.tsx`, `components/Sidebar.tsx` | F4/F9 |
 | **Storyboard mode** — drag-to-reorder frames, editable shot beats, per-frame AI prompt, frame picker, export shot list | `components/StoryboardView.tsx` | F11 |
 | Light/dark theming as first-class equals, system-aware, no-flash | `index.css`, `lib/theme.ts` | F5 |
-| Search + type filters | `components/Toolbar.tsx`, `components/ContextHeader.tsx` | F6 |
+| **Command palette (⌘K)** — full-text search across saves + jump-to-view + run-command, keyboard navigable | `components/SearchOverlay.tsx` | F6 |
+| **Backup & restore** — export/import the whole library as portable JSON | `lib/backup.ts`, `components/SettingsModal.tsx` (Data) | §0 |
+| **Real AI backend (optional)** — point at a Cloudflare Worker for Claude-powered auto-tag/prompts; falls back to on-device heuristics | `lib/ai.ts`, `../server/` | F10 |
+| **PWA** — installable, offline app-shell caching, mobile share target | `public/sw.js`, `public/manifest.webmanifest`, `lib/pwa.ts` | §10 |
+| **First-run onboarding** | `components/Onboarding.tsx` | — |
 | Local-first persistence (localStorage stands in for the SQLite source of truth) | `lib/store.tsx` | §0 |
 
 ## Try this
@@ -41,11 +45,18 @@ Other scripts: `npm run build` (type-check + production build), `npm run preview
    shot description, and **Add frame** from the project's items.
 6. Toggle **light/dark** in the top-right.
 
+## AI backend (optional)
+
+Auto-tag and Generate-prompt run on-device by default. To use a real model, deploy the
+Cloudflare Worker in [`../server`](../server) (`wrangler secret put ANTHROPIC_API_KEY && wrangler
+deploy`) and paste its URL into **Settings → AI Usage**. The key stays on the server; the app falls
+back to heuristics if the endpoint is unreachable.
+
 ## Not yet built (next milestones)
 
-Virtualized grid for 10k+ items, browser extension + mobile share-sheet capture, real AI
-tagging/embeddings/summaries, the Forage Digest surface, and the Tauri shell (the downloadable
-macOS app — built/verified on a Mac). See the PRD roadmap (§12).
+Virtualized grid for 10k+ items, real cross-device sync, embeddings-based semantic search, the
+Forage Digest surface, and a signed/auto-updating Tauri release (built/verified on a Mac). See the
+PRD roadmap (§12).
 
 ## Notes
 

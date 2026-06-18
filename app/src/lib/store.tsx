@@ -223,7 +223,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       .filter((it) => tagFilter === 'all' || it.tags.includes(tagFilter))
       .filter((it) => {
         if (!q) return true;
-        const hay = [it.title, it.source, it.note, it.summary, ...it.tags]
+        const hay = [it.title, it.source, it.note, it.summary, it.url, it.code, it.ai?.prompt, ...it.tags]
           .filter(Boolean)
           .join(' ')
           .toLowerCase();

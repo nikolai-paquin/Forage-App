@@ -12,17 +12,21 @@ import { CaptureDialog } from './components/CaptureDialog';
 import { SearchOverlay } from './components/SearchOverlay';
 import { ResurfacePanel } from './components/ResurfacePanel';
 import { SettingsModal } from './components/SettingsModal';
+import { Onboarding } from './components/Onboarding';
 import { Fab } from './components/Fab';
 import { BulkBar } from './components/BulkBar';
 import { detectFromInput } from './lib/util';
 import { extractPalette } from './lib/color';
 import { consumeShareUrl } from './lib/ingest';
+import { exportBackup } from './lib/backup';
+import { useTheme } from './lib/theme';
 import { toast } from './lib/toast';
 import { Toaster } from './components/Toaster';
 import type { Item } from './types';
 
 function Workspace() {
-  const { view, markSeen, addItem, updateItem, setView } = useForage();
+  const { view, markSeen, addItem, updateItem, setView, createSpace } = useForage();
+  const { dark, toggle } = useTheme();
   const [selected, setSelected] = useState<Item | null>(null);
   const [capture, setCapture] = useState(false);
   const [search, setSearch] = useState(false);
@@ -173,9 +177,26 @@ function Workspace() {
 
       <ItemDetail item={selected} onClose={() => setSelected(null)} onOpen={open} />
       <CaptureDialog open={capture} onClose={() => setCapture(false)} />
-      <SearchOverlay open={search} onClose={() => setSearch(false)} onOpenItem={open} />
+      <SearchOverlay
+        open={search}
+        onClose={() => setSearch(false)}
+        onOpenItem={open}
+        dark={dark}
+        actions={{
+          capture: () => setCapture(true),
+          settings: () => setSettings(true),
+          resurface: () => setResurface(true),
+          exportBackup: () => {
+            exportBackup();
+            toast('Backup downloaded');
+          },
+          toggleTheme: toggle,
+          newSpace: createSpace,
+        }}
+      />
       <ResurfacePanel open={resurface} onClose={() => setResurface(false)} onOpenItem={open} />
       <SettingsModal open={settings} onClose={() => setSettings(false)} />
+      <Onboarding onCapture={() => setCapture(true)} />
     </div>
   );
 }

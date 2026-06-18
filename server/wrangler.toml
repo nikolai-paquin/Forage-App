@@ -1,0 +1,10 @@
+name = "forage-ai"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Optional: override the model (defaults to claude-haiku-4-5-20251001 in worker.js).
+# [vars]
+# MODEL = "claude-sonnet-4-6"
+
+# Set the API key as a secret (never commit it):
+#   wrangler secret put ANTHROPIC_API_KEY

@@ -1,13 +1,20 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTheme } from '../lib/theme';
 import { useForage } from '../lib/store';
+import { exportBackup, importBackup, storageStats, formatBytes } from '../lib/backup';
+import { getAiEndpoint, setAiEndpoint } from '../lib/ai';
+import { usePwaInstall } from '../lib/pwa';
+import { toast } from '../lib/toast';
 import type { FilterEntry } from '../types';
 import {
   Camera,
+  Check,
   Close,
   Database,
   Download,
+  FileDown,
+  FileUp,
   Filter,
   Hash,
   Info,
@@ -17,6 +24,7 @@ import {
   Sparkle,
   User,
   Volume2,
+  Wand,
 } from './icons';
 
 const NAV = [
@@ -135,6 +143,28 @@ function Row({ label, value }: { label: string; value: string }) {
 export function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [active, setActive] = useState('account');
   const { dark, toggle } = useTheme();
+  const { canInstall, installed, promptInstall } = usePwaInstall();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [endpoint, setEndpoint] = useState(getAiEndpoint());
+  const [savedEndpoint, setSavedEndpoint] = useState(false);
+  const stats = storageStats();
+
+  const handleImport = async (file?: File) => {
+    if (!file) return;
+    try {
+      const { items: n } = await importBackup(file);
+      toast(`Restored ${n} saves — reloading…`);
+      setTimeout(() => window.location.reload(), 700);
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Import failed');
+    }
+  };
+
+  const saveEndpoint = () => {
+    setAiEndpoint(endpoint);
+    setSavedEndpoint(true);
+    setTimeout(() => setSavedEndpoint(false), 1600);
+  };
   const {
     items,
     fileTypes,
@@ -301,6 +331,133 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                   >
                     Sign in
                   </button>
+                </>
+              ) : active === 'data' ? (
+                <>
+                  <h2 className="text-[24px] font-semibold tracking-tight">Data</h2>
+                  <p className="mt-2 mb-6 max-w-md text-[13.5px] text-muted">
+                    Your library lives in this browser. Export a backup regularly — clearing your
+                    browser data would otherwise wipe it.
+                  </p>
+
+                  <div className="mb-6 grid grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-border bg-surface p-4">
+                      <p className="text-[22px] font-semibold tracking-tight text-ink">{stats.items}</p>
+                      <p className="text-[12.5px] text-muted">saves stored</p>
+                    </div>
+                    <div className="rounded-xl border border-border bg-surface p-4">
+                      <p className="text-[22px] font-semibold tracking-tight text-ink">
+                        {formatBytes(stats.bytes)}
+                      </p>
+                      <p className="text-[12.5px] text-muted">on this device</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2.5">
+                    <button
+                      onClick={() => {
+                        exportBackup();
+                        toast('Backup downloaded');
+                      }}
+                      className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink"
+                      style={{ background: 'var(--ink)' }}
+                    >
+                      <FileDown size={15} /> Export backup
+                    </button>
+                    <button
+                      onClick={() => fileRef.current?.click()}
+                      className="flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2 text-[13px] font-medium text-ink transition hover:bg-surface-2"
+                    >
+                      <FileUp size={15} /> Import backup
+                    </button>
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="application/json,.json"
+                      className="hidden"
+                      onChange={(e) => {
+                        handleImport(e.target.files?.[0]);
+                        e.target.value = '';
+                      }}
+                    />
+                  </div>
+                  <p className="mt-3 flex items-start gap-2 text-[12.5px] text-faint">
+                    <Info size={14} className="mt-0.5 shrink-0" />
+                    <span>Importing replaces your current library. Export first if unsure.</span>
+                  </p>
+                </>
+              ) : active === 'ai' ? (
+                <>
+                  <h2 className="text-[24px] font-semibold tracking-tight">AI Usage</h2>
+                  <p className="mt-2 mb-6 max-w-md text-[13.5px] text-muted">
+                    Auto-tag and prompt generation run on-device by default. Point Forage at your own
+                    backend endpoint to use a real model — your API key stays on the server, never in
+                    this app.
+                  </p>
+
+                  <label className="mb-1.5 block text-[13px] font-medium text-ink">Model endpoint URL</label>
+                  <div className="flex gap-2">
+                    <input
+                      value={endpoint}
+                      onChange={(e) => setEndpoint(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && saveEndpoint()}
+                      placeholder="https://your-worker.workers.dev"
+                      className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-ink outline-none placeholder:text-faint focus:border-border-strong"
+                    />
+                    <button
+                      onClick={saveEndpoint}
+                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium text-accent-ink"
+                      style={{ background: 'var(--ink)' }}
+                    >
+                      {savedEndpoint ? <Check size={14} /> : <Wand size={14} />}
+                      {savedEndpoint ? 'Saved' : 'Save'}
+                    </button>
+                  </div>
+                  <div className="mt-3 flex items-center gap-2 text-[12.5px]">
+                    <span
+                      className={`h-2 w-2 rounded-full ${endpoint.trim() ? 'bg-emerald-500' : 'bg-faint'}`}
+                    />
+                    <span className="text-muted">
+                      {endpoint.trim() ? 'Using your model endpoint' : 'Using on-device heuristics'}
+                    </span>
+                  </div>
+                  <p className="mt-4 flex items-start gap-2 text-[12.5px] text-faint">
+                    <Info size={14} className="mt-0.5 shrink-0" />
+                    <span>
+                      A ready-to-deploy Cloudflare Worker that calls Claude lives in{' '}
+                      <code className="rounded bg-surface-2 px-1 py-0.5 text-[11.5px]">/server</code> of
+                      the repo. Deploy it, set your API key as a secret, then paste its URL here.
+                    </span>
+                  </p>
+                </>
+              ) : active === 'updates' ? (
+                <>
+                  <h2 className="text-[24px] font-semibold tracking-tight">Updates</h2>
+                  <p className="mt-2 mb-6 max-w-md text-[13.5px] text-muted">
+                    Install Forage as an app for a dedicated window, dock icon, and the mobile share
+                    sheet.
+                  </p>
+                  {installed ? (
+                    <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-[13.5px] text-ink">
+                      <Check size={16} className="text-emerald-500" /> Forage is installed on this device.
+                    </div>
+                  ) : canInstall ? (
+                    <button
+                      onClick={promptInstall}
+                      className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink"
+                      style={{ background: 'var(--ink)' }}
+                    >
+                      <Download size={15} /> Install Forage
+                    </button>
+                  ) : (
+                    <p className="flex items-start gap-2 text-[13px] text-muted">
+                      <Info size={15} className="mt-0.5 shrink-0" />
+                      <span>
+                        Install isn’t available right now. On desktop Chrome/Edge, look for the install
+                        icon in the address bar; on iOS Safari, use Share → Add to Home Screen.
+                      </span>
+                    </p>
+                  )}
                 </>
               ) : (
                 <>

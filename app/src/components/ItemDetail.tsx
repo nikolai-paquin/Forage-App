@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item } from '../types';
-import { suggestTags, generatePrompt } from '../lib/ai';
+import { suggestTagsAsync, generatePromptAsync, aiEnabled } from '../lib/ai';
 import { extractPalette } from '../lib/color';
 
 function TagAdder({ onAdd }: { onAdd: (t: string) => void }) {
@@ -49,6 +49,7 @@ import {
   Plus,
   Sparkle,
   Trash2,
+  Loader,
 } from './icons';
 
 function SourcePicker({
@@ -174,6 +175,8 @@ export function ItemDetail({
   const { visibleItems, items, itemById, projectById, removeFromProject, updateItem, addTag, removeTag, trashItem, setDerivedFrom, outputsOf } =
     useForage();
   const [linking, setLinking] = useState(false);
+  const [busy, setBusy] = useState<null | 'tags' | 'prompt'>(null);
+  const usingModel = aiEnabled();
 
   const list = visibleItems.length ? visibleItems : item ? [item] : [];
   const idx = item ? list.findIndex((i) => i.id === item.id) : -1;
@@ -346,6 +349,7 @@ export function ItemDetail({
                 <div>
                   <p className="mb-2 flex items-center gap-1.5 text-[12px] text-white/45">
                     <Sparkle size={13} /> Image Prompt
+                    {usingModel && <span className="text-white/30">· model</span>}
                   </p>
                   {item.ai?.prompt ? (
                     <>
@@ -353,30 +357,43 @@ export function ItemDetail({
                         {item.ai.prompt}
                       </p>
                       <button
-                        onClick={() =>
+                        disabled={busy === 'prompt'}
+                        onClick={async () => {
+                          setBusy('prompt');
+                          const prompt = await generatePromptAsync(item);
                           updateItem(item.id, {
                             ai: {
-                              prompt: generatePrompt(item),
-                              model: item.ai?.model || 'forage-local',
+                              prompt,
+                              model: usingModel ? 'forage-remote' : 'forage-local',
                               sourceRefId: item.ai?.sourceRefId,
                             },
-                          })
-                        }
-                        className="mt-1.5 text-[12px] text-white/45 transition hover:text-white"
+                          });
+                          setBusy(null);
+                        }}
+                        className="mt-1.5 text-[12px] text-white/45 transition hover:text-white disabled:opacity-50"
                       >
-                        Regenerate
+                        {busy === 'prompt' ? 'Regenerating…' : 'Regenerate'}
                       </button>
                     </>
                   ) : (
                     <button
-                      onClick={() =>
+                      disabled={busy === 'prompt'}
+                      onClick={async () => {
+                        setBusy('prompt');
+                        const prompt = await generatePromptAsync(item);
                         updateItem(item.id, {
-                          ai: { prompt: generatePrompt(item), model: 'forage-local' },
-                        })
-                      }
-                      className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[13px] text-white/70 transition hover:text-white"
+                          ai: { prompt, model: usingModel ? 'forage-remote' : 'forage-local' },
+                        });
+                        setBusy(null);
+                      }}
+                      className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[13px] text-white/70 transition hover:text-white disabled:opacity-50"
                     >
-                      Generate prompt
+                      {busy === 'prompt' ? (
+                        <Loader size={13} className="animate-spin" />
+                      ) : (
+                        <Sparkle size={13} />
+                      )}
+                      {busy === 'prompt' ? 'Generating…' : 'Generate prompt'}
                     </button>
                   )}
                 </div>
@@ -420,10 +437,21 @@ export function ItemDetail({
                     ))}
                     <TagAdder onAdd={(t) => addTag(item.id, t)} />
                     <button
-                      onClick={() => suggestTags(item).forEach((t) => addTag(item.id, t))}
-                      className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[12px] text-white/60 hover:text-white"
+                      disabled={busy === 'tags'}
+                      onClick={async () => {
+                        setBusy('tags');
+                        const tags = await suggestTagsAsync(item);
+                        tags.forEach((t) => addTag(item.id, t));
+                        setBusy(null);
+                      }}
+                      className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[12px] text-white/60 hover:text-white disabled:opacity-50"
                     >
-                      <Sparkle size={11} /> Auto-tag
+                      {busy === 'tags' ? (
+                        <Loader size={11} className="animate-spin" />
+                      ) : (
+                        <Sparkle size={11} />
+                      )}
+                      {busy === 'tags' ? 'Tagging…' : 'Auto-tag'}
                     </button>
                   </div>
                 </div>

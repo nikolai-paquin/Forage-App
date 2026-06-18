@@ -51,4 +51,13 @@ export {
   ZoomOut,
   StickyNote,
   Minus,
+  Command,
+  CornerDownLeft,
+  FileDown,
+  FileUp,
+  Keyboard,
+  WandSparkles as Wand,
+  Loader as Loader,
+  Check,
+  Share2,
 } from 'lucide-react';

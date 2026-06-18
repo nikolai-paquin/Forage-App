@@ -1,8 +1,94 @@
-// Local "AI assist" heuristics. Pure client-side — structured so a real model
-// (e.g. a Claude call) can replace suggestTags / generatePrompt later.
+// "AI assist" for tags and prompts. Two tiers:
+//   1. Local heuristics (instant, offline, always available) — suggestTags / generatePrompt.
+//   2. A real model, when the user points Forage at a backend endpoint (see /server).
+//      The API key lives in that endpoint, never in this client.
+// The async wrappers try the endpoint and fall back to heuristics on any failure,
+// so the UI stays responsive whether or not a backend is configured.
 import type { Item } from '../types';
 import { colorName } from './color';
 import { sourceLabel } from './util';
+
+const ENDPOINT_KEY = 'forage.ai.endpoint';
+
+export function getAiEndpoint(): string {
+  try {
+    return localStorage.getItem(ENDPOINT_KEY)?.trim() ?? '';
+  } catch {
+    return '';
+  }
+}
+
+export function setAiEndpoint(url: string) {
+  try {
+    const v = url.trim();
+    if (v) localStorage.setItem(ENDPOINT_KEY, v);
+    else localStorage.removeItem(ENDPOINT_KEY);
+  } catch {
+    /* non-fatal */
+  }
+}
+
+export function aiEnabled(): boolean {
+  return !!getAiEndpoint();
+}
+
+/** Trim an item down to just what the model needs (no media blobs). */
+function itemContext(item: Item) {
+  return {
+    title: item.title,
+    type: item.type,
+    source: item.source ? sourceLabel(item.source) : undefined,
+    note: item.note,
+    summary: item.summary,
+    tags: item.tags,
+    palette: item.palette.map(colorName),
+  };
+}
+
+async function callBackend(task: 'tags' | 'prompt', item: Item, signal?: AbortSignal) {
+  const endpoint = getAiEndpoint();
+  if (!endpoint) throw new Error('no endpoint');
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ task, item: itemContext(item) }),
+    signal,
+  });
+  if (!res.ok) throw new Error(`backend ${res.status}`);
+  return res.json() as Promise<{ tags?: string[]; prompt?: string }>;
+}
+
+/** Suggest tags via the configured model, falling back to local heuristics. */
+export async function suggestTagsAsync(item: Item, signal?: AbortSignal): Promise<string[]> {
+  if (aiEnabled()) {
+    try {
+      const out = await callBackend('tags', item, signal);
+      if (out.tags?.length) {
+        const have = new Set(item.tags.map((t) => t.toLowerCase()));
+        const clean = out.tags
+          .map((t) => String(t).trim().toLowerCase())
+          .filter((t) => t && !have.has(t));
+        if (clean.length) return [...new Set(clean)].slice(0, 6);
+      }
+    } catch {
+      /* fall through to heuristics */
+    }
+  }
+  return suggestTags(item);
+}
+
+/** Compose a prompt via the configured model, falling back to local heuristics. */
+export async function generatePromptAsync(item: Item, signal?: AbortSignal): Promise<string> {
+  if (aiEnabled()) {
+    try {
+      const out = await callBackend('prompt', item, signal);
+      if (out.prompt?.trim()) return out.prompt.trim();
+    } catch {
+      /* fall through to heuristics */
+    }
+  }
+  return generatePrompt(item);
+}
 
 const STOP = new Set([
   'the', 'and', 'for', 'with', 'from', 'that', 'this', 'your', 'design', 'designs',
