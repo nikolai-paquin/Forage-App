@@ -1,11 +1,64 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
-import type { Item, SpaceElement } from '../types';
+import type { Item, SpaceDrawing, SpaceElement } from '../types';
 import { uid } from '../lib/util';
-import { ArrowLeft, Close, Image as ImageIcon, Maximize2, StickyNote, Trash2, ZoomIn, ZoomOut } from './icons';
+import {
+  ArrowLeft,
+  Close,
+  Image as ImageIcon,
+  Maximize2,
+  MousePointer2,
+  MoveUpRight,
+  Pencil,
+  StickyNote,
+  Trash2,
+  Undo2,
+  ZoomIn,
+  ZoomOut,
+} from './icons';
 
 const thumb = (i?: Item) => (i ? (i.type === 'video' ? i.poster : i.media) : undefined);
+
+const PEN_COLORS = ['#ef4444', '#1b1c1f', '#3b82f6', '#22c55e', '#eab308'];
+type Tool = 'select' | 'pen' | 'arrow';
+
+/** SVG path for a pen stroke or a line+arrowhead. */
+function drawingPath(d: SpaceDrawing): string {
+  if (d.kind === 'pen') return 'M ' + d.points.map((p) => `${p.x} ${p.y}`).join(' L ');
+  const s = d.points[0];
+  const e = d.points[d.points.length - 1];
+  const ang = Math.atan2(e.y - s.y, e.x - s.x);
+  const L = 16;
+  const sp = 0.42;
+  const a1 = { x: e.x - L * Math.cos(ang - sp), y: e.y - L * Math.sin(ang - sp) };
+  const a2 = { x: e.x - L * Math.cos(ang + sp), y: e.y - L * Math.sin(ang + sp) };
+  return `M ${s.x} ${s.y} L ${e.x} ${e.y} M ${a1.x} ${a1.y} L ${e.x} ${e.y} L ${a2.x} ${a2.y}`;
+}
+
+function DrawingLayer({ drawings, draft }: { drawings: SpaceDrawing[]; draft: SpaceDrawing | null }) {
+  const all = draft ? [...drawings, draft] : drawings;
+  return (
+    <svg
+      className="pointer-events-none absolute left-0 top-0"
+      style={{ overflow: 'visible', zIndex: 2147483000 }}
+      width={1}
+      height={1}
+    >
+      {all.map((d) => (
+        <path
+          key={d.id}
+          d={drawingPath(d)}
+          stroke={d.color}
+          strokeWidth={d.width}
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
+    </svg>
+  );
+}
 
 interface DragState {
   type: 'pan' | 'el' | 'resize';
@@ -25,6 +78,9 @@ export function SpaceCanvas() {
     addSpaceElement,
     updateSpaceElement,
     removeSpaceElement,
+    addDrawing,
+    removeLastDrawing,
+    clearDrawings,
     renameSpace,
     deleteSpace,
     setView,
@@ -37,19 +93,40 @@ export function SpaceCanvas() {
   const [zoom, setZoom] = useState(1);
   const [picker, setPicker] = useState(false);
   const [presenting, setPresenting] = useState(false);
+  const [tool, setTool] = useState<Tool>('select');
+  const [penColor, setPenColor] = useState(PEN_COLORS[0]);
+  const [draft, setDraft] = useState<SpaceDrawing | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const drag = useRef<DragState | null>(null);
+  const drawRef = useRef<SpaceDrawing | null>(null);
+  // Fresh values for the window pointer handlers without re-subscribing.
+  const liveRef = useRef({ pan, zoom, spaceId, addDrawing });
+  liveRef.current = { pan, zoom, spaceId, addDrawing };
 
   useEffect(() => {
     const move = (e: PointerEvent) => {
+      // Active pen/arrow stroke — append points in canvas coords.
+      if (drawRef.current) {
+        const r = containerRef.current?.getBoundingClientRect();
+        if (!r) return;
+        const { pan: lp, zoom: lz } = liveRef.current;
+        const p = { x: (e.clientX - r.left - lp.x) / lz, y: (e.clientY - r.top - lp.y) / lz };
+        const cur = drawRef.current;
+        if (cur.kind === 'arrow') cur.points[1] = p;
+        else cur.points.push(p);
+        setDraft({ ...cur, points: [...cur.points] });
+        return;
+      }
       const d = drag.current;
       if (!d) return;
       if (d.type === 'pan') {
         setPan({ x: d.ox + (e.clientX - d.sx), y: d.oy + (e.clientY - d.sy) });
       } else if (d.type === 'resize' && d.id) {
-        updateSpaceElement(spaceId, d.id, {
+        const patch: Partial<SpaceElement> = {
           w: Math.max(80, d.ox + (e.clientX - d.sx) / zoom),
-        });
+        };
+        if (d.oy >= 0) patch.h = Math.max(60, d.oy + (e.clientY - d.sy) / zoom);
+        updateSpaceElement(spaceId, d.id, patch);
       } else if (d.id) {
         updateSpaceElement(spaceId, d.id, {
           x: d.ox + (e.clientX - d.sx) / zoom,
@@ -58,6 +135,16 @@ export function SpaceCanvas() {
       }
     };
     const up = () => {
+      if (drawRef.current) {
+        const cur = drawRef.current;
+        const a = cur.points[0];
+        const b = cur.points[cur.points.length - 1];
+        const ok =
+          cur.kind === 'pen' ? cur.points.length >= 2 : a.x !== b.x || a.y !== b.y;
+        if (ok) liveRef.current.addDrawing(liveRef.current.spaceId, cur);
+        drawRef.current = null;
+        setDraft(null);
+      }
       drag.current = null;
     };
     window.addEventListener('pointermove', move);
@@ -83,13 +170,36 @@ export function SpaceCanvas() {
     drag.current = { type: 'pan', sx: e.clientX, sy: e.clientY, ox: pan.x, oy: pan.y };
   };
   const startEl = (e: React.PointerEvent, el: SpaceElement) => {
+    if (tool !== 'select') return; // let the press bubble to the canvas to draw
     e.stopPropagation();
     updateSpaceElement(spaceId, el.id, { z: nextZ() });
     drag.current = { type: 'el', id: el.id, sx: e.clientX, sy: e.clientY, ox: el.x, oy: el.y };
   };
   const startResize = (e: React.PointerEvent, el: SpaceElement) => {
     e.stopPropagation();
-    drag.current = { type: 'resize', id: el.id, sx: e.clientX, sy: e.clientY, ox: el.w, oy: 0 };
+    // Notes resize in both dimensions; items keep their image aspect (width only).
+    const oy = el.kind === 'note' ? (el.h ?? 120) : -1;
+    drag.current = { type: 'resize', id: el.id, sx: e.clientX, sy: e.clientY, ox: el.w, oy };
+  };
+
+  // Canvas press: pan in select mode, otherwise begin a pen/arrow stroke.
+  const onCanvasDown = (e: React.PointerEvent) => {
+    if (tool === 'select') {
+      startPan(e);
+      return;
+    }
+    const r = containerRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const p = { x: (e.clientX - r.left - pan.x) / zoom, y: (e.clientY - r.top - pan.y) / zoom };
+    const d: SpaceDrawing = {
+      id: uid(),
+      kind: tool,
+      color: penColor,
+      width: 3,
+      points: tool === 'arrow' ? [p, p] : [p],
+    };
+    drawRef.current = d;
+    setDraft(d);
   };
 
   // Fit-to-content transform for present mode.
@@ -130,6 +240,7 @@ export function SpaceCanvas() {
       x: c.x - 100,
       y: c.y - 60,
       w: 200,
+      h: 120,
       z: nextZ(),
     });
   };
@@ -167,6 +278,62 @@ export function SpaceCanvas() {
           >
             <StickyNote size={14} /> Note
           </button>
+
+          {/* draw tools */}
+          <div className="mx-1 flex items-center gap-0.5 rounded-lg border border-border bg-surface px-1 py-0.5">
+            {(
+              [
+                ['select', <MousePointer2 size={15} />, 'Select & move'],
+                ['pen', <Pencil size={15} />, 'Pen — draw / circle'],
+                ['arrow', <MoveUpRight size={15} />, 'Arrow'],
+              ] as [Tool, React.ReactNode, string][]
+            ).map(([t, icon, title]) => (
+              <button
+                key={t}
+                onClick={() => setTool(t)}
+                title={title}
+                className={`grid h-7 w-7 place-items-center rounded-md transition ${
+                  tool === t ? 'bg-ink text-accent-ink' : 'text-muted hover:text-ink'
+                }`}
+              >
+                {icon}
+              </button>
+            ))}
+          </div>
+          {tool !== 'select' && (
+            <div className="flex items-center gap-1">
+              {PEN_COLORS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setPenColor(c)}
+                  title="Pen color"
+                  className={`h-5 w-5 rounded-full ring-2 transition ${
+                    penColor === c ? 'ring-ink' : 'ring-transparent'
+                  }`}
+                  style={{ background: c }}
+                />
+              ))}
+            </div>
+          )}
+          {(space.drawings?.length ?? 0) > 0 && (
+            <>
+              <button
+                onClick={() => removeLastDrawing(space.id)}
+                title="Undo last drawing"
+                className="grid h-9 w-9 place-items-center rounded-lg text-muted transition hover:bg-surface-2 hover:text-ink"
+              >
+                <Undo2 size={16} />
+              </button>
+              <button
+                onClick={() => clearDrawings(space.id)}
+                title="Clear all drawings"
+                className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[12.5px] text-muted transition hover:text-ink"
+              >
+                Clear
+              </button>
+            </>
+          )}
+
           <div className="mx-1 flex items-center gap-0.5 rounded-lg border border-border bg-surface px-1 py-0.5">
             <button onClick={() => setZoom((z) => Math.max(0.25, z - 0.15))} className="grid h-7 w-7 place-items-center rounded-md text-muted hover:text-ink">
               <ZoomOut size={15} />
@@ -198,14 +365,14 @@ export function SpaceCanvas() {
       {/* canvas */}
       <div
         ref={containerRef}
-        onPointerDown={startPan}
+        onPointerDown={onCanvasDown}
         onWheel={onWheel}
         className="relative flex-1 overflow-hidden border-t border-border bg-surface-2/40"
         style={{
           backgroundImage: 'radial-gradient(var(--border-strong) 1px, transparent 1px)',
           backgroundSize: `${24 * zoom}px ${24 * zoom}px`,
           backgroundPosition: `${pan.x}px ${pan.y}px`,
-          cursor: 'grab',
+          cursor: tool === 'select' ? 'grab' : 'crosshair',
         }}
       >
         {space.elements.length === 0 && (
@@ -257,20 +424,25 @@ export function SpaceCanvas() {
                 className="group absolute"
                 style={{ left: el.x, top: el.y, width: el.w, zIndex: el.z }}
               >
-                <div className="overflow-hidden rounded-md border border-black/10 bg-white shadow-md ring-1 ring-black/5">
+                <div
+                  className="flex flex-col overflow-hidden rounded-md border border-black/10 bg-white shadow-md ring-1 ring-black/5"
+                  style={{ height: el.h ?? 120 }}
+                >
                   <div
                     onPointerDown={(e) => startEl(e, el)}
-                    className="flex h-4 cursor-grab items-center justify-center active:cursor-grabbing"
+                    className="flex h-4 shrink-0 cursor-grab items-center justify-center active:cursor-grabbing"
                   >
                     <span className="h-[3px] w-6 rounded-full bg-black/15 opacity-0 transition group-hover:opacity-100" />
                   </div>
                   <textarea
                     value={el.text}
-                    onPointerDown={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => {
+                      if (tool === 'select') e.stopPropagation();
+                    }}
                     onChange={(e) => updateSpaceElement(space.id, el.id, { text: e.target.value })}
                     placeholder="Note…"
-                    className="block w-full resize-none bg-transparent px-3 pb-3 text-[13px] text-[#1b1c1f] outline-none placeholder:text-black/30"
-                    rows={3}
+                    readOnly={tool !== 'select'}
+                    className="block w-full flex-1 cursor-text resize-none overflow-auto bg-transparent px-3 pb-3 text-[13px] text-[#1b1c1f] outline-none [user-select:text] placeholder:text-black/30"
                   />
                 </div>
                 <button
@@ -287,6 +459,7 @@ export function SpaceCanvas() {
               </div>
             );
           })}
+          <DrawingLayer drawings={space.drawings ?? []} draft={draft} />
         </div>
       </div>
 
@@ -328,13 +501,18 @@ export function SpaceCanvas() {
                       );
                     }
                     return (
-                      <div key={el.id} className="absolute" style={{ left: el.x, top: el.y, width: el.w }}>
-                        <div className="overflow-hidden rounded-md border border-black/10 bg-white p-3 text-[13px] text-[#1b1c1f] shadow-md ring-1 ring-black/5">
+                      <div
+                        key={el.id}
+                        className="absolute"
+                        style={{ left: el.x, top: el.y, width: el.w, height: el.h ?? 120 }}
+                      >
+                        <div className="h-full overflow-hidden whitespace-pre-wrap rounded-md border border-black/10 bg-white p-3 text-[13px] text-[#1b1c1f] shadow-md ring-1 ring-black/5">
                           {el.text}
                         </div>
                       </div>
                     );
                   })}
+                <DrawingLayer drawings={space.drawings ?? []} draft={null} />
               </div>
             </div>
           );

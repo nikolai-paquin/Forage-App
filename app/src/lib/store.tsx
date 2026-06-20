@@ -13,6 +13,7 @@ import type {
   SortBy,
   Space,
   SpaceElement,
+  SpaceDrawing,
   Storyboard,
   StoryFrame,
   TypeFilter,
@@ -184,6 +185,9 @@ interface ForageStore {
   addSpaceElement: (spaceId: string, el: SpaceElement) => void;
   updateSpaceElement: (spaceId: string, elId: string, patch: Partial<SpaceElement>) => void;
   removeSpaceElement: (spaceId: string, elId: string) => void;
+  addDrawing: (spaceId: string, drawing: SpaceDrawing) => void;
+  removeLastDrawing: (spaceId: string) => void;
+  clearDrawings: (spaceId: string) => void;
   // storyboards
   storyboards: Storyboard[];
   storyboardById: (id: string) => Storyboard | undefined;
@@ -637,6 +641,11 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         })),
       removeSpaceElement: (spaceId, elId) =>
         patchSpace(spaceId, (s) => ({ ...s, elements: s.elements.filter((e) => e.id !== elId) })),
+      addDrawing: (spaceId, drawing) =>
+        patchSpace(spaceId, (s) => ({ ...s, drawings: [...(s.drawings ?? []), drawing] })),
+      removeLastDrawing: (spaceId) =>
+        patchSpace(spaceId, (s) => ({ ...s, drawings: (s.drawings ?? []).slice(0, -1) })),
+      clearDrawings: (spaceId) => patchSpace(spaceId, (s) => ({ ...s, drawings: [] })),
 
       storyboards,
       storyboardById: (id) => storyboards.find((b) => b.id === id),

@@ -3,6 +3,10 @@
 export {
   Search,
   Plus,
+  Pencil,
+  MousePointer2,
+  MoveUpRight,
+  Undo2,
   Sun,
   Moon,
   Heart,
