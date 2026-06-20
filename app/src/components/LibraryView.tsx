@@ -71,7 +71,15 @@ function Empty({
   );
 }
 
-export function LibraryView({ onOpen, onCapture }: { onOpen: (i: Item) => void; onCapture: () => void }) {
+export function LibraryView({
+  onOpen,
+  onCapture,
+  onNewCollection,
+}: {
+  onOpen: (i: Item) => void;
+  onCapture: () => void;
+  onNewCollection: () => void;
+}) {
   const {
     view,
     setView,
@@ -241,7 +249,7 @@ export function LibraryView({ onOpen, onCapture }: { onOpen: (i: Item) => void; 
           {tab === 'all' && (
             <div className="mb-8 flex gap-4 overflow-x-auto pb-1">
               <button
-                onClick={onCapture}
+                onClick={onNewCollection}
                 className="flex h-36 w-[200px] shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border-strong text-muted transition hover:border-ink hover:text-ink"
               >
                 <Plus size={22} />

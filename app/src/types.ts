@@ -63,6 +63,8 @@ export interface Project {
   brief: string;
   color: string;
   status: 'active' | 'archived';
+  /** Tags that auto-collect into this collection — any save with one is included. */
+  autoTags?: string[];
 }
 
 export type LibraryTab = 'all' | 'bookmarks' | 'unsorted' | 'trash';

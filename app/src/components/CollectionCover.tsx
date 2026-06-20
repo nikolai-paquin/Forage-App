@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item, Project } from '../types';
+import { itemInProject } from '../lib/util';
 import { Trash2 } from './icons';
 
 const thumb = (i: Item) => (i.type === 'video' ? i.poster : i.media);
@@ -19,7 +20,7 @@ export function CollectionCover({
 }) {
   const { items, projectItemCount } = useForage();
   const thumbs = items
-    .filter((i) => i.projectIds.includes(project.id) && thumb(i))
+    .filter((i) => !i.deletedAt && itemInProject(i, project) && thumb(i))
     .slice(0, 3)
     .map(thumb) as string[];
   const count = projectItemCount(project.id);

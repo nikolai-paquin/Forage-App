@@ -19,7 +19,7 @@ import type {
   View,
 } from '../types';
 import { sampleItems, sampleProjects } from '../data/sample';
-import { fetchYouTubeMeta, sourceLabel, uid } from './util';
+import { fetchYouTubeMeta, itemInProject, sourceLabel, uid } from './util';
 import { unfurl, unfurlEnabled } from './unfurl';
 import { extractPalette } from './color';
 import { idbGet, idbSet } from './idb';
@@ -166,6 +166,7 @@ interface ForageStore {
   restoreSelected: () => void;
   deleteSelectedForever: () => void;
   projectById: (id: string) => Project | undefined;
+  createProject: (name: string, autoTags?: string[]) => void;
   deleteProject: (id: string) => void;
   itemById: (id: string) => Item | undefined;
   findDuplicate: (c: DupeCandidate) => Item | undefined;
@@ -380,7 +381,8 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         else inView = live.filter((i) => i.type === 'link');
       }
     } else if (view.kind === 'collection') {
-      inView = items.filter((i) => !i.deletedAt && i.projectIds.includes(view.id));
+      const p = projectById(view.id);
+      inView = p ? items.filter((i) => !i.deletedAt && itemInProject(i, p)) : [];
     }
 
     const q = query.trim().toLowerCase();
@@ -568,6 +570,20 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         setSelectedIds([]);
       },
       projectById,
+      createProject: (name, autoTags) => {
+        const tags = (autoTags ?? []).map((t) => t.trim().toLowerCase()).filter(Boolean);
+        const palette = ['#e8927c', '#7cb5e8', '#9ad29a', '#d29ad2', '#e8d27c', '#7ce8cf'];
+        const p: Project = {
+          id: uid(),
+          name: name.trim() || 'Untitled collection',
+          brief: '',
+          color: palette[Math.floor(Math.random() * palette.length)],
+          status: 'active',
+          autoTags: tags.length ? [...new Set(tags)] : undefined,
+        };
+        setProjects((prev) => [p, ...prev]);
+        setView({ kind: 'collection', id: p.id });
+      },
       deleteProject: (id) => {
         setProjects((prev) => prev.filter((p) => p.id !== id));
         setItems((prev) =>
@@ -581,7 +597,10 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       },
       itemById,
       findDuplicate: (c) => findDuplicate(items, c),
-      projectItemCount: (id) => items.filter((i) => !i.deletedAt && i.projectIds.includes(id)).length,
+      projectItemCount: (id) => {
+        const p = projectById(id);
+        return p ? items.filter((i) => !i.deletedAt && itemInProject(i, p)).length : 0;
+      },
       visibleItems,
       unsortedCount: items.filter((i) => !i.deletedAt && i.projectIds.length === 0).length,
       trashCount: items.filter((i) => i.deletedAt).length,

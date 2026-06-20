@@ -48,13 +48,49 @@ export function CaptureDialog({
     }
   }, [open]);
 
-  const detected = useMemo(() => (text.trim() ? detectFromInput(text) : null), [text]);
+  // Multiple links pasted at once (newline/space separated) → save them all.
+  const urls = useMemo(() => text.trim().match(/https?:\/\/\S+/g) ?? [], [text]);
+  const multi = urls.length > 1;
+  const detected = useMemo(
+    () => (text.trim() && !multi ? detectFromInput(text) : null),
+    [text, multi],
+  );
   const previewSrc = detected?.media ?? detected?.poster;
 
   const submit = () => {
-    if (!text.trim()) return;
-    const d = detected!;
     const trimmed = text.trim();
+    if (!trimmed) return;
+    const tagList = tags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const projectIds = projectId ? [projectId] : [];
+
+    // Multiple links → one save each.
+    if (multi) {
+      let n = 0;
+      for (const u of urls) {
+        const d = detectFromInput(u);
+        if (findDuplicate({ url: d.url, media: d.media })) continue;
+        addItem({
+          type: d.type,
+          title: d.title,
+          source: d.source,
+          url: d.url,
+          media: d.media,
+          poster: d.poster,
+          ratio: d.ratio,
+          tags: tagList,
+          projectIds,
+        });
+        n++;
+      }
+      toast(n ? `Saved ${n} item${n === 1 ? '' : 's'}` : 'All already in your library');
+      onClose();
+      return;
+    }
+
+    const d = detected!;
     const code = d.type === 'code' ? trimmed : undefined;
     if (findDuplicate({ url: d.url, media: d.media, code })) {
       toast('Already in your library');
@@ -70,11 +106,8 @@ export function CaptureDialog({
       poster: d.poster,
       ratio: d.ratio,
       code,
-      tags: tags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean),
-      projectIds: projectId ? [projectId] : [],
+      tags: tagList,
+      projectIds,
     });
     toast('Saved to Forage');
     onClose();
@@ -151,7 +184,7 @@ export function CaptureDialog({
             )}
 
             <AnimatePresence>
-              {detected && (
+              {(detected || multi) && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -160,18 +193,24 @@ export function CaptureDialog({
                 >
                   <div className="flex items-center gap-3 px-4 py-3">
                     <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-surface-2 text-muted">
-                      {previewSrc ? (
+                      {multi ? (
+                        <Link width={18} height={18} />
+                      ) : previewSrc ? (
                         <img src={previewSrc} alt="" className="h-full w-full object-cover" />
                       ) : (
-                        TYPE_META[detected.type]?.icon
+                        TYPE_META[detected!.type]?.icon
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-accent">
-                        {TYPE_META[detected.type]?.icon}
-                        detected: {TYPE_META[detected.type]?.label ?? detected.type}
+                        {multi ? <Link width={13} height={13} /> : TYPE_META[detected!.type]?.icon}
+                        {multi
+                          ? `${urls.length} links detected`
+                          : `detected: ${TYPE_META[detected!.type]?.label ?? detected!.type}`}
                       </p>
-                      <p className="truncate text-[13px] text-ink">{detected.title}</p>
+                      <p className="truncate text-[13px] text-ink">
+                        {multi ? 'They’ll be saved together' : detected!.title}
+                      </p>
                     </div>
                   </div>
 
@@ -199,8 +238,7 @@ export function CaptureDialog({
               )}
             </AnimatePresence>
 
-            <div className="flex items-center justify-between border-t border-border px-4 py-2.5">
-              <span className="text-[11.5px] text-faint">Capture now, organize later</span>
+            <div className="flex items-center justify-end border-t border-border px-4 py-2.5">
               <motion.button
                 whileTap={{ scale: 0.96 }}
                 onClick={submit}

@@ -1,7 +1,15 @@
 import { getUnfurlEndpoint } from './unfurl';
+import type { Item, Project } from '../types';
 
 export const uid = () =>
   's_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+
+/** A save belongs to a collection if it was added manually or matches an auto-tag. */
+export function itemInProject(item: Item, project: Project): boolean {
+  if (item.projectIds.includes(project.id)) return true;
+  const at = project.autoTags;
+  return !!(at && at.length && at.some((t) => item.tags.includes(t)));
+}
 
 const SOURCE_LABELS: Record<string, string> = {
   'youtube.com': 'YouTube',

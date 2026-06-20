@@ -43,7 +43,7 @@ function SmartCard({ label, items, onOpen }: { label: string; items: Item[]; onO
   );
 }
 
-export function CollectionsView({ onCapture }: { onCapture: () => void }) {
+export function CollectionsView({ onNewCollection }: { onNewCollection: () => void }) {
   const { projects, items, setView, setTypeFilter, setSourceFilter, deleteProject } = useForage();
   const live = items.filter((i) => !i.deletedAt);
 
@@ -73,7 +73,7 @@ export function CollectionsView({ onCapture }: { onCapture: () => void }) {
     <div className="px-5 pb-32 pt-1">
       <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         <button
-          onClick={onCapture}
+          onClick={onNewCollection}
           className="flex h-44 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border-strong text-muted transition hover:border-ink hover:text-ink"
         >
           <Plus size={24} />

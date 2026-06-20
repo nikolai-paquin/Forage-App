@@ -11,6 +11,7 @@ import { StoryboardsView } from './components/StoryboardsView';
 import { StoryboardView } from './components/StoryboardView';
 import { ItemDetail } from './components/ItemDetail';
 import { CaptureDialog } from './components/CaptureDialog';
+import { CollectionDialog } from './components/CollectionDialog';
 import { SearchOverlay } from './components/SearchOverlay';
 import { ResurfacePanel } from './components/ResurfacePanel';
 import { SettingsModal } from './components/SettingsModal';
@@ -49,6 +50,7 @@ function Workspace() {
   const { dark, toggle } = useTheme();
   const [selected, setSelected] = useState<Item | null>(null);
   const [capture, setCapture] = useState(false);
+  const [newCollection, setNewCollection] = useState(false);
   const [search, setSearch] = useState(false);
   const [settings, setSettings] = useState(false);
   const [resurface, setResurface] = useState(false);
@@ -402,9 +404,15 @@ function Workspace() {
           transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
         >
           {view.kind === 'library' && (
-            <LibraryView onOpen={open} onCapture={() => setCapture(true)} />
+            <LibraryView
+              onOpen={open}
+              onCapture={() => setCapture(true)}
+              onNewCollection={() => setNewCollection(true)}
+            />
           )}
-          {view.kind === 'collections' && <CollectionsView onCapture={() => setCapture(true)} />}
+          {view.kind === 'collections' && (
+            <CollectionsView onNewCollection={() => setNewCollection(true)} />
+          )}
           {view.kind === 'collection' && <CollectionView onOpen={open} />}
           {view.kind === 'spaces' && <SpacesView />}
           {view.kind === 'space' && <SpaceCanvas />}
@@ -419,6 +427,7 @@ function Workspace() {
 
       <ItemDetail item={selected} onClose={() => setSelected(null)} onOpen={open} />
       <CaptureDialog open={capture} onClose={() => setCapture(false)} onFiles={addFiles} />
+      <CollectionDialog open={newCollection} onClose={() => setNewCollection(false)} />
       <SearchOverlay
         open={search}
         onClose={() => setSearch(false)}
