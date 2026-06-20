@@ -2,7 +2,9 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    # The github-pages environment only permits the repo's default branch, which
+    # is this one — deploying from `main` is rejected by env protection.
+    branches: [claude/funny-curie-0jv9sm]
   workflow_dispatch:
 
 permissions:
