@@ -4,6 +4,7 @@ import { useForage } from '../lib/store';
 import type { Item } from '../types';
 import { suggestTagsAsync, generatePromptAsync, aiEnabled } from '../lib/ai';
 import { extractPalette } from '../lib/color';
+import { toast } from '../lib/toast';
 
 function TagAdder({ onAdd }: { onAdd: (t: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -235,7 +236,10 @@ export function ItemDetail({
       return;
     }
     const m = live.type === 'video' ? live.poster : live.media;
-    if (m) extractPalette(m).then((p) => p.length && updateItem(live.id, { palette: p }));
+    if (!m) return;
+    const p = await extractPalette(m);
+    if (p.length) updateItem(live.id, { palette: p });
+    else toast("Couldn't read colors — this image is hosted elsewhere (try Chrome's eyedropper).");
   };
 
   return (
@@ -333,6 +337,14 @@ export function ItemDetail({
                 >
                   <Info size={16} />
                 </button>
+                {infoOpen && (
+                  <button
+                    aria-hidden
+                    tabIndex={-1}
+                    onClick={() => setInfoOpen(false)}
+                    className="fixed inset-0 z-0 cursor-default"
+                  />
+                )}
                 {infoOpen && (
                   <div className="absolute right-0 top-9 z-10 w-60 rounded-xl border border-white/10 bg-[#1c1c1f] p-3 text-[12px] shadow-2xl">
                     <dl className="flex flex-col gap-1.5">
@@ -503,6 +515,14 @@ export function ItemDetail({
                       >
                         + Add
                       </button>
+                      {collectOpen && (
+                        <button
+                          aria-hidden
+                          tabIndex={-1}
+                          onClick={() => setCollectOpen(false)}
+                          className="fixed inset-0 z-0 cursor-default"
+                        />
+                      )}
                       {collectOpen && (
                         <div className="absolute right-0 z-10 mt-1.5 max-h-56 w-52 overflow-auto rounded-xl border border-white/10 bg-[#1c1c1f] p-1 shadow-2xl">
                           {projects.filter((p) => !live.projectIds.includes(p.id)).length === 0 ? (
