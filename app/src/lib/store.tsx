@@ -20,6 +20,8 @@ import type {
 } from '../types';
 import { sampleItems, sampleProjects } from '../data/sample';
 import { fetchYouTubeMeta, sourceLabel, uid } from './util';
+import { unfurl, unfurlEnabled } from './unfurl';
+import { extractPalette } from './color';
 import { idbGet, idbSet } from './idb';
 import { findDuplicate, type DupeCandidate } from './dedupe';
 import {
@@ -478,6 +480,21 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           fetchYouTubeMeta(item.url).then((meta) => {
             if (meta?.title)
               patch(item.id, (i) => ({ ...i, title: meta.title, author: meta.author ?? i.author }));
+          });
+        }
+        // Enrich a saved link with its real page title, description, and preview
+        // image via the unfurl proxy (powers rich bookmarks).
+        if (item.type === 'link' && item.url && unfurlEnabled()) {
+          unfurl(item.url).then((m) => {
+            if (!m) return;
+            patch(item.id, (i) => ({
+              ...i,
+              title: m.title?.trim() || i.title,
+              summary: m.description?.trim() || i.summary,
+              media: m.image || i.media,
+              author: m.author || i.author,
+            }));
+            if (m.image) extractPalette(m.image).then((p) => p.length && patch(item.id, (i) => ({ ...i, palette: p })));
           });
         }
         return item;

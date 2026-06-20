@@ -1,0 +1,7 @@
+name = "forage-unfurl"
+main = "unfurl-worker.js"
+compatibility_date = "2025-01-01"
+
+# No secrets or bindings needed. Deploy with:
+#   npx wrangler deploy -c wrangler.unfurl.toml
+# then paste the resulting URL into Forage → Settings → AI Usage → Link previews.

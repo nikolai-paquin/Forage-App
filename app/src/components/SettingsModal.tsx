@@ -4,6 +4,7 @@ import { useTheme } from '../lib/theme';
 import { useForage } from '../lib/store';
 import { exportBackup, importBackup, storageStats, formatBytes } from '../lib/backup';
 import { getAiEndpoint, setAiEndpoint } from '../lib/ai';
+import { getUnfurlEndpoint, setUnfurlEndpoint } from '../lib/unfurl';
 import { generateSyncKey } from '../lib/sync';
 import { usePwaInstall } from '../lib/pwa';
 import { toast } from '../lib/toast';
@@ -152,6 +153,8 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   const fileRef = useRef<HTMLInputElement>(null);
   const [endpoint, setEndpoint] = useState(getAiEndpoint());
   const [savedEndpoint, setSavedEndpoint] = useState(false);
+  const [unfurlEp, setUnfurlEp] = useState(getUnfurlEndpoint());
+  const [savedUnfurl, setSavedUnfurl] = useState(false);
   const [stats, setStats] = useState({ items: 0, bytes: 0 });
   const [confirmReset, setConfirmReset] = useState(false);
 
@@ -174,6 +177,11 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
     setAiEndpoint(endpoint);
     setSavedEndpoint(true);
     setTimeout(() => setSavedEndpoint(false), 1600);
+  };
+  const saveUnfurl = () => {
+    setUnfurlEndpoint(unfurlEp);
+    setSavedUnfurl(true);
+    setTimeout(() => setSavedUnfurl(false), 1600);
   };
   const {
     items,
@@ -541,6 +549,56 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                       the repo. Deploy it, set your API key as a secret, then paste its URL here.
                     </span>
                   </p>
+
+                  <div className="mt-8 border-t border-border pt-6">
+                    <label className="mb-1.5 block text-[13px] font-medium text-ink">
+                      Link previews endpoint URL
+                    </label>
+                    <p className="mb-2.5 max-w-md text-[12.5px] text-muted">
+                      Fetches real page titles, descriptions, and preview images for saved links
+                      (rich bookmarks), reliable YouTube titles, and lets color extraction read
+                      images hosted elsewhere.
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        value={unfurlEp}
+                        onChange={(e) => setUnfurlEp(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && saveUnfurl()}
+                        placeholder="https://forage-unfurl.you.workers.dev"
+                        className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-ink outline-none placeholder:text-faint focus:border-border-strong"
+                      />
+                      <button
+                        onClick={saveUnfurl}
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium text-accent-ink"
+                        style={{ background: 'var(--ink)' }}
+                      >
+                        {savedUnfurl ? <Check size={14} /> : <Wand size={14} />}
+                        {savedUnfurl ? 'Saved' : 'Save'}
+                      </button>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2 text-[12.5px]">
+                      <span
+                        className={`h-2 w-2 rounded-full ${unfurlEp.trim() ? 'bg-emerald-500' : 'bg-faint'}`}
+                      />
+                      <span className="text-muted">
+                        {unfurlEp.trim() ? 'Rich link previews on' : 'Links saved as plain URLs'}
+                      </span>
+                    </div>
+                    <p className="mt-4 flex items-start gap-2 text-[12.5px] text-faint">
+                      <Info size={14} className="mt-0.5 shrink-0" />
+                      <span>
+                        Deploy{' '}
+                        <code className="rounded bg-surface-2 px-1 py-0.5 text-[11.5px]">
+                          server/unfurl-worker.js
+                        </code>{' '}
+                        with{' '}
+                        <code className="rounded bg-surface-2 px-1 py-0.5 text-[11.5px]">
+                          wrangler deploy -c wrangler.unfurl.toml
+                        </code>{' '}
+                        (no API key needed), then paste its URL here.
+                      </span>
+                    </p>
+                  </div>
                 </>
               ) : active === 'updates' ? (
                 <>

@@ -1,3 +1,5 @@
+import { getUnfurlEndpoint } from './unfurl';
+
 export const uid = () =>
   's_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
 
@@ -75,23 +77,25 @@ export function youTubeId(url: string): string | null {
 }
 
 /**
- * Fetch a YouTube video's real title + creator via oEmbed (so a save reads
- * "How to … · Some Channel" instead of a generic label). Tries YouTube's
- * first-party endpoint, then a CORS-friendly fallback; null if both fail.
+ * Fetch a YouTube video's real title + creator. Prefers the unfurl Worker
+ * (server-side oEmbed, no CORS), then YouTube's first-party endpoint, then a
+ * CORS-friendly fallback; null if all fail.
  */
 export async function fetchYouTubeMeta(
   url: string,
 ): Promise<{ title: string; author?: string } | null> {
+  const ep = getUnfurlEndpoint();
   const endpoints = [
+    ...(ep ? [`${ep}?url=${encodeURIComponent(url)}`] : []),
     `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
     `https://noembed.com/embed?url=${encodeURIComponent(url)}`,
   ];
-  for (const ep of endpoints) {
+  for (const endpoint of endpoints) {
     try {
-      const res = await fetch(ep);
+      const res = await fetch(endpoint);
       if (!res.ok) continue;
-      const data = (await res.json()) as { title?: string; author_name?: string };
-      if (data?.title) return { title: data.title, author: data.author_name };
+      const data = (await res.json()) as { title?: string; author?: string; author_name?: string };
+      if (data?.title) return { title: data.title, author: data.author ?? data.author_name };
     } catch {
       /* try next */
     }

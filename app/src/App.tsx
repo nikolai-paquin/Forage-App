@@ -18,6 +18,7 @@ import { Onboarding } from './components/Onboarding';
 import { Fab } from './components/Fab';
 import { BulkBar } from './components/BulkBar';
 import { detectFromInput, fetchYouTubeMeta } from './lib/util';
+import { unfurl, unfurlEnabled } from './lib/unfurl';
 import { extractPalette, imageRatio } from './lib/color';
 import { consumeShareUrl } from './lib/ingest';
 import { exportBackup } from './lib/backup';
@@ -181,6 +182,31 @@ function Workspace() {
         const meta = await fetchYouTubeMeta(it.url!);
         if (meta?.title && !cancelled)
           updateItem(it.id, { title: meta.title, author: meta.author ?? it.author });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
+
+  // Backfill rich previews for older link saves once an unfurl endpoint is set.
+  useEffect(() => {
+    if (!hydrated || !unfurlEnabled()) return;
+    const stale = items.filter((i) => i.type === 'link' && i.url && !i.summary && !i.media);
+    if (!stale.length) return;
+    let cancelled = false;
+    (async () => {
+      for (const it of stale) {
+        if (cancelled) return;
+        const m = await unfurl(it.url!);
+        if (!m || cancelled) continue;
+        updateItem(it.id, {
+          title: m.title?.trim() || it.title,
+          summary: m.description?.trim() || it.summary,
+          media: m.image || it.media,
+          author: m.author || it.author,
+        });
       }
     })();
     return () => {

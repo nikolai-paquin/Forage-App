@@ -1,4 +1,5 @@
 // Color utilities for palette extraction, naming, and color search.
+import { proxiedImage } from './unfurl';
 
 export function hexToRgb(hex: string): [number, number, number] {
   const h = hex.replace('#', '');
@@ -110,6 +111,7 @@ export function extractPalette(src: string): Promise<string[]> {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
+    img.onerror = () => resolve([]);
     img.onload = () => {
       try {
         const w = 64;
@@ -151,6 +153,8 @@ export function extractPalette(src: string): Promise<string[]> {
       }
     };
     img.onerror = () => resolve([]);
-    img.src = src;
+    // Route cross-origin images through the proxy (if configured) so the canvas
+    // isn't tainted; data/same-origin URLs pass through untouched.
+    img.src = proxiedImage(src);
   });
 }

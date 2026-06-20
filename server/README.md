@@ -7,6 +7,9 @@ a minute. Neither is required — Forage works fully offline without them.
 - **`worker.js`** — AI: **Auto-tag**, **Generate prompt** (Claude), and **embeddings**
   for semantic search (Cloudflare Workers AI). → Settings → AI Usage.
 - **`sync-worker.js`** — **Cross-device sync** via Workers KV. → Settings → Sync.
+- **`unfurl-worker.js`** — **Link previews + image proxy**: real page titles,
+  descriptions, and preview images for bookmarks; reliable YouTube titles/creators;
+  and cross-origin palette extraction. → Settings → AI Usage → Link previews.
 
 ---
 
@@ -68,6 +71,31 @@ device and a delete on another both survive a round-trip.
 GET  /:key  → 200 snapshot JSON | 404 (nothing stored yet)
 PUT  /:key  → 204               (body is the snapshot JSON)
 ```
+
+---
+
+## Unfurl Worker (`unfurl-worker.js`)
+
+Gives the static app two things it can't do from the browser (CORS): reading other
+sites' metadata, and reading pixels from cross-origin images. No API key or binding.
+
+```bash
+cd server
+wrangler deploy -c wrangler.unfurl.toml
+```
+
+Paste the printed URL into **Forage → Settings → AI Usage → Link previews**. With it
+set, saved links unfurl into rich bookmarks (title · description · preview), YouTube
+saves get dependable titles + creators, and the eyedropper/palette works on images
+hosted elsewhere.
+
+```
+GET /?url=<page>   → { title, description, image, author, siteName, type }
+GET /?img=<image>  → the image bytes, re-served with permissive CORS
+```
+
+It refuses non-http(s) and private/loopback hosts, but it is still an open fetch
+proxy — deploy it for your own use, don't advertise the URL.
 
 ---
 
