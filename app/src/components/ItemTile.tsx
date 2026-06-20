@@ -13,6 +13,22 @@ import {
   Trash2,
 } from './icons';
 
+const isYouTube = (item: Item) =>
+  item.type === 'video' && (item.source === 'youtube.com' || /youtu\.?be/.test(item.url ?? ''));
+
+/** The YouTube glyph — a red rounded rectangle with a white play triangle. */
+function YouTubeLogo({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className="shrink-0" aria-hidden>
+      <path
+        fill="#FF0000"
+        d="M23.5 6.5a3 3 0 0 0-2.1-2.1C19.5 4 12 4 12 4s-7.5 0-9.4.4A3 3 0 0 0 .5 6.5C.1 8.4.1 12 .1 12s0 3.6.4 5.5a3 3 0 0 0 2.1 2.1C4.5 20 12 20 12 20s7.5 0 9.4-.4a3 3 0 0 0 2.1-2.1c.4-1.9.4-5.5.4-5.5s0-3.6-.4-5.5Z"
+      />
+      <path fill="#fff" d="M9.6 15.6 15.8 12 9.6 8.4v7.2Z" />
+    </svg>
+  );
+}
+
 function VectorArt({ palette }: { palette: string[] }) {
   return (
     <div
@@ -35,6 +51,27 @@ function CodeArt({ item }: { item: Item }) {
       <pre className="font-mono text-[10.5px] leading-[1.5] text-[#c9cdd6]">
         <code>{item.code?.split('\n').slice(0, 9).join('\n')}</code>
       </pre>
+    </div>
+  );
+}
+
+function YouTubeArt({ item }: { item: Item }) {
+  return (
+    <div className="flex h-full w-full flex-col bg-surface">
+      <div className="relative min-h-0 flex-1 overflow-hidden bg-black">
+        {item.poster && (
+          <img src={item.poster} alt="" className="h-full w-full object-cover" loading="lazy" />
+        )}
+        <span className="absolute inset-0 grid place-items-center">
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-black/55 text-white backdrop-blur-md transition group-hover:bg-[#FF0000]">
+            <Play size={17} fill="currentColor" stroke="none" className="ml-0.5" />
+          </span>
+        </span>
+      </div>
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        <YouTubeLogo size={16} />
+        <span className="truncate text-[12.5px] font-medium text-ink">{item.title}</span>
+      </div>
     </div>
   );
 }
@@ -82,7 +119,8 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
     }
   };
 
-  const isCard = item.type === 'link' || item.type === 'code';
+  const youtube = isYouTube(item);
+  const isCard = item.type === 'link' || item.type === 'code' || youtube;
 
   return (
     <motion.button
@@ -108,6 +146,8 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
           <CodeArt item={item} />
         ) : item.type === 'link' ? (
           <LinkArt item={item} />
+        ) : youtube ? (
+          <YouTubeArt item={item} />
         ) : item.type === 'video' ? (
           <>
             <img

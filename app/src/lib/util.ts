@@ -74,6 +74,29 @@ export function youTubeId(url: string): string | null {
   return null;
 }
 
+/**
+ * Fetch a YouTube video's real title via oEmbed (so a save reads "How to … "
+ * instead of a generic label). Tries YouTube's first-party endpoint, then a
+ * CORS-friendly fallback; returns null if both are unreachable.
+ */
+export async function fetchYouTubeMeta(url: string): Promise<{ title: string } | null> {
+  const endpoints = [
+    `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+    `https://noembed.com/embed?url=${encodeURIComponent(url)}`,
+  ];
+  for (const ep of endpoints) {
+    try {
+      const res = await fetch(ep);
+      if (!res.ok) continue;
+      const data = (await res.json()) as { title?: string };
+      if (data?.title) return { title: data.title };
+    } catch {
+      /* try next */
+    }
+  }
+  return null;
+}
+
 /** Guess an item type, title, and any embeddable media from pasted text or a URL. */
 export function detectFromInput(raw: string): Detected {
   const text = raw.trim();
@@ -88,7 +111,8 @@ export function detectFromInput(raw: string): Detected {
         url: text,
         // hqdefault always exists; object-cover trims its 4:3 letterbox to a clean 16:9.
         poster: `https://img.youtube.com/vi/${yt}/hqdefault.jpg`,
-        ratio: 16 / 9,
+        // Slightly taller than 16:9 to leave room for the logo + title footer.
+        ratio: 1.4,
       };
     }
     let host = '';

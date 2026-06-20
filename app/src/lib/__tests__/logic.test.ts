@@ -148,8 +148,8 @@ describe('detectFromInput', () => {
   it('detects a YouTube link as video with a thumbnail', () => {
     const d = detectFromInput('https://youtu.be/dQw4w9WgXcQ');
     expect(d.type).toBe('video');
+    expect(d.source).toBe('youtube.com');
     expect(d.poster).toContain('dQw4w9WgXcQ');
-    expect(d.ratio).toBeCloseTo(16 / 9, 4);
   });
 
   it('detects a direct image URL with media set', () => {

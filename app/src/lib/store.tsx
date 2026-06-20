@@ -8,7 +8,7 @@ import {
 } from 'react';
 import type { FilterEntry, Item, Project, SortBy, Space, SpaceElement, TypeFilter, View } from '../types';
 import { sampleItems, sampleProjects } from '../data/sample';
-import { sourceLabel, uid } from './util';
+import { fetchYouTubeMeta, sourceLabel, uid } from './util';
 import { idbGet, idbSet } from './idb';
 import { findDuplicate, type DupeCandidate } from './dedupe';
 import {
@@ -420,6 +420,12 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         };
         setItems((prev) => [item, ...prev]);
         registerSource(item.source);
+        // Enrich a YouTube save with its real video title (async, best-effort).
+        if (item.type === 'video' && item.source === 'youtube.com' && item.url) {
+          fetchYouTubeMeta(item.url).then((meta) => {
+            if (meta?.title) patch(item.id, (i) => ({ ...i, title: meta.title }));
+          });
+        }
         return item;
       },
       updateItem: (id, p) => patch(id, (i) => ({ ...i, ...p })),
