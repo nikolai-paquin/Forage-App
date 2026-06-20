@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item } from '../types';
@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Close,
   Image as ImageIcon,
+  Pencil,
   Plus,
   Trash2,
 } from './icons';
@@ -33,6 +34,14 @@ export function StoryboardView() {
 
   const [picker, setPicker] = useState<string | null>(null); // frameId we're choosing an image for
   const [confirm, setConfirm] = useState(false);
+  const [enlarged, setEnlarged] = useState<string | null>(null); // image src shown in the lightbox
+
+  useEffect(() => {
+    if (!enlarged) return;
+    const h = (e: KeyboardEvent) => e.key === 'Escape' && setEnlarged(null);
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [enlarged]);
 
   const boardId = view.kind === 'storyboard' ? view.id : '';
   const board = storyboardById(boardId);
@@ -109,24 +118,39 @@ export function StoryboardView() {
               return (
                 <div
                   key={f.id}
-                  className="flex w-64 flex-col self-start overflow-hidden rounded-xl border border-border bg-surface"
+                  className="group flex w-64 flex-col self-start overflow-hidden rounded-xl border border-border bg-surface"
                 >
-                  <button
-                    onClick={() => setPicker(f.id)}
-                    className="relative aspect-video w-full overflow-hidden bg-surface-2"
-                    title={src ? 'Change image' : 'Add image'}
-                  >
+                  <div className="relative aspect-video w-full overflow-hidden bg-surface-2">
                     {src ? (
-                      <img src={src} alt="" className="h-full w-full object-cover" />
+                      <button
+                        onClick={() => setEnlarged(src)}
+                        className="block h-full w-full cursor-zoom-in"
+                        title="Click to enlarge"
+                      >
+                        <img src={src} alt="" className="h-full w-full object-cover" />
+                      </button>
                     ) : (
-                      <span className="grid h-full place-items-center text-faint">
+                      <button
+                        onClick={() => setPicker(f.id)}
+                        className="grid h-full w-full place-items-center text-faint transition hover:text-ink"
+                        title="Add image"
+                      >
                         <ImageIcon size={20} />
-                      </span>
+                      </button>
                     )}
-                    <span className="absolute left-2 top-2 grid h-6 min-w-[24px] place-items-center rounded-full bg-black/55 px-1.5 text-[11px] font-medium tabular-nums text-white">
+                    <span className="pointer-events-none absolute left-2 top-2 grid h-6 min-w-[24px] place-items-center rounded-full bg-black/55 px-1.5 text-[11px] font-medium tabular-nums text-white">
                       {i + 1}
                     </span>
-                  </button>
+                    {src && (
+                      <button
+                        onClick={() => setPicker(f.id)}
+                        title="Change image"
+                        className="absolute right-2 top-2 hidden h-7 w-7 place-items-center rounded-full bg-black/55 text-white backdrop-blur-md transition hover:bg-black/75 group-hover:grid"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                    )}
+                  </div>
                   <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
                     <input
                       value={f.caption}
@@ -245,6 +269,36 @@ export function StoryboardView() {
                   ))}
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* enlarged image lightbox */}
+      <AnimatePresence>
+        {enlarged && (
+          <motion.div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setEnlarged(null)}
+          >
+            <motion.img
+              src={enlarged}
+              alt=""
+              initial={{ scale: 0.96 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.97 }}
+              className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setEnlarged(null)}
+              className="absolute right-5 top-5 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+              title="Close (Esc)"
+            >
+              <Close size={18} />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
