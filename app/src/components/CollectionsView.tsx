@@ -44,7 +44,7 @@ function SmartCard({ label, items, onOpen }: { label: string; items: Item[]; onO
 }
 
 export function CollectionsView({ onNewCollection }: { onNewCollection: () => void }) {
-  const { projects, items, setView, setTypeFilter, setSourceFilter, deleteProject } = useForage();
+  const { projects, items, setView, deleteProject } = useForage();
   const live = items.filter((i) => !i.deletedAt);
 
   const byType = Array.from(new Set(live.map((i) => i.type)))
@@ -58,16 +58,8 @@ export function CollectionsView({ onNewCollection }: { onNewCollection: () => vo
     .sort((a, b) => b.items.length - a.items.length)
     .slice(0, 6);
 
-  const openType = (t: ItemType) => {
-    setSourceFilter('all');
-    setTypeFilter(t);
-    setView({ kind: 'library', tab: 'all' });
-  };
-  const openSource = (s: string) => {
-    setTypeFilter('all');
-    setSourceFilter(s);
-    setView({ kind: 'library', tab: 'all' });
-  };
+  const openType = (t: ItemType) => setView({ kind: 'smart', field: 'type', value: t });
+  const openSource = (s: string) => setView({ kind: 'smart', field: 'source', value: s });
 
   return (
     <div className="px-5 pb-32 pt-1">

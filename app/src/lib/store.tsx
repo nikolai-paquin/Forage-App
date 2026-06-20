@@ -383,6 +383,12 @@ export function ForageProvider({ children }: { children: ReactNode }) {
     } else if (view.kind === 'collection') {
       const p = projectById(view.id);
       inView = p ? items.filter((i) => !i.deletedAt && itemInProject(i, p)) : [];
+    } else if (view.kind === 'smart') {
+      const live = items.filter((i) => !i.deletedAt);
+      inView =
+        view.field === 'type'
+          ? live.filter((i) => i.type === view.value)
+          : live.filter((i) => i.source === view.value);
     }
 
     const q = query.trim().toLowerCase();

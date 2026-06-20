@@ -68,12 +68,15 @@ export function CaptureDialog({
       .map((t) => t.trim())
       .filter(Boolean);
     const projectIds = projectId ? [projectId] : [];
+    // Bookmarks mode: everything becomes a plain link (even image URLs).
+    const linkify = (d: ReturnType<typeof detectFromInput>) =>
+      linksOnly ? { ...d, type: 'link' as const } : d;
 
     // Multiple links → one save each.
     if (multi) {
       let n = 0;
       for (const u of urls) {
-        const d = detectFromInput(u);
+        const d = linkify(detectFromInput(u));
         if (findDuplicate({ url: d.url, media: d.media })) continue;
         addItem({
           type: d.type,
@@ -93,7 +96,7 @@ export function CaptureDialog({
       return;
     }
 
-    const d = detected!;
+    const d = linkify(detected!);
     const code = d.type === 'code' ? trimmed : undefined;
     if (findDuplicate({ url: d.url, media: d.media, code })) {
       toast('Already in your library');

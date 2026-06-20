@@ -5,6 +5,7 @@ import { TopBar } from './components/TopBar';
 import { LibraryView } from './components/LibraryView';
 import { CollectionsView } from './components/CollectionsView';
 import { CollectionView } from './components/CollectionView';
+import { SmartCollectionView } from './components/SmartCollectionView';
 import { SpacesView } from './components/SpacesView';
 import { SpaceCanvas } from './components/SpaceCanvas';
 import { StoryboardsView } from './components/StoryboardsView';
@@ -308,7 +309,7 @@ function Workspace() {
     toggleSelect,
     open,
     blocked: capture || search || settings || resurface || selected !== null,
-    isGrid: view.kind === 'library' || view.kind === 'collection',
+    isGrid: view.kind === 'library' || view.kind === 'collection' || view.kind === 'smart',
   };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -360,7 +361,9 @@ function Workspace() {
       ? view.id
       : view.kind === 'library'
         ? view.tab
-        : '');
+        : view.kind === 'smart'
+          ? `${view.field}:${view.value}`
+          : '');
 
   // Brief splash while the library loads from IndexedDB — avoids an empty-state flash.
   if (!hydrated) {
@@ -424,6 +427,7 @@ function Workspace() {
             <CollectionsView onNewCollection={() => setNewCollection(true)} />
           )}
           {view.kind === 'collection' && <CollectionView onOpen={open} />}
+          {view.kind === 'smart' && <SmartCollectionView onOpen={open} />}
           {view.kind === 'spaces' && <SpacesView />}
           {view.kind === 'space' && <SpaceCanvas />}
           {view.kind === 'storyboards' && <StoryboardsView />}
