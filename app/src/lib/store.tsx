@@ -6,7 +6,18 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { FilterEntry, Item, Project, SortBy, Space, SpaceElement, TypeFilter, View } from '../types';
+import type {
+  FilterEntry,
+  Item,
+  Project,
+  SortBy,
+  Space,
+  SpaceElement,
+  Storyboard,
+  StoryFrame,
+  TypeFilter,
+  View,
+} from '../types';
 import { sampleItems, sampleProjects } from '../data/sample';
 import { fetchYouTubeMeta, sourceLabel, uid } from './util';
 import { idbGet, idbSet } from './idb';
@@ -40,6 +51,7 @@ const SPACES_KEY = 'forage.spaces.v1'; // legacy localStorage key, migrated into
 const IDB_ITEMS = 'items';
 const IDB_SPACES = 'spaces';
 const IDB_PROJECTS = 'projects';
+const IDB_STORYBOARDS = 'storyboards';
 
 const DEFAULT_TYPES: FilterEntry[] = [
   { value: 'image', label: 'Images', enabled: true },
@@ -166,6 +178,16 @@ interface ForageStore {
   addSpaceElement: (spaceId: string, el: SpaceElement) => void;
   updateSpaceElement: (spaceId: string, elId: string, patch: Partial<SpaceElement>) => void;
   removeSpaceElement: (spaceId: string, elId: string) => void;
+  // storyboards
+  storyboards: Storyboard[];
+  storyboardById: (id: string) => Storyboard | undefined;
+  createStoryboard: () => void;
+  renameStoryboard: (id: string, name: string) => void;
+  deleteStoryboard: (id: string) => void;
+  addFrame: (boardId: string, frame: StoryFrame) => void;
+  updateFrame: (boardId: string, frameId: string, patch: Partial<StoryFrame>) => void;
+  removeFrame: (boardId: string, frameId: string) => void;
+  moveFrame: (boardId: string, frameId: string, dir: -1 | 1) => void;
   // sync
   syncCfg: SyncCfg;
   syncBusy: boolean;
@@ -208,6 +230,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [focusedId, setFocusedId] = useState<string | undefined>(undefined);
   const [spaces, setSpaces] = useState<Space[]>([]);
+  const [storyboards, setStoryboards] = useState<Storyboard[]>([]);
   const [syncCfg, setSyncCfg] = useState<SyncCfg>(() => ({
     endpoint: getSyncEndpoint(),
     key: getSyncKey(),
@@ -231,10 +254,12 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       }
       let loadedProjects = await idbGet<Project[]>(IDB_PROJECTS);
       if (loadedProjects === undefined) loadedProjects = sampleProjects;
+      const loadedStoryboards = (await idbGet<Storyboard[]>(IDB_STORYBOARDS)) ?? [];
       if (cancelled) return;
       setItems(loadedItems);
       setSpaces(loadedSpaces);
       setProjects(loadedProjects);
+      setStoryboards(loadedStoryboards);
       setHydrated(true);
     })();
     return () => {
@@ -256,6 +281,10 @@ export function ForageProvider({ children }: { children: ReactNode }) {
     if (!hydrated) return;
     idbSet(IDB_PROJECTS, projects).catch(() => {});
   }, [projects, hydrated]);
+  useEffect(() => {
+    if (!hydrated) return;
+    idbSet(IDB_STORYBOARDS, storyboards).catch(() => {});
+  }, [storyboards, hydrated]);
 
   useEffect(() => {
     try {
@@ -314,6 +343,11 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   const patchSpace = (spaceId: string, fn: (s: Space) => Space) =>
     setSpaces((prev) =>
       prev.map((s) => (s.id === spaceId ? { ...fn(s), updatedAt: Date.now() } : s)),
+    );
+
+  const patchBoard = (boardId: string, fn: (b: Storyboard) => Storyboard) =>
+    setStoryboards((prev) =>
+      prev.map((b) => (b.id === boardId ? { ...fn(b), updatedAt: Date.now() } : b)),
     );
 
   const patch = (id: string, fn: (i: Item) => Item) =>
@@ -389,6 +423,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       clearLibrary: () => {
         setItems([]);
         setSpaces([]);
+        setStoryboards([]);
         setSelectedIds([]);
         setFocusedId(undefined);
       },
@@ -532,7 +567,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       createSpace: () => {
         const s: Space = {
           id: uid(),
-          name: 'Untitled space',
+          name: 'Untitled moodboard',
           elements: [],
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -554,6 +589,42 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         })),
       removeSpaceElement: (spaceId, elId) =>
         patchSpace(spaceId, (s) => ({ ...s, elements: s.elements.filter((e) => e.id !== elId) })),
+
+      storyboards,
+      storyboardById: (id) => storyboards.find((b) => b.id === id),
+      createStoryboard: () => {
+        const b: Storyboard = {
+          id: uid(),
+          name: 'Untitled storyboard',
+          frames: [],
+          createdAt: Date.now(),
+        };
+        setStoryboards((prev) => [b, ...prev]);
+        setView({ kind: 'storyboard', id: b.id });
+      },
+      renameStoryboard: (id, name) => patchBoard(id, (b) => ({ ...b, name })),
+      deleteStoryboard: (id) => {
+        setStoryboards((prev) => prev.filter((b) => b.id !== id));
+        setView({ kind: 'storyboards' });
+      },
+      addFrame: (boardId, frame) =>
+        patchBoard(boardId, (b) => ({ ...b, frames: [...b.frames, frame] })),
+      updateFrame: (boardId, frameId, p) =>
+        patchBoard(boardId, (b) => ({
+          ...b,
+          frames: b.frames.map((f) => (f.id === frameId ? { ...f, ...p } : f)),
+        })),
+      removeFrame: (boardId, frameId) =>
+        patchBoard(boardId, (b) => ({ ...b, frames: b.frames.filter((f) => f.id !== frameId) })),
+      moveFrame: (boardId, frameId, dir) =>
+        patchBoard(boardId, (b) => {
+          const i = b.frames.findIndex((f) => f.id === frameId);
+          const j = i + dir;
+          if (i < 0 || j < 0 || j >= b.frames.length) return b;
+          const frames = [...b.frames];
+          [frames[i], frames[j]] = [frames[j], frames[i]];
+          return { ...b, frames };
+        }),
       syncCfg,
       syncBusy,
       lastSyncedAt,
@@ -591,7 +662,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, projects, view, query, typeFilter, sourceFilter, tagFilter, sortBy, fileTypes, sources, selectedIds, focusedId, hydrated, spaces, syncCfg, syncBusy, lastSyncedAt]);
+  }, [items, projects, view, query, typeFilter, sourceFilter, tagFilter, sortBy, fileTypes, sources, selectedIds, focusedId, hydrated, spaces, storyboards, syncCfg, syncBusy, lastSyncedAt]);
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }

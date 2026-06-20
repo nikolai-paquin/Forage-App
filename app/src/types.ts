@@ -70,7 +70,9 @@ export type View =
   | { kind: 'collections' }
   | { kind: 'collection'; id: string }
   | { kind: 'spaces' }
-  | { kind: 'space'; id: string };
+  | { kind: 'space'; id: string }
+  | { kind: 'storyboards' }
+  | { kind: 'storyboard'; id: string };
 
 // ---- Spaces: freeform infinite canvas ----
 export interface SpaceElement {
@@ -94,6 +96,23 @@ export interface Space {
   updatedAt?: number;
 }
 
+// ---- Storyboards: an ordered sequence of captioned frames ----
+export interface StoryFrame {
+  id: string;
+  /** Optional linked save — its media is shown as the frame image. */
+  itemId?: string;
+  caption: string;
+  notes?: string;
+}
+
+export interface Storyboard {
+  id: string;
+  name: string;
+  frames: StoryFrame[];
+  createdAt: number;
+  updatedAt?: number;
+}
+
 export type TypeFilter = ItemType | 'all';
 
 export type SortBy = 'recent' | 'oldest' | 'name' | 'type';
@@ -105,22 +124,3 @@ export interface FilterEntry {
   enabled: boolean;
 }
 
-// ---- Storyboard (PRD §8.4) ----
-// An ordered sequence of frames built from Items, for AI video & sequenced design work.
-
-export interface Frame {
-  id: string;
-  /** The Item this frame shows (image/video/ai_asset). */
-  itemId: string;
-  /** Short direction for the shot, e.g. "wide, dawn" or "push-in". */
-  beat: string;
-  /** How this frame moves to the next. */
-  transition?: string;
-}
-
-export interface Storyboard {
-  id: string;
-  projectId: string;
-  title: string;
-  frames: Frame[];
-}

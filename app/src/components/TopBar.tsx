@@ -5,6 +5,7 @@ import type { View } from '../types';
 import {
   ChevronsUpDown,
   Compass,
+  Film,
   Frame,
   Grid,
   LibraryIcon,
@@ -14,17 +15,19 @@ import {
   Sun,
 } from './icons';
 
-type Mode = 'library' | 'collections' | 'spaces';
+type Mode = 'library' | 'collections' | 'moodboards' | 'storyboards';
 
 const MODES: { id: Mode; label: string; icon: React.ReactNode }[] = [
   { id: 'library', label: 'Library', icon: <LibraryIcon size={15} /> },
   { id: 'collections', label: 'Collections', icon: <Grid size={15} /> },
-  { id: 'spaces', label: 'Spaces', icon: <Frame size={15} /> },
+  { id: 'moodboards', label: 'Moodboards', icon: <Frame size={15} /> },
+  { id: 'storyboards', label: 'Storyboards', icon: <Film size={15} /> },
 ];
 
 function modeOf(view: View): Mode {
   if (view.kind === 'collections' || view.kind === 'collection') return 'collections';
-  if (view.kind === 'spaces' || view.kind === 'space') return 'spaces';
+  if (view.kind === 'spaces' || view.kind === 'space') return 'moodboards';
+  if (view.kind === 'storyboards' || view.kind === 'storyboard') return 'storyboards';
   return 'library';
 }
 
@@ -44,7 +47,8 @@ export function TopBar({
   const goto = (m: Mode) => {
     if (m === 'library') setView({ kind: 'library', tab: 'all' });
     else if (m === 'collections') setView({ kind: 'collections' });
-    else setView({ kind: 'spaces' });
+    else if (m === 'moodboards') setView({ kind: 'spaces' });
+    else setView({ kind: 'storyboards' });
   };
 
   const iconBtn =

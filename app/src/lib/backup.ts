@@ -8,13 +8,14 @@ const PREFIX = 'forage.';
 const IDB_ITEMS = 'items';
 const IDB_SPACES = 'spaces';
 const IDB_PROJECTS = 'projects';
+const IDB_STORYBOARDS = 'storyboards';
 
 export interface Backup {
   app: 'forage';
   version: 2;
   exportedAt: number;
-  /** The library — items + spaces + collections, from IndexedDB. */
-  idb: { items: unknown[]; spaces: unknown[]; projects?: unknown[] };
+  /** The library — items + spaces + collections + storyboards, from IndexedDB. */
+  idb: { items: unknown[]; spaces: unknown[]; projects?: unknown[]; storyboards?: unknown[] };
   /** Config — every forage.* localStorage key. */
   local: Record<string, unknown>;
 }
@@ -36,16 +37,22 @@ function snapshotLocal(): Record<string, unknown> {
 }
 
 export async function buildBackup(): Promise<Backup> {
-  const [items, spaces, projects] = await Promise.all([
+  const [items, spaces, projects, storyboards] = await Promise.all([
     idbGet<unknown[]>(IDB_ITEMS),
     idbGet<unknown[]>(IDB_SPACES),
     idbGet<unknown[]>(IDB_PROJECTS),
+    idbGet<unknown[]>(IDB_STORYBOARDS),
   ]);
   return {
     app: 'forage',
     version: 2,
     exportedAt: Date.now(),
-    idb: { items: items ?? [], spaces: spaces ?? [], projects: projects ?? [] },
+    idb: {
+      items: items ?? [],
+      spaces: spaces ?? [],
+      projects: projects ?? [],
+      storyboards: storyboards ?? [],
+    },
     local: snapshotLocal(),
   };
 }
@@ -91,11 +98,13 @@ export async function importBackup(file: File): Promise<ImportResult> {
   let items: unknown[] = [];
   let spaces: unknown[] = [];
   let projects: unknown[] | undefined;
+  let storyboards: unknown[] | undefined;
 
   if (parsed.version === 2 && parsed.idb && parsed.local) {
     items = parsed.idb.items ?? [];
     spaces = parsed.idb.spaces ?? [];
     projects = parsed.idb.projects;
+    storyboards = parsed.idb.storyboards;
     for (const [key, value] of Object.entries(parsed.local)) {
       if (key.startsWith(PREFIX)) {
         localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
@@ -118,6 +127,7 @@ export async function importBackup(file: File): Promise<ImportResult> {
 
   const writes = [idbSet(IDB_ITEMS, items), idbSet(IDB_SPACES, spaces)];
   if (projects !== undefined) writes.push(idbSet(IDB_PROJECTS, projects));
+  if (storyboards !== undefined) writes.push(idbSet(IDB_STORYBOARDS, storyboards));
   await Promise.all(writes);
   return { items: Array.isArray(items) ? items.length : 0 };
 }

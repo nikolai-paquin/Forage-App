@@ -7,6 +7,8 @@ import { CollectionsView } from './components/CollectionsView';
 import { CollectionView } from './components/CollectionView';
 import { SpacesView } from './components/SpacesView';
 import { SpaceCanvas } from './components/SpaceCanvas';
+import { StoryboardsView } from './components/StoryboardsView';
+import { StoryboardView } from './components/StoryboardView';
 import { ItemDetail } from './components/ItemDetail';
 import { CaptureDialog } from './components/CaptureDialog';
 import { SearchOverlay } from './components/SearchOverlay';
@@ -265,7 +267,7 @@ function Workspace() {
 
   const viewKey =
     view.kind +
-    (view.kind === 'collection' || view.kind === 'space'
+    (view.kind === 'collection' || view.kind === 'space' || view.kind === 'storyboard'
       ? view.id
       : view.kind === 'library'
         ? view.tab
@@ -328,6 +330,8 @@ function Workspace() {
           {view.kind === 'collection' && <CollectionView onOpen={open} />}
           {view.kind === 'spaces' && <SpacesView />}
           {view.kind === 'space' && <SpaceCanvas />}
+          {view.kind === 'storyboards' && <StoryboardsView />}
+          {view.kind === 'storyboard' && <StoryboardView />}
         </motion.div>
       </main>
 

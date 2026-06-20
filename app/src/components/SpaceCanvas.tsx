@@ -149,7 +149,7 @@ export function SpaceCanvas() {
           onClick={() => setView({ kind: 'spaces' })}
           className="flex items-center gap-1.5 text-[13px] text-muted transition hover:text-ink"
         >
-          <ArrowLeft size={15} /> Spaces
+          <ArrowLeft size={15} /> Moodboards
         </button>
         <input
           value={space.name}
@@ -190,7 +190,7 @@ export function SpaceCanvas() {
           <button
             onClick={() => deleteSpace(space.id)}
             className="grid h-9 w-9 place-items-center rounded-lg text-muted transition hover:bg-surface-2 hover:text-red-500"
-            title="Delete space"
+            title="Delete moodboard"
           >
             <Trash2 size={16} />
           </button>

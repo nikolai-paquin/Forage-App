@@ -44,6 +44,7 @@ export {
   Database,
   Library as LibraryIcon,
   Frame,
+  Film,
   SlidersHorizontal as Filter,
   GripVertical,
   RotateCcw,

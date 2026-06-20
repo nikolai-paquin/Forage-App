@@ -52,16 +52,16 @@ export function SpacesView() {
         <div className="mb-4 text-faint">
           <Frame size={36} strokeWidth={1.5} />
         </div>
-        <p className="text-[17px] font-medium text-ink">No spaces yet</p>
+        <p className="text-[17px] font-medium text-ink">No moodboards yet</p>
         <p className="mt-1.5 max-w-sm text-[13.5px] leading-relaxed text-muted">
-          Spaces are infinite canvases — drop saves in, arrange them freely, and add notes.
+          Moodboards are infinite canvases — drop saves in, arrange them freely, and add notes.
         </p>
         <button
           onClick={createSpace}
           className="mt-5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink"
           style={{ background: 'var(--ink)' }}
         >
-          Create your first space
+          Create your first moodboard
         </button>
       </div>
     );
@@ -75,7 +75,7 @@ export function SpacesView() {
           className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border-strong text-muted transition hover:border-ink hover:text-ink"
         >
           <Plus size={24} />
-          <span className="text-[13px]">New space</span>
+          <span className="text-[13px]">New moodboard</span>
         </button>
         {spaces.map((s) => (
           <SpaceCard key={s.id} space={s} onOpen={() => setView({ kind: 'space', id: s.id })} />
