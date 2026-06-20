@@ -186,6 +186,7 @@ interface ForageStore {
   updateSpaceElement: (spaceId: string, elId: string, patch: Partial<SpaceElement>) => void;
   removeSpaceElement: (spaceId: string, elId: string) => void;
   addDrawing: (spaceId: string, drawing: SpaceDrawing) => void;
+  removeDrawing: (spaceId: string, id: string) => void;
   removeLastDrawing: (spaceId: string) => void;
   clearDrawings: (spaceId: string) => void;
   // storyboards
@@ -643,6 +644,8 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         patchSpace(spaceId, (s) => ({ ...s, elements: s.elements.filter((e) => e.id !== elId) })),
       addDrawing: (spaceId, drawing) =>
         patchSpace(spaceId, (s) => ({ ...s, drawings: [...(s.drawings ?? []), drawing] })),
+      removeDrawing: (spaceId, id) =>
+        patchSpace(spaceId, (s) => ({ ...s, drawings: (s.drawings ?? []).filter((d) => d.id !== id) })),
       removeLastDrawing: (spaceId) =>
         patchSpace(spaceId, (s) => ({ ...s, drawings: (s.drawings ?? []).slice(0, -1) })),
       clearDrawings: (spaceId) => patchSpace(spaceId, (s) => ({ ...s, drawings: [] })),

@@ -4,6 +4,8 @@ export {
   Search,
   Plus,
   Pencil,
+  Highlighter,
+  Eraser,
   MousePointer2,
   MoveUpRight,
   Undo2,

@@ -96,7 +96,7 @@ export interface SpaceElement {
 /** A freehand pen stroke or arrow drawn on the canvas, for annotation. */
 export interface SpaceDrawing {
   id: string;
-  kind: 'pen' | 'arrow';
+  kind: 'pen' | 'marker' | 'arrow';
   points: { x: number; y: number }[];
   color: string;
   width: number;

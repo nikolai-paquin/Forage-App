@@ -6,6 +6,8 @@ import { uid } from '../lib/util';
 import {
   ArrowLeft,
   Close,
+  Eraser,
+  Highlighter,
   Image as ImageIcon,
   Maximize2,
   MousePointer2,
@@ -21,7 +23,26 @@ import {
 const thumb = (i?: Item) => (i ? (i.type === 'video' ? i.poster : i.media) : undefined);
 
 const PEN_COLORS = ['#ef4444', '#1b1c1f', '#3b82f6', '#22c55e', '#eab308'];
-type Tool = 'select' | 'pen' | 'arrow';
+type Tool = 'select' | 'pen' | 'marker' | 'arrow' | 'eraser';
+
+type Pt = { x: number; y: number };
+function distToSeg(p: Pt, a: Pt, b: Pt): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const l2 = dx * dx + dy * dy;
+  if (l2 === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+  let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+}
+/** Is the cursor close enough to a stroke to erase it? */
+function nearDrawing(p: Pt, d: SpaceDrawing): boolean {
+  const thr = Math.max(10, d.width / 1.5);
+  const pts = d.points;
+  if (pts.length === 1) return Math.hypot(p.x - pts[0].x, p.y - pts[0].y) <= thr;
+  for (let i = 1; i < pts.length; i++) if (distToSeg(p, pts[i - 1], pts[i]) <= thr) return true;
+  return false;
+}
 
 /** SVG path for a pen stroke or a line+arrowhead. */
 function drawingPath(d: SpaceDrawing): string {
@@ -51,6 +72,7 @@ function DrawingLayer({ drawings, draft }: { drawings: SpaceDrawing[]; draft: Sp
           d={drawingPath(d)}
           stroke={d.color}
           strokeWidth={d.width}
+          opacity={d.kind === 'marker' ? 0.4 : 1}
           fill="none"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -79,6 +101,7 @@ export function SpaceCanvas() {
     updateSpaceElement,
     removeSpaceElement,
     addDrawing,
+    removeDrawing,
     removeLastDrawing,
     clearDrawings,
     renameSpace,
@@ -99,12 +122,27 @@ export function SpaceCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const drag = useRef<DragState | null>(null);
   const drawRef = useRef<SpaceDrawing | null>(null);
+  const erasing = useRef(false);
   // Fresh values for the window pointer handlers without re-subscribing.
-  const liveRef = useRef({ pan, zoom, spaceId, addDrawing });
-  liveRef.current = { pan, zoom, spaceId, addDrawing };
+  const liveRef = useRef({ pan, zoom, spaceId, addDrawing, removeDrawing, drawings: space?.drawings ?? [] });
+  liveRef.current = { pan, zoom, spaceId, addDrawing, removeDrawing, drawings: space?.drawings ?? [] };
 
   useEffect(() => {
+    const canvasPoint = (e: PointerEvent) => {
+      const r = containerRef.current?.getBoundingClientRect();
+      if (!r) return null;
+      const { pan: lp, zoom: lz } = liveRef.current;
+      return { x: (e.clientX - r.left - lp.x) / lz, y: (e.clientY - r.top - lp.y) / lz };
+    };
     const move = (e: PointerEvent) => {
+      // Eraser drag — remove any stroke under the cursor.
+      if (erasing.current) {
+        const p = canvasPoint(e);
+        if (!p) return;
+        const { drawings, removeDrawing: rm, spaceId: sid } = liveRef.current;
+        for (const d of drawings) if (nearDrawing(p, d)) rm(sid, d.id);
+        return;
+      }
       // Active pen/arrow stroke — append points in canvas coords.
       if (drawRef.current) {
         const r = containerRef.current?.getBoundingClientRect();
@@ -145,6 +183,7 @@ export function SpaceCanvas() {
         drawRef.current = null;
         setDraft(null);
       }
+      erasing.current = false;
       drag.current = null;
     };
     window.addEventListener('pointermove', move);
@@ -182,7 +221,7 @@ export function SpaceCanvas() {
     drag.current = { type: 'resize', id: el.id, sx: e.clientX, sy: e.clientY, ox: el.w, oy };
   };
 
-  // Canvas press: pan in select mode, otherwise begin a pen/arrow stroke.
+  // Canvas press: pan (select), erase, or begin a pen/marker/arrow stroke.
   const onCanvasDown = (e: React.PointerEvent) => {
     if (tool === 'select') {
       startPan(e);
@@ -191,11 +230,16 @@ export function SpaceCanvas() {
     const r = containerRef.current?.getBoundingClientRect();
     if (!r) return;
     const p = { x: (e.clientX - r.left - pan.x) / zoom, y: (e.clientY - r.top - pan.y) / zoom };
+    if (tool === 'eraser') {
+      erasing.current = true;
+      for (const d of space?.drawings ?? []) if (nearDrawing(p, d)) removeDrawing(spaceId, d.id);
+      return;
+    }
     const d: SpaceDrawing = {
       id: uid(),
       kind: tool,
       color: penColor,
-      width: 3,
+      width: tool === 'marker' ? 16 : 3,
       points: tool === 'arrow' ? [p, p] : [p],
     };
     drawRef.current = d;
@@ -285,7 +329,9 @@ export function SpaceCanvas() {
               [
                 ['select', <MousePointer2 size={15} />, 'Select & move'],
                 ['pen', <Pencil size={15} />, 'Pen — draw / circle'],
+                ['marker', <Highlighter size={15} />, 'Marker — highlight'],
                 ['arrow', <MoveUpRight size={15} />, 'Arrow'],
+                ['eraser', <Eraser size={15} />, 'Eraser — remove strokes'],
               ] as [Tool, React.ReactNode, string][]
             ).map(([t, icon, title]) => (
               <button
@@ -300,7 +346,7 @@ export function SpaceCanvas() {
               </button>
             ))}
           </div>
-          {tool !== 'select' && (
+          {(tool === 'pen' || tool === 'marker' || tool === 'arrow') && (
             <div className="flex items-center gap-1">
               {PEN_COLORS.map((c) => (
                 <button
