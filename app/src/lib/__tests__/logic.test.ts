@@ -3,6 +3,7 @@ import type { Item } from '../../types';
 import { normalizeUrl, findDuplicate } from '../dedupe';
 import { mergeById, mergeSnapshots, generateSyncKey, type SyncSnapshot } from '../sync';
 import { cosine, hashText, itemText } from '../semantic';
+import { youTubeId, detectFromInput } from '../util';
 
 function item(partial: Partial<Item> & { id: string }): Item {
   return {
@@ -127,5 +128,39 @@ describe('semantic math', () => {
     const text = itemText(item({ id: 'a', title: 'Brutalist poster', tags: ['typography'] }));
     expect(text).toContain('Brutalist poster');
     expect(text).toContain('typography');
+  });
+});
+
+describe('youTubeId', () => {
+  it('parses every common YouTube URL shape', () => {
+    expect(youTubeId('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+    expect(youTubeId('https://youtu.be/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+    expect(youTubeId('https://www.youtube.com/shorts/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+    expect(youTubeId('https://youtube.com/embed/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+  });
+
+  it('returns null for non-YouTube urls', () => {
+    expect(youTubeId('https://example.com/watch?v=nope')).toBeNull();
+  });
+});
+
+describe('detectFromInput', () => {
+  it('detects a YouTube link as video with a thumbnail', () => {
+    const d = detectFromInput('https://youtu.be/dQw4w9WgXcQ');
+    expect(d.type).toBe('video');
+    expect(d.poster).toContain('dQw4w9WgXcQ');
+    expect(d.ratio).toBeCloseTo(16 / 9, 4);
+  });
+
+  it('detects a direct image URL with media set', () => {
+    const d = detectFromInput('https://cdn.example.com/photo.jpg');
+    expect(d.type).toBe('image');
+    expect(d.media).toBe('https://cdn.example.com/photo.jpg');
+  });
+
+  it('treats a plain page URL as a link', () => {
+    const d = detectFromInput('https://example.com/some/article');
+    expect(d.type).toBe('link');
+    expect(d.source).toBe('example.com');
   });
 });

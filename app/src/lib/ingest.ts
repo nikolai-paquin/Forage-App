@@ -1,10 +1,12 @@
 import { detectFromInput } from './util';
 
 export interface IngestPayload {
-  type: 'image' | 'gif' | 'link' | 'code';
+  type: 'image' | 'gif' | 'link' | 'code' | 'video';
   title: string;
   url?: string;
   media?: string;
+  poster?: string;
+  ratio?: number;
   source?: string;
   tags?: string[];
 }
@@ -41,11 +43,13 @@ export function consumeShareUrl(): IngestPayload | null {
     if (link) {
       const d = detectFromInput(link);
       payload = {
-        type: d.type === 'gif' ? 'gif' : d.type === 'image' ? 'image' : 'link',
+        type: d.type,
         title: title || d.title,
-        url: /^https?:/i.test(link) ? link : undefined,
-        media: d.type === 'image' || d.type === 'gif' ? link : undefined,
-        source: hostOf(link) ?? d.source,
+        url: d.url,
+        media: d.media,
+        poster: d.poster,
+        ratio: d.ratio,
+        source: d.source ?? hostOf(link),
       };
     } else if (title || text) {
       payload = { type: 'link', title: (title || text).slice(0, 80), source: 'note' };

@@ -76,6 +76,43 @@ function Workspace() {
     });
   };
 
+  // Turn pasted/dropped text (a URL, snippet, or YouTube link) into a save.
+  const captureFromText = (raw: string) => {
+    const text = raw.trim();
+    if (!text) return;
+    const d = detectFromInput(text);
+    const code = d.type === 'code' ? text : undefined;
+    if (findDuplicate({ url: d.url, media: d.media, code })) {
+      toast('Already in your library');
+      return;
+    }
+    const created = addItem({
+      type: d.type,
+      title: d.title,
+      source: d.source,
+      url: d.url,
+      media: d.media,
+      poster: d.poster,
+      ratio: d.ratio,
+      code,
+      projectIds: targetCollection,
+    });
+    if (d.media) extractPalette(d.media).then((p) => p.length && updateItem(created.id, { palette: p }));
+    toast(`Saved “${created.title}”`);
+  };
+
+  // Accept an image dragged from a browser (no File, just an <img> in the payload).
+  const captureDrop = (dt: DataTransfer) => {
+    if (dt.files.length) {
+      addFiles(dt.files);
+      return;
+    }
+    const html = dt.getData('text/html');
+    const fromHtml = html.match(/<img[^>]+src=["']([^"']+)["']/i)?.[1];
+    const candidate = fromHtml || dt.getData('text/uri-list') || dt.getData('text/plain');
+    if (candidate && /^https?:/i.test(candidate.trim())) captureFromText(candidate.trim());
+  };
+
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
       const t = e.target as HTMLElement | null;
@@ -86,17 +123,7 @@ function Workspace() {
         return;
       }
       const text = e.clipboardData?.getData('text')?.trim();
-      if (text) {
-        const d = detectFromInput(text);
-        const url = /^https?:/i.test(text) ? text : undefined;
-        const media = d.type === 'image' || d.type === 'gif' ? text : undefined;
-        const code = d.type === 'code' ? text : undefined;
-        if (findDuplicate({ url, media, code })) {
-          toast('Already in your library');
-          return;
-        }
-        addItem({ type: d.type, title: d.title, source: d.source, url, media, code, projectIds: targetCollection });
-      }
+      if (text) captureFromText(text);
     };
     window.addEventListener('paste', onPaste);
     return () => window.removeEventListener('paste', onPaste);
@@ -270,7 +297,7 @@ function Workspace() {
         onDrop={(e) => {
           e.preventDefault();
           setDragging(false);
-          if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+          captureDrop(e.dataTransfer);
         }}
       >
         {dragging && (

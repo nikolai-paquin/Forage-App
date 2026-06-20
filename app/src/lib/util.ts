@@ -43,15 +43,54 @@ export function timeAgo(ms: number): string {
   return `${mo}mo ago`;
 }
 
-/** Guess an item type + a friendly title from pasted text (the smart-paste demo). */
-export function detectFromInput(raw: string): {
-  type: 'link' | 'image' | 'gif' | 'code';
+export interface Detected {
+  type: 'link' | 'image' | 'gif' | 'code' | 'video';
   title: string;
   source?: string;
-} {
+  url?: string;
+  /** Media URL (image/gif/video preview). */
+  media?: string;
+  /** Poster thumbnail (video). */
+  poster?: string;
+  /** Known aspect ratio (w/h), e.g. 16:9 for video thumbnails. */
+  ratio?: number;
+}
+
+/** Extract a YouTube video id from any of its URL shapes. */
+export function youTubeId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace(/^www\./, '');
+    if (host === 'youtu.be') return u.pathname.slice(1).split('/')[0] || null;
+    if (host.endsWith('youtube.com')) {
+      const v = u.searchParams.get('v');
+      if (v) return v;
+      const m = u.pathname.match(/\/(?:shorts|embed|live|v)\/([^/?]+)/);
+      if (m) return m[1];
+    }
+  } catch {
+    /* not a url */
+  }
+  return null;
+}
+
+/** Guess an item type, title, and any embeddable media from pasted text or a URL. */
+export function detectFromInput(raw: string): Detected {
   const text = raw.trim();
   const isUrl = /^https?:\/\//i.test(text);
   if (isUrl) {
+    const yt = youTubeId(text);
+    if (yt) {
+      return {
+        type: 'video',
+        title: 'YouTube video',
+        source: 'youtube.com',
+        url: text,
+        // hqdefault always exists; object-cover trims its 4:3 letterbox to a clean 16:9.
+        poster: `https://img.youtube.com/vi/${yt}/hqdefault.jpg`,
+        ratio: 16 / 9,
+      };
+    }
     let host = '';
     try {
       host = new URL(text).hostname.replace(/^www\./, '');
@@ -59,9 +98,10 @@ export function detectFromInput(raw: string): {
       host = 'link';
     }
     if (/\.(png|jpe?g|webp|avif)(\?|$)/i.test(text))
-      return { type: 'image', title: 'Pasted image', source: host };
-    if (/\.gif(\?|$)/i.test(text)) return { type: 'gif', title: 'Pasted GIF', source: host };
-    return { type: 'link', title: host, source: host };
+      return { type: 'image', title: 'Pasted image', source: host, url: text, media: text };
+    if (/\.gif(\?|$)/i.test(text))
+      return { type: 'gif', title: 'Pasted GIF', source: host, url: text, media: text };
+    return { type: 'link', title: host, source: host, url: text };
   }
   if (/[{};=>]|function |const |=>/.test(text) && text.length > 12)
     return { type: 'code', title: 'Pasted snippet', source: 'paste' };

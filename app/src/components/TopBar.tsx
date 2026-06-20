@@ -51,9 +51,12 @@ export function TopBar({
     'grid h-9 w-9 place-items-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink';
 
   return (
-    <header className="flex items-center justify-between px-5 py-3.5">
+    <header
+      data-tauri-drag-region
+      className="topbar flex items-center justify-between px-5 py-3.5"
+    >
       {/* Left: workspace */}
-      <div className="flex w-[220px] items-center gap-2.5">
+      <div className="topbar-left flex w-[220px] items-center gap-2.5">
         <span
           className="grid h-8 w-8 place-items-center rounded-[9px] text-accent-ink"
           style={{ background: 'var(--ink)' }}

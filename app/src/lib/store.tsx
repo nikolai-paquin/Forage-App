@@ -80,6 +80,8 @@ interface NewItemInput {
   source?: string;
   url?: string;
   media?: string;
+  poster?: string;
+  ratio?: number;
   code?: string;
   tags?: string[];
   projectIds?: string[];
@@ -406,8 +408,9 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           source: input.source,
           url: input.url,
           media: input.media,
+          poster: input.poster,
           code: input.code,
-          ratio: input.type === 'link' ? 1.6 : 0.7 + Math.random() * 0.7,
+          ratio: input.ratio ?? (input.type === 'link' ? 1.6 : 0.7 + Math.random() * 0.7),
           palette: ['#3b3b3b', '#9a9a9a', '#e6e6e6'],
           tags: input.tags ?? [],
           projectIds: input.projectIds ?? [],

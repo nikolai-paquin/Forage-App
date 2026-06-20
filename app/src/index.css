@@ -209,3 +209,13 @@ body {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Native desktop (Tauri): leave room at the top-left for the macOS traffic-light
+   buttons so they don't overlap the logo. (Window dragging is handled natively via
+   the data-tauri-drag-region attribute on the header.) */
+.tauri .topbar {
+  padding-top: 1.5rem;
+}
+.tauri .topbar-left {
+  padding-left: 72px;
+}

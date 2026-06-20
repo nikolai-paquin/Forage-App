@@ -3,12 +3,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import { detectFromInput } from '../lib/util';
 import { toast } from '../lib/toast';
-import { Code, Image, Link, Sparkle } from './icons';
+import { Code, Image, Link, Play, Sparkle } from './icons';
 
 const TYPE_META: Record<string, { label: string; icon: React.ReactNode }> = {
   link: { label: 'Link', icon: <Link width={13} height={13} /> },
   image: { label: 'Image', icon: <Image width={13} height={13} /> },
   gif: { label: 'GIF', icon: <Image width={13} height={13} /> },
+  video: { label: 'Video', icon: <Play width={13} height={13} /> },
   code: { label: 'Code', icon: <Code width={13} height={13} /> },
   ai_asset: { label: 'AI asset', icon: <Sparkle width={13} height={13} /> },
 };
@@ -30,16 +31,14 @@ export function CaptureDialog({ open, onClose }: { open: boolean; onClose: () =>
   }, [open]);
 
   const detected = useMemo(() => (text.trim() ? detectFromInput(text) : null), [text]);
-  const isImg = detected?.type === 'image' || detected?.type === 'gif';
+  const previewSrc = detected?.media ?? detected?.poster;
 
   const submit = () => {
     if (!text.trim()) return;
     const d = detected!;
     const trimmed = text.trim();
-    const url = /^https?:/i.test(text) ? trimmed : undefined;
-    const media = isImg ? trimmed : undefined;
     const code = d.type === 'code' ? trimmed : undefined;
-    if (findDuplicate({ url, media, code })) {
+    if (findDuplicate({ url: d.url, media: d.media, code })) {
       toast('Already in your library');
       onClose();
       return;
@@ -48,8 +47,10 @@ export function CaptureDialog({ open, onClose }: { open: boolean; onClose: () =>
       type: d.type,
       title: d.title,
       source: d.source,
-      url,
-      media,
+      url: d.url,
+      media: d.media,
+      poster: d.poster,
+      ratio: d.ratio,
       code,
       tags: tags
         .split(',')
@@ -106,8 +107,8 @@ export function CaptureDialog({ open, onClose }: { open: boolean; onClose: () =>
                 >
                   <div className="flex items-center gap-3 px-4 py-3">
                     <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-surface-2 text-muted">
-                      {isImg ? (
-                        <img src={text.trim()} alt="" className="h-full w-full object-cover" />
+                      {previewSrc ? (
+                        <img src={previewSrc} alt="" className="h-full w-full object-cover" />
                       ) : (
                         TYPE_META[detected.type]?.icon
                       )}
