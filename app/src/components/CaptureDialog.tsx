@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import { detectFromInput } from '../lib/util';
 import { toast } from '../lib/toast';
-import { Code, Image, Link, Music, Play, Sparkle, Upload } from './icons';
+import { Close, Code, Image, Link, Music, Play, Sparkle, Upload } from './icons';
 
 const TYPE_META: Record<string, { label: string; icon: React.ReactNode }> = {
   link: { label: 'Link', icon: <Link width={13} height={13} /> },
@@ -27,13 +27,24 @@ export function CaptureDialog({
   /** Bookmarks "Add a link": paste links only, no image/audio upload zone. */
   linksOnly?: boolean;
 }) {
-  const { addItem, projects, findDuplicate } = useForage();
+  const { addItem, projects, findDuplicate, createProject } = useForage();
   const [text, setText] = useState('');
   const [projectId, setProjectId] = useState('');
   const [tags, setTags] = useState('');
   const [over, setOver] = useState(false);
+  const [creatingCollection, setCreatingCollection] = useState(false);
+  const [newCollName, setNewCollName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const createColl = () => {
+    const n = newCollName.trim();
+    if (!n) return;
+    const id = createProject(n, [], false);
+    setProjectId(id);
+    setCreatingCollection(false);
+    setNewCollName('');
+  };
 
   const pickFiles = (files: FileList | File[] | null) => {
     if (files && files.length && onFiles) {
@@ -47,6 +58,8 @@ export function CaptureDialog({
       setText('');
       setTags('');
       setProjectId('');
+      setCreatingCollection(false);
+      setNewCollName('');
       setTimeout(() => inputRef.current?.focus(), 40);
     }
   }, [open]);
@@ -223,24 +236,66 @@ export function CaptureDialog({
                   </div>
 
                   <div className="flex items-center gap-2 px-4 pb-2">
-                    <select
-                      value={projectId}
-                      onChange={(e) => setProjectId(e.target.value)}
-                      className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[12.5px] text-ink outline-none"
-                    >
-                      <option value="">No collection</option>
-                      {projects.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      value={tags}
-                      onChange={(e) => setTags(e.target.value)}
-                      placeholder="# tags…"
-                      className="flex-1 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[12.5px] text-ink outline-none placeholder:text-faint"
-                    />
+                    {creatingCollection ? (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          autoFocus
+                          value={newCollName}
+                          onChange={(e) => setNewCollName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              createColl();
+                            }
+                            if (e.key === 'Escape') setCreatingCollection(false);
+                          }}
+                          placeholder="New collection name"
+                          className="w-40 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[12.5px] text-ink outline-none placeholder:text-faint"
+                        />
+                        <button
+                          onClick={createColl}
+                          disabled={!newCollName.trim()}
+                          className="rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium text-accent-ink disabled:opacity-40"
+                          style={{ background: 'var(--ink)' }}
+                        >
+                          Create
+                        </button>
+                        <button
+                          onClick={() => setCreatingCollection(false)}
+                          className="grid h-7 w-7 place-items-center rounded-lg text-muted hover:text-ink"
+                        >
+                          <Close size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <select
+                        value={projectId}
+                        onChange={(e) => {
+                          if (e.target.value === '__new__') {
+                            setCreatingCollection(true);
+                            return;
+                          }
+                          setProjectId(e.target.value);
+                        }}
+                        className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[12.5px] text-ink outline-none"
+                      >
+                        <option value="">No collection</option>
+                        {projects.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                        <option value="__new__">+ New collection…</option>
+                      </select>
+                    )}
+                    {!creatingCollection && (
+                      <input
+                        value={tags}
+                        onChange={(e) => setTags(e.target.value)}
+                        placeholder="# tags…"
+                        className="flex-1 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[12.5px] text-ink outline-none placeholder:text-faint"
+                      />
+                    )}
                   </div>
                 </motion.div>
               )}

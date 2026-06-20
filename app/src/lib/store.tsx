@@ -166,7 +166,7 @@ interface ForageStore {
   restoreSelected: () => void;
   deleteSelectedForever: () => void;
   projectById: (id: string) => Project | undefined;
-  createProject: (name: string, autoTags?: string[]) => void;
+  createProject: (name: string, autoTags?: string[], navigate?: boolean) => string;
   deleteProject: (id: string) => void;
   itemById: (id: string) => Item | undefined;
   findDuplicate: (c: DupeCandidate) => Item | undefined;
@@ -576,7 +576,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         setSelectedIds([]);
       },
       projectById,
-      createProject: (name, autoTags) => {
+      createProject: (name, autoTags, navigate = true) => {
         const tags = (autoTags ?? []).map((t) => t.trim().toLowerCase()).filter(Boolean);
         const palette = ['#e8927c', '#7cb5e8', '#9ad29a', '#d29ad2', '#e8d27c', '#7ce8cf'];
         const p: Project = {
@@ -588,7 +588,8 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           autoTags: tags.length ? [...new Set(tags)] : undefined,
         };
         setProjects((prev) => [p, ...prev]);
-        setView({ kind: 'collection', id: p.id });
+        if (navigate) setView({ kind: 'collection', id: p.id });
+        return p.id;
       },
       deleteProject: (id) => {
         setProjects((prev) => prev.filter((p) => p.id !== id));
