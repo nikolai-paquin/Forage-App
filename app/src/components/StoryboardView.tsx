@@ -91,7 +91,7 @@ export function StoryboardView() {
       </div>
 
       {/* frames */}
-      <div className="min-h-0 flex-1 overflow-x-auto border-t border-border bg-surface-2/40 px-5 py-6">
+      <div className="min-h-0 flex-1 overflow-y-auto border-t border-border bg-surface-2/40 px-5 py-6">
         {board.frames.length === 0 ? (
           <div className="grid h-full place-items-center">
             <button
@@ -103,13 +103,13 @@ export function StoryboardView() {
             </button>
           </div>
         ) : (
-          <div className="flex h-full items-stretch gap-4">
+          <div className="flex flex-wrap content-start gap-4">
             {board.frames.map((f, i) => {
               const src = thumb(itemById(f.itemId ?? ''));
               return (
                 <div
                   key={f.id}
-                  className="flex w-64 shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-surface"
+                  className="flex w-64 flex-col self-start overflow-hidden rounded-xl border border-border bg-surface"
                 >
                   <button
                     onClick={() => setPicker(f.id)}
@@ -173,7 +173,7 @@ export function StoryboardView() {
             })}
             <button
               onClick={addEmpty}
-              className="grid w-40 shrink-0 place-items-center rounded-xl border border-dashed border-border-strong text-muted transition hover:border-ink hover:text-ink"
+              className="grid h-44 w-40 place-items-center self-start rounded-xl border border-dashed border-border-strong text-muted transition hover:border-ink hover:text-ink"
             >
               <span className="flex flex-col items-center gap-1.5">
                 <Plus size={20} />
