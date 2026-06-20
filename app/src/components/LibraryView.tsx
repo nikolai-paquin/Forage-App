@@ -238,8 +238,8 @@ export function LibraryView({
             </button>
           </Empty>
         ) : (
-          <div className="mx-auto max-w-3xl">
-            <div className="mb-3 flex justify-end">
+          <div>
+            <div className="mb-3 flex justify-start">
               <button
                 onClick={onAddLink}
                 className="flex items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 py-1.5 text-[13px] font-medium text-ink transition hover:bg-surface-2"

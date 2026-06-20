@@ -228,7 +228,7 @@ export function CaptureDialog({
                       onChange={(e) => setProjectId(e.target.value)}
                       className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[12.5px] text-ink outline-none"
                     >
-                      <option value="">Add to: Basket</option>
+                      <option value="">No collection</option>
                       {projects.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name}
