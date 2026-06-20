@@ -12,6 +12,7 @@ import {
   getSoundId,
   setSoundId,
   playSound,
+  playVarietyPreview,
 } from '../lib/sound';
 import {
   getDefaultCollection,
@@ -518,7 +519,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                             clearLibrary();
                             setConfirmReset(false);
                             storageStats().then(setStats);
-                            toast('Library cleared');
+                            toast('Library cleared', { sound: 'trash' });
                           }}
                           className="rounded-full bg-red-500 px-4 py-2 text-[13px] font-medium text-white transition hover:bg-red-600"
                         >
@@ -700,8 +701,10 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                         {l.id !== 'default' && l.id !== activeLibrary && (
                           <button
                             onClick={() => {
-                              if (confirm(`Delete the library “${l.name}” and everything in it?`))
+                              if (confirm(`Delete the library “${l.name}” and everything in it?`)) {
                                 deleteLibrary(l.id);
+                                toast('Library deleted', { sound: 'trash' });
+                              }
                             }}
                             title="Delete library"
                             className="grid h-7 w-7 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-red-500"
@@ -811,7 +814,10 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                         const next = !soundOn;
                         setSoundOn(next);
                         setSoundEnabled(next);
-                        if (next) playSound(soundChoice);
+                        if (next) {
+                          if (soundChoice === 'variety') playVarietyPreview();
+                          else playSound(soundChoice);
+                        }
                       }}
                     />
                   </div>
@@ -819,6 +825,24 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                   <p className="mb-2.5 mt-6 text-[12px] font-medium uppercase tracking-[0.16em] text-faint">
                     Choose a sound
                   </p>
+                  <button
+                    onClick={() => {
+                      setSoundChoice('variety');
+                      setSoundId('variety');
+                      playVarietyPreview();
+                    }}
+                    className={`mb-2 flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-[13px] transition ${
+                      soundChoice === 'variety'
+                        ? 'border-ink bg-surface-2 text-ink'
+                        : 'border-border bg-surface text-muted hover:text-ink'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Sparkle size={14} />
+                      Variety — cycle through all
+                    </span>
+                    {soundChoice === 'variety' && <Check size={14} />}
+                  </button>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {SOUNDS.map((s) => (
                       <button

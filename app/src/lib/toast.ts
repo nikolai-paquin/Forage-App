@@ -2,6 +2,8 @@
 export interface ToastOpts {
   /** Show an "Undo" action; the toast lingers longer while it's offered. */
   undo?: () => void;
+  /** Which cue to play. Defaults to the action sound; 'trash' for deletes. */
+  sound?: 'action' | 'trash' | 'none';
 }
 
 type Listener = (message: string, opts?: ToastOpts) => void;

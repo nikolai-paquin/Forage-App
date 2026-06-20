@@ -75,7 +75,7 @@ export function StoryboardView() {
             <button
               onClick={() => {
                 deleteStoryboard(board.id);
-                toast('Storyboard deleted');
+                toast('Storyboard deleted', { sound: 'trash' });
               }}
               className="rounded-lg bg-red-500 px-3 py-1.5 text-[13px] font-medium text-white transition hover:bg-red-600"
             >

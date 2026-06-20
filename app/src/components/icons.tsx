@@ -69,4 +69,6 @@ export {
   Loader as Loader,
   Check,
   Share2,
+  Type as FontIcon,
+  Copy,
 } from 'lucide-react';

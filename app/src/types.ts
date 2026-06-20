@@ -9,6 +9,8 @@ export type ItemType =
   | 'link'
   | 'code'
   | 'audio'
+  | 'palette'
+  | 'font'
   | 'ai_asset';
 
 export interface AiMeta {
@@ -34,6 +36,13 @@ export interface Item {
   /** For code items. */
   code?: string;
   language?: string;
+  /** For font items: the CSS family name, an optional uploaded font file
+   *  (data URL, registered via FontFace), and an optional Google Fonts URL. */
+  fontFamily?: string;
+  fontData?: string;
+  fontUrl?: string;
+  /** For font items: the sample text shown in the preview. */
+  sample?: string;
   /** Intrinsic aspect ratio (w/h) to lay out the masonry without layout shift. */
   ratio: number;
   /** Dominant palette, used for the focus glow + future color filtering. */

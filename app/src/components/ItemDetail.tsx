@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item } from '../types';
 import { suggestTagsAsync, generatePromptAsync, aiEnabled } from '../lib/ai';
 import { extractPalette } from '../lib/color';
+import { ensureFont, fontStack } from '../lib/fonts';
+import { copyHex } from '../lib/util';
 import { toast } from '../lib/toast';
 
 function TagAdder({ onAdd }: { onAdd: (t: string) => void }) {
@@ -41,6 +43,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Close,
+  Copy,
   Download,
   ExternalLink,
   Folder,
@@ -115,11 +118,56 @@ const EXT: Record<Item['type'], string> = {
   link: 'LINK',
   code: 'CODE',
   audio: 'AUDIO',
+  palette: 'PALETTE',
+  font: 'FONT',
 };
 
 const thumb = (i: Item) => (i.type === 'video' ? i.poster : i.media);
 
+function PaletteView({ item }: { item: Item }) {
+  const colors = item.palette.length ? item.palette : ['#e6e6e6'];
+  return (
+    <div className="w-full max-w-3xl">
+      <div className="flex overflow-hidden rounded-2xl shadow-2xl">
+        {colors.map((c, i) => (
+          <button
+            key={`${c}-${i}`}
+            onClick={() => copyHex(c)}
+            title={`${c.toUpperCase()} — click to copy`}
+            className="group/sw relative flex h-64 flex-1 flex-col items-center justify-end pb-5 transition-[flex] hover:flex-[1.4]"
+            style={{ background: c }}
+          >
+            <span className="flex items-center gap-1.5 rounded-full bg-black/35 px-2.5 py-1 text-[12px] font-medium uppercase tracking-wide text-white opacity-0 backdrop-blur-md transition group-hover/sw:opacity-100">
+              <Copy size={11} /> {c.replace('#', '')}
+            </span>
+          </button>
+        ))}
+      </div>
+      <p className="mt-3 text-center text-[12.5px] text-white/45">
+        Click a swatch to copy its hex code.
+      </p>
+    </div>
+  );
+}
+
+function FontView({ item }: { item: Item }) {
+  const sample = item.sample || 'The quick brown fox jumps over the lazy dog';
+  return (
+    <div className="w-full max-w-3xl text-white" style={{ fontFamily: fontStack(item.fontFamily) }}>
+      <p className="text-[clamp(56px,12vw,120px)] leading-none">Ag</p>
+      <p className="mt-6 text-[clamp(22px,4vw,40px)] leading-tight">{sample}</p>
+      <p className="mt-6 text-[clamp(15px,2vw,22px)] leading-snug text-white/70">
+        ABCDEFGHIJKLMNOPQRSTUVWXYZ
+        <br />
+        abcdefghijklmnopqrstuvwxyz 0123456789
+      </p>
+    </div>
+  );
+}
+
 function Media({ item }: { item: Item }) {
+  if (item.type === 'palette') return <PaletteView item={item} />;
+  if (item.type === 'font') return <FontView item={item} />;
   if (item.type === 'video')
     return (
       <video
@@ -212,6 +260,11 @@ export function ItemDetail({
   // wouldn't otherwise appear here.
   const live = item ? itemById(item.id) ?? item : null;
 
+  // Register a saved typeface so its preview renders in the real font.
+  useEffect(() => {
+    if (live?.type === 'font') ensureFont(live);
+  }, [live?.id, live?.fontFamily, live?.fontData, live?.fontUrl]);
+
   const list = visibleItems.length ? visibleItems : item ? [item] : [];
   const idx = item ? list.findIndex((i) => i.id === item.id) : -1;
   const prev = idx > 0 ? list[idx - 1] : null;
@@ -296,7 +349,7 @@ export function ItemDetail({
                   const deleted = live;
                   deleteForever(item.id);
                   onClose();
-                  toast('Deleted', { undo: () => reinsertItem(deleted) });
+                  toast('Deleted', { undo: () => reinsertItem(deleted), sound: 'trash' });
                 }}
                 className={iconBtn}
                 title="Delete"
@@ -385,7 +438,20 @@ export function ItemDetail({
               </div>
 
               <div className="relative mb-4 overflow-hidden rounded-xl border border-white/10 bg-black/30">
-                {thumb(item) ? (
+                {live.type === 'palette' ? (
+                  <div className="flex h-28 w-full">
+                    {(live.palette.length ? live.palette : ['#e6e6e6']).map((c, i) => (
+                      <span key={`${c}-${i}`} className="flex-1" style={{ background: c }} />
+                    ))}
+                  </div>
+                ) : live.type === 'font' ? (
+                  <div
+                    className="grid h-28 place-items-center text-[44px] text-white"
+                    style={{ fontFamily: fontStack(live.fontFamily) }}
+                  >
+                    Ag
+                  </div>
+                ) : thumb(item) ? (
                   <img src={thumb(item)} alt="" className="max-h-52 w-full object-contain" />
                 ) : (
                   <div className="grid h-40 place-items-center text-white/30">{EXT[item.type]}</div>
@@ -397,10 +463,11 @@ export function ItemDetail({
 
               <div className="mb-5 flex items-center gap-2">
                 {live.palette.map((c, i) => (
-                  <span
+                  <button
                     key={`${c}-${i}`}
-                    title={c}
-                    className="h-5 w-5 rounded-full ring-1 ring-white/15"
+                    onClick={() => copyHex(c)}
+                    title={`${c.toUpperCase()} — click to copy`}
+                    className="h-5 w-5 rounded-full ring-1 ring-white/15 transition hover:scale-110"
                     style={{ background: c }}
                   />
                 ))}
@@ -422,6 +489,17 @@ export function ItemDetail({
                     className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[13.5px] text-white outline-none focus:border-white/25"
                   />
                 </Field>
+                {live.type === 'font' && (
+                  <Field label="Sample text">
+                    <input
+                      key={`sample-${item.id}`}
+                      defaultValue={live.sample ?? ''}
+                      onChange={(e) => updateItem(item.id, { sample: e.target.value })}
+                      placeholder="The quick brown fox…"
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[13.5px] text-white outline-none placeholder:text-white/30 focus:border-white/25"
+                    />
+                  </Field>
+                )}
                 {(live.author || live.type === 'link' || live.type === 'video') && (
                   <Field label="Creator">
                     <input

@@ -74,6 +74,8 @@ const DEFAULT_TYPES: FilterEntry[] = [
   { value: 'vector', label: 'Vectors', enabled: true },
   { value: 'code', label: 'Code', enabled: true },
   { value: 'audio', label: 'Audio', enabled: true },
+  { value: 'palette', label: 'Palettes', enabled: true },
+  { value: 'font', label: 'Fonts', enabled: true },
 ];
 
 /** Merge stored filter entries with defaults so new built-in types appear on upgrade. */
@@ -119,6 +121,13 @@ interface NewItemInput {
   summary?: string;
   tags?: string[];
   projectIds?: string[];
+  /** Explicit palette (e.g. a saved color palette item). */
+  palette?: string[];
+  /** Font item fields. */
+  fontFamily?: string;
+  fontData?: string;
+  fontUrl?: string;
+  sample?: string;
 }
 
 interface ForageStore {
@@ -535,7 +544,11 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           code: input.code,
           summary: input.summary,
           ratio: input.ratio ?? (input.type === 'link' ? 1.6 : 0.7 + Math.random() * 0.7),
-          palette: ['#3b3b3b', '#9a9a9a', '#e6e6e6'],
+          palette: input.palette ?? ['#3b3b3b', '#9a9a9a', '#e6e6e6'],
+          fontFamily: input.fontFamily,
+          fontData: input.fontData,
+          fontUrl: input.fontUrl,
+          sample: input.sample,
           tags: input.tags ?? [],
           projectIds,
           createdAt: Date.now(),

@@ -13,6 +13,8 @@ import { StoryboardView } from './components/StoryboardView';
 import { ItemDetail } from './components/ItemDetail';
 import { CaptureDialog } from './components/CaptureDialog';
 import { CollectionDialog } from './components/CollectionDialog';
+import { PaletteDialog } from './components/PaletteDialog';
+import { FontDialog } from './components/FontDialog';
 import { SearchOverlay } from './components/SearchOverlay';
 import { ResurfacePanel } from './components/ResurfacePanel';
 import { SettingsModal } from './components/SettingsModal';
@@ -22,6 +24,7 @@ import { BulkBar } from './components/BulkBar';
 import { detectFromInput, fetchYouTubeMeta } from './lib/util';
 import { unfurl, unfurlEnabled } from './lib/unfurl';
 import { extractPalette, imageRatio } from './lib/color';
+import { ensureFonts } from './lib/fonts';
 import { consumeShareUrl } from './lib/ingest';
 import { exportBackup } from './lib/backup';
 import { aiEnabled } from './lib/ai';
@@ -53,6 +56,8 @@ function Workspace() {
   const [capture, setCapture] = useState(false);
   const [captureLinksOnly, setCaptureLinksOnly] = useState(false);
   const [newCollection, setNewCollection] = useState(false);
+  const [newPalette, setNewPalette] = useState(false);
+  const [newFont, setNewFont] = useState(false);
   const openCapture = () => {
     setCaptureLinksOnly(false);
     setCapture(true);
@@ -137,6 +142,11 @@ function Workspace() {
     const candidate = fromHtml || dt.getData('text/uri-list') || dt.getData('text/plain');
     if (candidate && /^https?:/i.test(candidate.trim())) captureFromText(candidate.trim());
   };
+
+  // Register every saved typeface so font tiles render in the real font.
+  useEffect(() => {
+    ensureFonts(items);
+  }, [items]);
 
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
@@ -426,7 +436,7 @@ function Workspace() {
           {view.kind === 'collections' && (
             <CollectionsView onNewCollection={() => setNewCollection(true)} />
           )}
-          {view.kind === 'collection' && <CollectionView onOpen={open} />}
+          {view.kind === 'collection' && <CollectionView onOpen={open} onAdd={openCapture} />}
           {view.kind === 'smart' && <SmartCollectionView onOpen={open} />}
           {view.kind === 'spaces' && <SpacesView />}
           {view.kind === 'space' && <SpaceCanvas />}
@@ -435,7 +445,11 @@ function Workspace() {
         </motion.div>
       </main>
 
-      <Fab onClick={openCapture} />
+      <Fab
+        onClick={openCapture}
+        onNewPalette={() => setNewPalette(true)}
+        onNewFont={() => setNewFont(true)}
+      />
       <BulkBar />
       <Toaster />
 
@@ -447,6 +461,8 @@ function Workspace() {
         linksOnly={captureLinksOnly}
       />
       <CollectionDialog open={newCollection} onClose={() => setNewCollection(false)} />
+      <PaletteDialog open={newPalette} onClose={() => setNewPalette(false)} />
+      <FontDialog open={newFont} onClose={() => setNewFont(false)} />
       <SearchOverlay
         open={search}
         onClose={() => setSearch(false)}

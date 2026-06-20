@@ -1,15 +1,19 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Item } from '../types';
 import { useForage } from '../lib/store';
 import { toast } from '../lib/toast';
+import { ensureFont, fontStack } from '../lib/fonts';
+import { copyHex } from '../lib/util';
 import {
   CheckCircle2,
   Circle,
   Code as CodeIcon,
+  FontIcon,
   Link as LinkIcon,
   Maximize2,
   Music,
+  Palette,
   Pause,
   Play,
   Trash2,
@@ -74,6 +78,67 @@ function YouTubeLogo({ size = 16 }: { size?: number }) {
       />
       <path fill="#fff" d="M9.6 15.6 15.8 12 9.6 8.4v7.2Z" />
     </svg>
+  );
+}
+
+function PaletteArt({ item }: { item: Item }) {
+  const colors = item.palette.length ? item.palette : ['#e6e6e6'];
+  return (
+    <div className="flex h-full w-full flex-col bg-surface">
+      <div className="flex min-h-0 flex-1">
+        {colors.map((c, i) => (
+          <span
+            key={`${c}-${i}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              copyHex(c);
+            }}
+            title={`${c.toUpperCase()} — click to copy`}
+            className="group/sw relative flex-1 cursor-pointer transition-[flex] duration-200 hover:flex-[1.6]"
+            style={{ background: c }}
+          >
+            <span className="pointer-events-none absolute inset-x-0 bottom-1 text-center text-[9.5px] font-medium uppercase tracking-wide text-white opacity-0 transition group-hover/sw:opacity-100 [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]">
+              {c.replace('#', '')}
+            </span>
+          </span>
+        ))}
+      </div>
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        <Palette size={13} className="shrink-0 text-faint" />
+        <span className="truncate text-[12.5px] font-medium text-ink">{item.title}</span>
+      </div>
+    </div>
+  );
+}
+
+function FontArt({ item }: { item: Item }) {
+  useEffect(() => {
+    ensureFont(item);
+  }, [item.fontFamily, item.fontData, item.fontUrl]);
+  return (
+    <div className="flex h-full w-full flex-col bg-surface">
+      <div className="grid min-h-0 flex-1 place-items-center overflow-hidden px-3 py-4">
+        <span
+          className="text-[clamp(34px,9vw,64px)] leading-none text-ink"
+          style={{ fontFamily: fontStack(item.fontFamily) }}
+        >
+          Ag
+        </span>
+      </div>
+      <div className="border-t border-border px-3 py-2.5">
+        <div className="flex items-center gap-2">
+          <FontIcon size={13} className="shrink-0 text-faint" />
+          <span className="truncate text-[12.5px] font-medium text-ink">{item.title}</span>
+        </div>
+        <p
+          className="mt-1 truncate text-[13px] text-muted"
+          style={{ fontFamily: fontStack(item.fontFamily) }}
+        >
+          {item.sample || 'The quick brown fox'}
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -172,7 +237,13 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
   };
 
   const youtube = isYouTube(item);
-  const isCard = item.type === 'link' || item.type === 'code' || item.type === 'audio' || youtube;
+  const isCard =
+    item.type === 'link' ||
+    item.type === 'code' ||
+    item.type === 'audio' ||
+    item.type === 'palette' ||
+    item.type === 'font' ||
+    youtube;
 
   return (
     <motion.button
@@ -200,6 +271,10 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
           <LinkArt item={item} />
         ) : item.type === 'audio' ? (
           <AudioArt item={item} />
+        ) : item.type === 'palette' ? (
+          <PaletteArt item={item} />
+        ) : item.type === 'font' ? (
+          <FontArt item={item} />
         ) : youtube ? (
           <YouTubeArt item={item} />
         ) : item.type === 'video' ? (
@@ -260,7 +335,7 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
             onClick={(e) => {
               stop(e);
               deleteForever(item.id);
-              toast('Deleted', { undo: () => reinsertItem(item) });
+              toast('Deleted', { undo: () => reinsertItem(item), sound: 'trash' });
             }}
             title="Delete"
             className="grid h-7 w-7 cursor-pointer place-items-center rounded-full bg-black/45 text-white backdrop-blur-md transition hover:bg-red-500"

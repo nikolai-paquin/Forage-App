@@ -109,7 +109,7 @@ export function BookmarksList({ items, onOpen }: { items: Item[]; onOpen: (i: It
           <button
             onClick={() => {
               deleteForever(item.id);
-              toast('Deleted', { undo: () => reinsertItem(item) });
+              toast('Deleted', { undo: () => reinsertItem(item), sound: 'trash' });
             }}
             title="Delete"
             className="grid h-8 w-8 place-items-center rounded-full text-muted transition hover:bg-surface hover:text-red-500"

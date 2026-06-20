@@ -1,8 +1,32 @@
 import { getUnfurlEndpoint } from './unfurl';
+import { toast } from './toast';
 import type { Item, Project } from '../types';
 
 export const uid = () =>
   's_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+
+/** Copy a hex color to the clipboard and confirm with a toast. */
+export async function copyHex(hex: string) {
+  const value = hex.toUpperCase();
+  try {
+    await navigator.clipboard.writeText(value);
+  } catch {
+    // Fallback for browsers without the async clipboard API.
+    const ta = document.createElement('textarea');
+    ta.value = value;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+    } catch {
+      /* give up silently */
+    }
+    ta.remove();
+  }
+  toast(`Copied ${value}`);
+}
 
 /** A save belongs to a collection if it was added manually or matches an auto-tag. */
 export function itemInProject(item: Item, project: Project): boolean {

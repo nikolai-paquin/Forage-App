@@ -2,10 +2,16 @@ import { useState } from 'react';
 import { useForage } from '../lib/store';
 import type { Item } from '../types';
 import { MasonryGrid } from './MasonryGrid';
-import { ArrowLeft, Trash2 } from './icons';
+import { ArrowLeft, Plus, Trash2 } from './icons';
 import { toast } from '../lib/toast';
 
-export function CollectionView({ onOpen }: { onOpen: (i: Item) => void }) {
+export function CollectionView({
+  onOpen,
+  onAdd,
+}: {
+  onOpen: (i: Item) => void;
+  onAdd: () => void;
+}) {
   const { view, projectById, visibleItems, setView, deleteProject } = useForage();
   const [confirm, setConfirm] = useState(false);
   if (view.kind !== 'collection') return null;
@@ -24,14 +30,20 @@ export function CollectionView({ onOpen }: { onOpen: (i: Item) => void }) {
         <h1 className="text-[26px] font-semibold tracking-tight">{p?.name}</h1>
         <span className="text-[14px] text-faint">· {visibleItems.length} saves</span>
 
-        <div className="ml-auto">
+        <button
+          onClick={onAdd}
+          className="ml-auto flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[13px] text-ink transition hover:bg-surface-2"
+        >
+          <Plus size={14} /> Add
+        </button>
+        <div>
           {confirm ? (
             <div className="flex items-center gap-2">
               <span className="text-[13px] text-muted">Delete collection?</span>
               <button
                 onClick={() => {
                   deleteProject(view.id);
-                  toast('Collection deleted');
+                  toast('Collection deleted', { sound: 'trash' });
                 }}
                 className="rounded-full bg-red-500 px-3 py-1.5 text-[13px] font-medium text-white transition hover:bg-red-600"
               >
@@ -60,7 +72,26 @@ export function CollectionView({ onOpen }: { onOpen: (i: Item) => void }) {
           The collection is removed; the saves inside it stay in your library.
         </p>
       )}
-      <MasonryGrid items={visibleItems} onOpen={onOpen} />
+      {visibleItems.length === 0 ? (
+        <div className="mt-20 flex flex-col items-center text-center">
+          <div className="grid h-14 w-14 place-items-center rounded-2xl border border-dashed border-border text-faint">
+            <Plus size={22} />
+          </div>
+          <p className="mt-4 text-[15px] font-medium text-ink">This collection is empty</p>
+          <p className="mt-1 max-w-xs text-[13px] text-muted">
+            Add images, links, audio, or notes — everything you save here is tagged to this
+            collection.
+          </p>
+          <button
+            onClick={onAdd}
+            className="mt-5 flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-[13px] font-medium text-accent-ink transition hover:opacity-90"
+          >
+            <Plus size={15} /> Add to this collection
+          </button>
+        </div>
+      ) : (
+        <MasonryGrid items={visibleItems} onOpen={onOpen} />
+      )}
     </div>
   );
 }
