@@ -184,24 +184,63 @@ export function ItemDetail({
   onClose: () => void;
   onOpen: (i: Item) => void;
 }) {
-  const { visibleItems, items, itemById, projectById, removeFromProject, updateItem, addTag, removeTag, trashItem, setDerivedFrom, outputsOf } =
-    useForage();
+  const {
+    visibleItems,
+    items,
+    itemById,
+    projectById,
+    projects,
+    assignToProject,
+    removeFromProject,
+    updateItem,
+    addTag,
+    removeTag,
+    trashItem,
+    setDerivedFrom,
+    outputsOf,
+  } = useForage();
   const [linking, setLinking] = useState(false);
   const [busy, setBusy] = useState<null | 'tags' | 'prompt'>(null);
+  const [collectOpen, setCollectOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
   const usingModel = aiEnabled();
+
+  // Resolve the LIVE item from the store — the `item` prop is a snapshot taken
+  // when the tile was clicked, so edits (tags, prompt, palette, collections)
+  // wouldn't otherwise appear here.
+  const live = item ? itemById(item.id) ?? item : null;
 
   const list = visibleItems.length ? visibleItems : item ? [item] : [];
   const idx = item ? list.findIndex((i) => i.id === item.id) : -1;
   const prev = idx > 0 ? list[idx - 1] : null;
   const next = idx >= 0 && idx < list.length - 1 ? list[idx + 1] : null;
 
-  const sourceId = item ? item.derivedFrom ?? item.ai?.sourceRefId : undefined;
+  const sourceId = live ? live.derivedFrom ?? live.ai?.sourceRefId : undefined;
   const srcItem = sourceId ? itemById(sourceId) : undefined;
-  const outputs = item ? outputsOf(item.id).filter((o) => o.id !== item.id) : [];
+  const outputs = live ? outputsOf(live.id).filter((o) => o.id !== live.id) : [];
+
+  // Native eyedropper: sample any pixel on screen and add it to the palette.
+  // Works regardless of image CORS (canvas extraction fails on cross-origin URLs).
+  const pickColor = async () => {
+    if (!live) return;
+    const ED = (window as unknown as { EyeDropper?: new () => { open: () => Promise<{ sRGBHex: string }> } })
+      .EyeDropper;
+    if (ED) {
+      try {
+        const { sRGBHex } = await new ED().open();
+        updateItem(live.id, { palette: [sRGBHex, ...live.palette.filter((c) => c !== sRGBHex)].slice(0, 5) });
+      } catch {
+        /* cancelled */
+      }
+      return;
+    }
+    const m = live.type === 'video' ? live.poster : live.media;
+    if (m) extractPalette(m).then((p) => p.length && updateItem(live.id, { palette: p }));
+  };
 
   return (
     <AnimatePresence>
-      {item && (
+      {item && live && (
         <motion.div
           className="fixed inset-0 z-50 flex flex-col bg-[#0a0a0b] text-white"
           initial={{ opacity: 0 }}
@@ -229,14 +268,7 @@ export function ItemDetail({
             <div className="flex items-center gap-1">
               <span className="mr-2 text-[13px] tabular-nums text-white/50">100%</span>
               <input type="range" min={50} max={150} defaultValue={100} className="mr-3 h-1 w-28 accent-white" />
-              <button
-                onClick={() => {
-                  const m = item.type === 'video' ? item.poster : item.media;
-                  if (m) extractPalette(m).then((p) => p.length && updateItem(item.id, { palette: p }));
-                }}
-                className={iconBtn}
-                title="Extract palette"
-              >
+              <button onClick={pickColor} className={iconBtn} title="Pick a color (eyedropper)">
                 <Pipette size={17} />
               </button>
               {item.url && (
@@ -292,9 +324,49 @@ export function ItemDetail({
 
             {/* details panel */}
             <aside className="w-[360px] shrink-0 overflow-auto border-l border-white/10 bg-[#141416] p-5">
-              <div className="mb-4 flex items-center justify-between">
+              <div className="relative mb-4 flex items-center justify-between">
                 <h2 className="text-[15px] font-semibold">Details</h2>
-                <Info size={16} className="text-white/40" />
+                <button
+                  onClick={() => setInfoOpen((v) => !v)}
+                  className="grid h-7 w-7 place-items-center rounded-lg text-white/40 transition hover:bg-white/10 hover:text-white"
+                  title="Item info"
+                >
+                  <Info size={16} />
+                </button>
+                {infoOpen && (
+                  <div className="absolute right-0 top-9 z-10 w-60 rounded-xl border border-white/10 bg-[#1c1c1f] p-3 text-[12px] shadow-2xl">
+                    <dl className="flex flex-col gap-1.5">
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-white/40">Type</dt>
+                        <dd className="text-white/85">{EXT[live.type]}</dd>
+                      </div>
+                      {live.source && (
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-white/40">Source</dt>
+                          <dd className="truncate text-white/85">{live.source}</dd>
+                        </div>
+                      )}
+                      {live.author && (
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-white/40">Creator</dt>
+                          <dd className="truncate text-white/85">{live.author}</dd>
+                        </div>
+                      )}
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-white/40">Saved</dt>
+                        <dd className="text-white/85">{new Date(live.createdAt).toLocaleDateString()}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-white/40">Ratio</dt>
+                        <dd className="text-white/85">{live.ratio.toFixed(2)}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-white/40">Tags</dt>
+                        <dd className="text-white/85">{live.tags.length}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                )}
               </div>
 
               <div className="relative mb-4 overflow-hidden rounded-xl border border-white/10 bg-black/30">
@@ -309,7 +381,7 @@ export function ItemDetail({
               </div>
 
               <div className="mb-5 flex items-center gap-2">
-                {item.palette.map((c, i) => (
+                {live.palette.map((c, i) => (
                   <span
                     key={`${c}-${i}`}
                     title={c}
@@ -318,11 +390,8 @@ export function ItemDetail({
                   />
                 ))}
                 <button
-                  onClick={() => {
-                    const m = item.type === 'video' ? item.poster : item.media;
-                    if (m) extractPalette(m).then((p) => p.length && updateItem(item.id, { palette: p }));
-                  }}
-                  title="Re-extract palette"
+                  onClick={pickColor}
+                  title="Pick a color (eyedropper)"
                   className="grid h-5 w-5 place-items-center rounded-full text-white/40 hover:text-white"
                 >
                   <Pipette size={12} />
@@ -363,21 +432,21 @@ export function ItemDetail({
                     <Sparkle size={13} /> Image Prompt
                     {usingModel && <span className="text-white/30">· model</span>}
                   </p>
-                  {item.ai?.prompt ? (
+                  {live.ai?.prompt ? (
                     <>
                       <p className="rounded-lg border border-white/10 bg-white/5 p-2.5 text-[12.5px] leading-relaxed text-white/80">
-                        {item.ai.prompt}
+                        {live.ai.prompt}
                       </p>
                       <button
                         disabled={busy === 'prompt'}
                         onClick={async () => {
                           setBusy('prompt');
-                          const prompt = await generatePromptAsync(item);
-                          updateItem(item.id, {
+                          const prompt = await generatePromptAsync(live);
+                          updateItem(live.id, {
                             ai: {
                               prompt,
                               model: usingModel ? 'forage-remote' : 'forage-local',
-                              sourceRefId: item.ai?.sourceRefId,
+                              sourceRefId: live.ai?.sourceRefId,
                             },
                           });
                           setBusy(null);
@@ -392,8 +461,8 @@ export function ItemDetail({
                       disabled={busy === 'prompt'}
                       onClick={async () => {
                         setBusy('prompt');
-                        const prompt = await generatePromptAsync(item);
-                        updateItem(item.id, {
+                        const prompt = await generatePromptAsync(live);
+                        updateItem(live.id, {
                           ai: { prompt, model: usingModel ? 'forage-remote' : 'forage-local' },
                         });
                         setBusy(null);
@@ -415,19 +484,51 @@ export function ItemDetail({
                     <Folder size={13} /> Collections
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {item.projectIds.map((pid) => {
+                    {live.projectIds.map((pid) => {
                       const p = projectById(pid);
                       if (!p) return null;
                       return (
                         <span key={pid} className="flex items-center gap-1.5 rounded-full bg-white/8 px-2.5 py-1 text-[12px] text-white/85">
                           <Folder size={12} /> {p.name}
-                          <button onClick={() => removeFromProject(item.id, pid)} className="text-white/40 hover:text-white">
+                          <button onClick={() => removeFromProject(live.id, pid)} className="text-white/40 hover:text-white">
                             <Close size={12} />
                           </button>
                         </span>
                       );
                     })}
-                    <button className="rounded-full border border-dashed border-white/20 px-2.5 py-1 text-[12px] text-white/50 hover:text-white">+ Add</button>
+                    <div className="relative">
+                      <button
+                        onClick={() => setCollectOpen((v) => !v)}
+                        className="rounded-full border border-dashed border-white/20 px-2.5 py-1 text-[12px] text-white/50 hover:text-white"
+                      >
+                        + Add
+                      </button>
+                      {collectOpen && (
+                        <div className="absolute right-0 z-10 mt-1.5 max-h-56 w-52 overflow-auto rounded-xl border border-white/10 bg-[#1c1c1f] p-1 shadow-2xl">
+                          {projects.filter((p) => !live.projectIds.includes(p.id)).length === 0 ? (
+                            <p className="px-2.5 py-2 text-[12px] text-white/40">
+                              In every collection already.
+                            </p>
+                          ) : (
+                            projects
+                              .filter((p) => !live.projectIds.includes(p.id))
+                              .map((p) => (
+                                <button
+                                  key={p.id}
+                                  onClick={() => {
+                                    assignToProject(live.id, p.id);
+                                    setCollectOpen(false);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-white/85 transition hover:bg-white/10"
+                                >
+                                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: p.color }} />
+                                  <span className="truncate">{p.name}</span>
+                                </button>
+                              ))
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -436,24 +537,24 @@ export function ItemDetail({
                     <Hash size={13} /> Tags
                   </p>
                   <div className="flex flex-wrap items-center gap-1.5">
-                    {item.tags.map((t) => (
+                    {live.tags.map((t) => (
                       <span
                         key={t}
                         className="flex items-center gap-1.5 rounded-full bg-white/8 px-2.5 py-1 text-[12px] text-white/85"
                       >
                         #{t}
-                        <button onClick={() => removeTag(item.id, t)} className="text-white/40 hover:text-white">
+                        <button onClick={() => removeTag(live.id, t)} className="text-white/40 hover:text-white">
                           <Close size={11} />
                         </button>
                       </span>
                     ))}
-                    <TagAdder onAdd={(t) => addTag(item.id, t)} />
+                    <TagAdder onAdd={(t) => addTag(live.id, t)} />
                     <button
                       disabled={busy === 'tags'}
                       onClick={async () => {
                         setBusy('tags');
-                        const tags = await suggestTagsAsync(item);
-                        tags.forEach((t) => addTag(item.id, t));
+                        const tags = await suggestTagsAsync(live);
+                        tags.forEach((t) => addTag(live.id, t));
                         setBusy(null);
                       }}
                       className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[12px] text-white/60 hover:text-white disabled:opacity-50"
@@ -468,34 +569,39 @@ export function ItemDetail({
                   </div>
                 </div>
 
-                <div className="border-t border-white/10 pt-4">
-                  <p className="mb-2 flex items-center gap-1.5 text-[12px] text-white/45">
-                    <Sparkle size={13} /> Derived from
-                  </p>
-                  {srcItem ? (
-                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 p-1.5 pr-2">
-                      <button onClick={() => onOpen(srcItem)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                        <span className="h-9 w-9 shrink-0 overflow-hidden rounded-md bg-white/10">
-                          {thumb(srcItem) && <img src={thumb(srcItem)} alt="" className="h-full w-full object-cover" />}
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block truncate text-[12.5px] text-white">{srcItem.title}</span>
-                          <span className="block text-[11px] text-white/40">the inspiration</span>
-                        </span>
+                {(live.type === 'ai_asset' || srcItem) && (
+                  <div className="border-t border-white/10 pt-4">
+                    <p className="mb-1 flex items-center gap-1.5 text-[12px] text-white/45">
+                      <Sparkle size={13} /> Derived from
+                    </p>
+                    <p className="mb-2 text-[11px] leading-relaxed text-white/30">
+                      Link the reference this was made from, to trace your input→output history.
+                    </p>
+                    {srcItem ? (
+                      <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 p-1.5 pr-2">
+                        <button onClick={() => onOpen(srcItem)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                          <span className="h-9 w-9 shrink-0 overflow-hidden rounded-md bg-white/10">
+                            {thumb(srcItem) && <img src={thumb(srcItem)} alt="" className="h-full w-full object-cover" />}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-[12.5px] text-white">{srcItem.title}</span>
+                            <span className="block text-[11px] text-white/40">the inspiration</span>
+                          </span>
+                        </button>
+                        <button onClick={() => setDerivedFrom(live.id, undefined)} className="text-white/40 hover:text-white">
+                          <Close size={13} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setLinking(true)}
+                        className="flex items-center gap-1.5 rounded-lg border border-dashed border-white/20 px-3 py-1.5 text-[13px] text-white/55 hover:text-white"
+                      >
+                        <Plus size={13} /> Link a source
                       </button>
-                      <button onClick={() => setDerivedFrom(item.id, undefined)} className="text-white/40 hover:text-white">
-                        <Close size={13} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setLinking(true)}
-                      className="flex items-center gap-1.5 rounded-lg border border-dashed border-white/20 px-3 py-1.5 text-[13px] text-white/55 hover:text-white"
-                    >
-                      <Plus size={13} /> Link a source
-                    </button>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
 
                 {outputs.length > 0 && (
                   <div>
