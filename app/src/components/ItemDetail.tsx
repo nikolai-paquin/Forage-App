@@ -419,6 +419,17 @@ export function ItemDetail({
                     className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[13.5px] text-white outline-none focus:border-white/25"
                   />
                 </Field>
+                {(live.author || live.type === 'link' || live.type === 'video') && (
+                  <Field label="Creator">
+                    <input
+                      key={`author-${item.id}-${!!live.author}`}
+                      defaultValue={live.author ?? ''}
+                      onChange={(e) => updateItem(item.id, { author: e.target.value })}
+                      placeholder="Channel, author, or site"
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[13.5px] text-white outline-none placeholder:text-white/30 focus:border-white/25"
+                    />
+                  </Field>
+                )}
                 <Field label="URL">
                   <input
                     key={`url-${item.id}`}
@@ -428,6 +439,18 @@ export function ItemDetail({
                     className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[13.5px] text-white outline-none placeholder:text-white/30 focus:border-white/25"
                   />
                 </Field>
+                {(live.summary || live.type === 'link') && (
+                  <Field label="Description">
+                    <textarea
+                      key={`summary-${item.id}-${!!live.summary}`}
+                      defaultValue={live.summary ?? ''}
+                      onChange={(e) => updateItem(item.id, { summary: e.target.value })}
+                      placeholder="Page description…"
+                      rows={2}
+                      className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[13.5px] text-white outline-none placeholder:text-white/30 focus:border-white/25"
+                    />
+                  </Field>
+                )}
                 <Field label="Note">
                   <textarea
                     key={`note-${item.id}`}

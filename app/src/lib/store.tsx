@@ -100,11 +100,13 @@ interface NewItemInput {
   type: Item['type'];
   title: string;
   source?: string;
+  author?: string;
   url?: string;
   media?: string;
   poster?: string;
   ratio?: number;
   code?: string;
+  summary?: string;
   tags?: string[];
   projectIds?: string[];
 }
@@ -461,10 +463,12 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           type: input.type,
           title: input.title || 'Untitled',
           source: input.source,
+          author: input.author,
           url: input.url,
           media: input.media,
           poster: input.poster,
           code: input.code,
+          summary: input.summary,
           ratio: input.ratio ?? (input.type === 'link' ? 1.6 : 0.7 + Math.random() * 0.7),
           palette: ['#3b3b3b', '#9a9a9a', '#e6e6e6'],
           tags: input.tags ?? [],
@@ -483,8 +487,9 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           });
         }
         // Enrich a saved link with its real page title, description, and preview
-        // image via the unfurl proxy (powers rich bookmarks).
-        if (item.type === 'link' && item.url && unfurlEnabled()) {
+        // image via the unfurl proxy — unless it already arrived enriched (e.g.
+        // from the browser extension, which reads the page's meta tags directly).
+        if (item.type === 'link' && item.url && unfurlEnabled() && (!item.summary || !item.media)) {
           unfurl(item.url).then((m) => {
             if (!m) return;
             patch(item.id, (i) => ({

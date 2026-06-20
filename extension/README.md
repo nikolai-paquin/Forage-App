@@ -5,6 +5,12 @@ Saves the page/image/link/selection you're looking at into your Forage library.
 It works by handing the capture to the Forage web app via a URL
 (`?forage=<json>`); the app ingests it on load and adds the save.
 
+When you forage a **page**, the extension reads that page's own OpenGraph/meta
+tags (title, description, preview image, site/author) and sends them along, so
+links arrive as rich bookmarks immediately — no server-side unfurl needed. This
+uses the `scripting` + `activeTab` permissions, which only grant access to a tab
+at the moment you invoke the extension on it.
+
 ## Install (Chrome / Edge / Brave — unpacked)
 
 1. Open `chrome://extensions`

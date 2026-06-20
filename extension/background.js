@@ -10,6 +10,56 @@ function hostOf(u) {
   }
 }
 
+// Runs in the page (via chrome.scripting) to read OpenGraph/meta tags, so links
+// saved from the extension arrive as rich bookmarks without any server unfurl.
+function readPageMeta() {
+  const pick = (sel) => document.querySelector(sel)?.getAttribute('content')?.trim() || '';
+  const meta = {
+    title:
+      pick('meta[property="og:title"]') ||
+      pick('meta[name="twitter:title"]') ||
+      document.title ||
+      '',
+    description:
+      pick('meta[property="og:description"]') ||
+      pick('meta[name="description"]') ||
+      pick('meta[name="twitter:description"]') ||
+      '',
+    image:
+      pick('meta[property="og:image"]') ||
+      pick('meta[property="og:image:url"]') ||
+      pick('meta[name="twitter:image"]') ||
+      pick('meta[name="twitter:image:src"]') ||
+      '',
+    author:
+      pick('meta[property="og:site_name"]') ||
+      pick('meta[name="author"]') ||
+      pick('meta[property="article:author"]') ||
+      '',
+  };
+  if (meta.image) {
+    try {
+      meta.image = new URL(meta.image, location.href).href;
+    } catch {
+      /* leave as-is */
+    }
+  }
+  return meta;
+}
+
+async function readMeta(tab) {
+  if (!tab || tab.id == null || !chrome.scripting) return {};
+  try {
+    const [res] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: readPageMeta,
+    });
+    return res?.result || {};
+  } catch {
+    return {};
+  }
+}
+
 function openForage(payload) {
   const target = APP_URL + '?forage=' + encodeURIComponent(JSON.stringify(payload));
   // Reuse an existing Forage tab so saves don't pile up new tabs.
@@ -33,7 +83,7 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   const pageUrl = info.pageUrl || (tab && tab.url) || '';
   const title = (tab && tab.title) || 'Saved from web';
   switch (info.menuItemId) {
@@ -46,7 +96,18 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     case 'forage-selection':
       openForage({ type: 'link', title: (info.selectionText || '').slice(0, 80), url: pageUrl, source: hostOf(pageUrl), tags: ['highlight'] });
       break;
-    default:
-      openForage({ type: 'link', title, url: pageUrl, source: hostOf(pageUrl) });
+    default: {
+      // "Forage this page" — pull the page's own metadata for a rich save.
+      const meta = await readMeta(tab);
+      openForage({
+        type: 'link',
+        title: meta.title || title,
+        url: pageUrl,
+        media: meta.image || undefined,
+        summary: meta.description || undefined,
+        author: meta.author || undefined,
+        source: hostOf(pageUrl),
+      });
+    }
   }
 });

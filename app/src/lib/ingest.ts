@@ -8,6 +8,10 @@ export interface IngestPayload {
   poster?: string;
   ratio?: number;
   source?: string;
+  /** Page description (OpenGraph), e.g. sent by the extension for rich bookmarks. */
+  summary?: string;
+  /** Creator/author/site, e.g. og:site_name or article author. */
+  author?: string;
   tags?: string[];
 }
 

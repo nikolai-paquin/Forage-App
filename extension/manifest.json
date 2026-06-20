@@ -9,5 +9,5 @@
     "default_icon": { "128": "icon-128.png" }
   },
   "background": { "service_worker": "background.js" },
-  "permissions": ["contextMenus", "activeTab", "tabs"]
+  "permissions": ["contextMenus", "activeTab", "tabs", "scripting"]
 }

@@ -8,6 +8,52 @@ function hostOf(u) {
   }
 }
 
+// Injected into the page to read OpenGraph/meta tags for a rich bookmark.
+function readPageMeta() {
+  const pick = (sel) => document.querySelector(sel)?.getAttribute('content')?.trim() || '';
+  const meta = {
+    title:
+      pick('meta[property="og:title"]') ||
+      pick('meta[name="twitter:title"]') ||
+      document.title ||
+      '',
+    description:
+      pick('meta[property="og:description"]') ||
+      pick('meta[name="description"]') ||
+      pick('meta[name="twitter:description"]') ||
+      '',
+    image:
+      pick('meta[property="og:image"]') ||
+      pick('meta[property="og:image:url"]') ||
+      pick('meta[name="twitter:image"]') ||
+      pick('meta[name="twitter:image:src"]') ||
+      '',
+    author:
+      pick('meta[property="og:site_name"]') ||
+      pick('meta[name="author"]') ||
+      pick('meta[property="article:author"]') ||
+      '',
+  };
+  if (meta.image) {
+    try {
+      meta.image = new URL(meta.image, location.href).href;
+    } catch {
+      /* leave as-is */
+    }
+  }
+  return meta;
+}
+
+async function readMeta(tabId) {
+  if (tabId == null || !chrome.scripting) return {};
+  try {
+    const [res] = await chrome.scripting.executeScript({ target: { tabId }, func: readPageMeta });
+    return res?.result || {};
+  } catch {
+    return {};
+  }
+}
+
 function openForage(payload) {
   const target = APP_URL + '?forage=' + encodeURIComponent(JSON.stringify(payload));
   chrome.tabs.query({}, (tabs) => {
@@ -27,11 +73,15 @@ chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
   document.getElementById('url').textContent = tab?.url || '';
   document.getElementById('open').href = APP_URL;
 
-  document.getElementById('save').addEventListener('click', () => {
+  document.getElementById('save').addEventListener('click', async () => {
+    const meta = await readMeta(tab?.id);
     openForage({
       type: 'link',
-      title: tab?.title || 'Saved page',
+      title: meta.title || tab?.title || 'Saved page',
       url: tab?.url,
+      media: meta.image || undefined,
+      summary: meta.description || undefined,
+      author: meta.author || undefined,
       source: hostOf(tab?.url || ''),
     });
   });
