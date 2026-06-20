@@ -24,6 +24,8 @@ export interface Item {
   title: string;
   /** Display/source domain for links, or tool for ai assets. */
   source?: string;
+  /** Creator/author/channel, e.g. a YouTube channel name. */
+  author?: string;
   url?: string;
   /** Media URL (image/video/gif/vector preview). */
   media?: string;

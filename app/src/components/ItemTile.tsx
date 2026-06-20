@@ -117,9 +117,14 @@ function YouTubeArt({ item }: { item: Item }) {
           </span>
         </span>
       </div>
-      <div className="flex items-center gap-2 px-3 py-2.5">
+      <div className="flex items-center gap-2 border-t border-border px-3 py-2.5">
         <YouTubeLogo size={16} />
-        <span className="truncate text-[12.5px] font-medium text-ink">{item.title}</span>
+        <div className="min-w-0">
+          <p className="truncate text-[12.5px] font-medium leading-tight text-ink">{item.title}</p>
+          {item.author && (
+            <p className="truncate text-[11px] leading-tight text-muted">{item.author}</p>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -181,7 +186,7 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: 'spring', stiffness: 400, damping: 34, mass: 0.6 }}
-      className={`group relative mb-2.5 block w-full overflow-hidden rounded-xl bg-surface-2 text-left outline-none transition-shadow duration-300 hover:shadow-[var(--shadow-tile)] ${
+      className={`group relative mb-2.5 block w-full overflow-hidden rounded-lg bg-surface-2 text-left outline-none transition-shadow duration-300 hover:shadow-[var(--shadow-tile)] ${
         selected
           ? 'ring-2 ring-offset-2 ring-offset-canvas ring-[var(--ink)]'
           : focused

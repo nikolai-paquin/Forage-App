@@ -473,10 +473,11 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         };
         setItems((prev) => [item, ...prev]);
         registerSource(item.source);
-        // Enrich a YouTube save with its real video title (async, best-effort).
+        // Enrich a YouTube save with its real video title + creator (async, best-effort).
         if (item.type === 'video' && item.source === 'youtube.com' && item.url) {
           fetchYouTubeMeta(item.url).then((meta) => {
-            if (meta?.title) patch(item.id, (i) => ({ ...i, title: meta.title }));
+            if (meta?.title)
+              patch(item.id, (i) => ({ ...i, title: meta.title, author: meta.author ?? i.author }));
           });
         }
         return item;

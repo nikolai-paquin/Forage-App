@@ -75,11 +75,13 @@ export function youTubeId(url: string): string | null {
 }
 
 /**
- * Fetch a YouTube video's real title via oEmbed (so a save reads "How to … "
- * instead of a generic label). Tries YouTube's first-party endpoint, then a
- * CORS-friendly fallback; returns null if both are unreachable.
+ * Fetch a YouTube video's real title + creator via oEmbed (so a save reads
+ * "How to … · Some Channel" instead of a generic label). Tries YouTube's
+ * first-party endpoint, then a CORS-friendly fallback; null if both fail.
  */
-export async function fetchYouTubeMeta(url: string): Promise<{ title: string } | null> {
+export async function fetchYouTubeMeta(
+  url: string,
+): Promise<{ title: string; author?: string } | null> {
   const endpoints = [
     `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
     `https://noembed.com/embed?url=${encodeURIComponent(url)}`,
@@ -88,8 +90,8 @@ export async function fetchYouTubeMeta(url: string): Promise<{ title: string } |
     try {
       const res = await fetch(ep);
       if (!res.ok) continue;
-      const data = (await res.json()) as { title?: string };
-      if (data?.title) return { title: data.title };
+      const data = (await res.json()) as { title?: string; author_name?: string };
+      if (data?.title) return { title: data.title, author: data.author_name };
     } catch {
       /* try next */
     }

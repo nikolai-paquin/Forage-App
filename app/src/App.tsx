@@ -17,7 +17,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { Onboarding } from './components/Onboarding';
 import { Fab } from './components/Fab';
 import { BulkBar } from './components/BulkBar';
-import { detectFromInput } from './lib/util';
+import { detectFromInput, fetchYouTubeMeta } from './lib/util';
 import { extractPalette, imageRatio } from './lib/color';
 import { consumeShareUrl } from './lib/ingest';
 import { exportBackup } from './lib/backup';
@@ -161,6 +161,33 @@ function Workspace() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  // One-time backfill: older YouTube saves predate title/creator enrichment —
+  // fetch their real title + channel once the library has hydrated.
+  useEffect(() => {
+    if (!hydrated) return;
+    const stale = items.filter(
+      (i) =>
+        i.type === 'video' &&
+        i.source === 'youtube.com' &&
+        i.url &&
+        (i.title === 'YouTube video' || !i.author),
+    );
+    if (!stale.length) return;
+    let cancelled = false;
+    (async () => {
+      for (const it of stale) {
+        if (cancelled) return;
+        const meta = await fetchYouTubeMeta(it.url!);
+        if (meta?.title && !cancelled)
+          updateItem(it.id, { title: meta.title, author: meta.author ?? it.author });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
 
   // Ingest a capture handed off from the extension or mobile share sheet.
   useEffect(() => {
