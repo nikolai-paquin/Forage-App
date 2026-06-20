@@ -19,10 +19,13 @@ export function CaptureDialog({
   open,
   onClose,
   onFiles,
+  linksOnly = false,
 }: {
   open: boolean;
   onClose: () => void;
   onFiles?: (files: FileList | File[]) => void;
+  /** Bookmarks "Add a link": paste links only, no image/audio upload zone. */
+  linksOnly?: boolean;
 }) {
   const { addItem, projects, findDuplicate } = useForage();
   const [text, setText] = useState('');
@@ -143,12 +146,14 @@ export function CaptureDialog({
                 ref={inputRef}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Paste a link, image URL, or a snippet…"
+                placeholder={
+                  linksOnly ? 'Paste a link — or several…' : 'Paste a link, image URL, or a snippet…'
+                }
                 className="w-full bg-transparent text-[15px] text-ink outline-none placeholder:text-faint"
               />
             </div>
 
-            {onFiles && !text.trim() && (
+            {onFiles && !linksOnly && !text.trim() && (
               <div
                 onDragOver={(e) => {
                   e.preventDefault();

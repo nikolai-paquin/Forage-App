@@ -50,7 +50,16 @@ function Workspace() {
   const { dark, toggle } = useTheme();
   const [selected, setSelected] = useState<Item | null>(null);
   const [capture, setCapture] = useState(false);
+  const [captureLinksOnly, setCaptureLinksOnly] = useState(false);
   const [newCollection, setNewCollection] = useState(false);
+  const openCapture = () => {
+    setCaptureLinksOnly(false);
+    setCapture(true);
+  };
+  const openAddLink = () => {
+    setCaptureLinksOnly(true);
+    setCapture(true);
+  };
   const [search, setSearch] = useState(false);
   const [settings, setSettings] = useState(false);
   const [resurface, setResurface] = useState(false);
@@ -154,7 +163,7 @@ function Workspace() {
       }
       if (meta && e.key.toLowerCase() === 'n') {
         e.preventDefault();
-        setCapture(true);
+        openCapture();
       }
       if (e.key === 'Escape') {
         setCapture(false);
@@ -406,7 +415,8 @@ function Workspace() {
           {view.kind === 'library' && (
             <LibraryView
               onOpen={open}
-              onCapture={() => setCapture(true)}
+              onCapture={openCapture}
+              onAddLink={openAddLink}
               onNewCollection={() => setNewCollection(true)}
             />
           )}
@@ -421,12 +431,17 @@ function Workspace() {
         </motion.div>
       </main>
 
-      <Fab onClick={() => setCapture(true)} />
+      <Fab onClick={openCapture} />
       <BulkBar />
       <Toaster />
 
       <ItemDetail item={selected} onClose={() => setSelected(null)} onOpen={open} />
-      <CaptureDialog open={capture} onClose={() => setCapture(false)} onFiles={addFiles} />
+      <CaptureDialog
+        open={capture}
+        onClose={() => setCapture(false)}
+        onFiles={addFiles}
+        linksOnly={captureLinksOnly}
+      />
       <CollectionDialog open={newCollection} onClose={() => setNewCollection(false)} />
       <SearchOverlay
         open={search}
@@ -434,7 +449,7 @@ function Workspace() {
         onOpenItem={open}
         dark={dark}
         actions={{
-          capture: () => setCapture(true),
+          capture: openCapture,
           settings: () => setSettings(true),
           resurface: () => setResurface(true),
           exportBackup: () => {
@@ -446,7 +461,7 @@ function Workspace() {
       />
       <ResurfacePanel open={resurface} onClose={() => setResurface(false)} onOpenItem={open} />
       <SettingsModal open={settings} onClose={() => setSettings(false)} />
-      <Onboarding onCapture={() => setCapture(true)} />
+      <Onboarding onCapture={openCapture} />
     </div>
   );
 }

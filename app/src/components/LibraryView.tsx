@@ -74,10 +74,12 @@ function Empty({
 export function LibraryView({
   onOpen,
   onCapture,
+  onAddLink,
   onNewCollection,
 }: {
   onOpen: (i: Item) => void;
   onCapture: () => void;
+  onAddLink: () => void;
   onNewCollection: () => void;
 }) {
   const {
@@ -228,7 +230,7 @@ export function LibraryView({
             sub="Every web page or link you save lands here — like browser bookmarks, but better. Paste a URL or use the extension to add one."
           >
             <button
-              onClick={onCapture}
+              onClick={onAddLink}
               className="mt-5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink"
               style={{ background: 'var(--ink)' }}
             >
@@ -236,7 +238,17 @@ export function LibraryView({
             </button>
           </Empty>
         ) : (
-          <BookmarksList items={visibleItems} onOpen={onOpen} />
+          <div className="mx-auto max-w-3xl">
+            <div className="mb-3 flex justify-end">
+              <button
+                onClick={onAddLink}
+                className="flex items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 py-1.5 text-[13px] font-medium text-ink transition hover:bg-surface-2"
+              >
+                <Plus size={15} /> Add a link
+              </button>
+            </div>
+            <BookmarksList items={visibleItems} onOpen={onOpen} />
+          </div>
         )
       ) : tab === 'unsorted' && visibleItems.length === 0 ? (
         <Empty
@@ -270,7 +282,15 @@ export function LibraryView({
               icon={<ImageIcon size={34} strokeWidth={1.5} />}
               title="Nothing here yet"
               sub="Drag images in or save URLs to start your library."
-            />
+            >
+              <button
+                onClick={onCapture}
+                className="mt-5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink"
+                style={{ background: 'var(--ink)' }}
+              >
+                Add to library
+              </button>
+            </Empty>
           ) : (
             <MasonryGrid items={visibleItems} onOpen={onOpen} targetWidth={density} />
           )}
