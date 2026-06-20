@@ -215,6 +215,31 @@ function Workspace() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated]);
 
+  // Re-measure images that arrived without real dimensions/colors — e.g. saved
+  // silently by the extension via sync (ratio 1 + default gray palette). Fixes
+  // the aspect ratio and palette in place once the image loads.
+  const measuredRef = useRef(new Set<string>());
+  useEffect(() => {
+    if (!hydrated) return;
+    const DEFAULT = '["#3b3b3b","#9a9a9a","#e6e6e6"]';
+    const pending = items.filter(
+      (i) =>
+        (i.type === 'image' || i.type === 'gif') &&
+        i.media &&
+        i.ratio === 1 &&
+        JSON.stringify(i.palette) === DEFAULT &&
+        !measuredRef.current.has(i.id),
+    );
+    pending.forEach(async (it) => {
+      measuredRef.current.add(it.id);
+      const r = await imageRatio(it.media!);
+      if (r && r !== 1) updateItem(it.id, { ratio: r });
+      const p = await extractPalette(it.media!);
+      if (p.length) updateItem(it.id, { palette: p });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, items]);
+
   // Ingest a capture handed off from the extension or mobile share sheet.
   useEffect(() => {
     const p = consumeShareUrl();

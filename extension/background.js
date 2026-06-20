@@ -228,10 +228,10 @@ async function save(payload) {
     const ok = await saveViaSync(payload, s);
     flashBadge(ok);
     if (!ok) openForage(payload); // fall back to a tab if the push failed
-    return ok;
+    return { ok, background: true };
   }
   openForage(payload);
-  return true;
+  return { ok: true, background: false };
 }
 
 // Enrich a payload with page metadata, then save.
@@ -301,8 +301,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg?.type === 'capture') {
     capture(msg.payload || {}, msg.enrich || null)
-      .then((ok) => sendResponse({ ok }))
-      .catch(() => sendResponse({ ok: false }));
+      .then((res) => sendResponse(res))
+      .catch(() => sendResponse({ ok: false, background: false }));
     return true;
   }
   return false;

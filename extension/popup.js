@@ -8,15 +8,35 @@ function hostOf(u) {
   }
 }
 
+let sending = false;
+
+function showMsg(text, ok = true) {
+  const el = document.getElementById('savedMsg');
+  el.textContent = text;
+  el.style.color = ok ? '#16a34a' : '#dc2626';
+  el.style.display = 'block';
+}
+
 // Hand a capture to the background worker, which enriches it and either opens
 // the app or saves it silently to the sync endpoint.
 async function send(payload, enrich) {
+  if (sending) return;
+  sending = true;
+  showMsg('Saving…', true);
+  let res;
   try {
-    await chrome.runtime.sendMessage({ type: 'capture', payload, enrich });
+    res = await chrome.runtime.sendMessage({ type: 'capture', payload, enrich });
   } catch {
-    /* worker may have closed the popup already */
+    /* worker may still complete; fall through */
   }
-  window.close();
+  if (res && res.background) {
+    // Silent save — confirm in the popup before closing.
+    showMsg(res.ok ? '✓ Saved to your library' : '⚠ Couldn’t save — opening Forage…', res.ok);
+    setTimeout(() => window.close(), 1100);
+  } else {
+    // Tab mode — the Forage tab is opening; nothing more to show.
+    window.close();
+  }
 }
 
 chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {

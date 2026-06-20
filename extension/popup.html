@@ -33,6 +33,7 @@
       .check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; color: #16171b; }
       .check input { flex: 0; }
       .status { margin-top: 8px; font-size: 11px; color: #16a34a; min-height: 14px; }
+      .saved { margin-top: 12px; text-align: center; font-size: 12.5px; font-weight: 600; display: none; }
       @media (prefers-color-scheme: dark) { .check { color: #f2f3f5; } }
       @media (prefers-color-scheme: dark) {
         body { background: #151619; color: #f2f3f5; }
@@ -47,6 +48,7 @@
       <div id="title" class="t"></div>
       <div id="url" class="u"></div>
       <button id="save">Forage this page</button>
+      <div id="savedMsg" class="saved"></div>
       <div class="sep">Or forage any link / image URL</div>
       <div class="row">
         <input id="link" type="text" placeholder="https://…" />
