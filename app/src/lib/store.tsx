@@ -39,6 +39,7 @@ const SOURCES_KEY = 'forage.sources.v1';
 const SPACES_KEY = 'forage.spaces.v1'; // legacy localStorage key, migrated into IDB
 const IDB_ITEMS = 'items';
 const IDB_SPACES = 'spaces';
+const IDB_PROJECTS = 'projects';
 
 const DEFAULT_TYPES: FilterEntry[] = [
   { value: 'image', label: 'Images', enabled: true },
@@ -142,6 +143,7 @@ interface ForageStore {
   restoreSelected: () => void;
   deleteSelectedForever: () => void;
   projectById: (id: string) => Project | undefined;
+  deleteProject: (id: string) => void;
   itemById: (id: string) => Item | undefined;
   findDuplicate: (c: DupeCandidate) => Item | undefined;
   projectItemCount: (id: string) => number;
@@ -183,7 +185,7 @@ function migrateLegacy<T>(key: string): T | undefined {
 export function ForageProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<Item[]>([]);
   const [hydrated, setHydrated] = useState(false);
-  const [projects] = useState<Project[]>(sampleProjects);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [view, setView] = useState<View>({ kind: 'library', tab: 'all' });
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
@@ -218,9 +220,12 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       if (loadedSpaces === undefined) {
         loadedSpaces = migrateLegacy<Space[]>(SPACES_KEY) ?? [];
       }
+      let loadedProjects = await idbGet<Project[]>(IDB_PROJECTS);
+      if (loadedProjects === undefined) loadedProjects = sampleProjects;
       if (cancelled) return;
       setItems(loadedItems);
       setSpaces(loadedSpaces);
+      setProjects(loadedProjects);
       setHydrated(true);
     })();
     return () => {
@@ -238,6 +243,10 @@ export function ForageProvider({ children }: { children: ReactNode }) {
     if (!hydrated) return;
     idbSet(IDB_SPACES, spaces).catch(() => {});
   }, [spaces, hydrated]);
+  useEffect(() => {
+    if (!hydrated) return;
+    idbSet(IDB_PROJECTS, projects).catch(() => {});
+  }, [projects, hydrated]);
 
   useEffect(() => {
     try {
@@ -492,6 +501,17 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         setSelectedIds([]);
       },
       projectById,
+      deleteProject: (id) => {
+        setProjects((prev) => prev.filter((p) => p.id !== id));
+        setItems((prev) =>
+          prev.map((i) =>
+            i.projectIds.includes(id)
+              ? { ...i, projectIds: i.projectIds.filter((p) => p !== id), updatedAt: Date.now() }
+              : i,
+          ),
+        );
+        setView({ kind: 'collections' });
+      },
       itemById,
       findDuplicate: (c) => findDuplicate(items, c),
       projectItemCount: (id) => items.filter((i) => !i.deletedAt && i.projectIds.includes(id)).length,

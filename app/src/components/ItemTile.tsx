@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Item } from '../types';
 import { useForage } from '../lib/store';
+import { toast } from '../lib/toast';
 import {
   CheckCircle2,
   Circle,
@@ -97,7 +98,8 @@ function LinkArt({ item }: { item: Item }) {
 }
 
 export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) => void }) {
-  const { selectedIds, focusedId, toggleSelect, view, restoreItem, deleteForever } = useForage();
+  const { selectedIds, focusedId, toggleSelect, view, restoreItem, deleteForever, trashItem } =
+    useForage();
   const [hover, setHover] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -225,11 +227,26 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
             <Trash2 size={13} />
           </span>
         </div>
-      ) : !isCard ? (
-        <span className="absolute bottom-2.5 right-2.5 z-[2] grid h-7 w-7 place-items-center rounded-full bg-black/40 text-white opacity-0 backdrop-blur-md transition-opacity duration-200 group-hover:opacity-100">
-          <Maximize2 size={13} />
-        </span>
-      ) : null}
+      ) : (
+        <div className="absolute bottom-2.5 right-2.5 z-[3] flex gap-1.5 opacity-0 transition group-hover:opacity-100">
+          <span
+            onClick={(e) => {
+              stop(e);
+              trashItem(item.id);
+              toast('Moved to Trash');
+            }}
+            title="Delete"
+            className="grid h-7 w-7 cursor-pointer place-items-center rounded-full bg-black/45 text-white backdrop-blur-md transition hover:bg-red-500"
+          >
+            <Trash2 size={13} />
+          </span>
+          {!isCard && (
+            <span className="grid h-7 w-7 place-items-center rounded-full bg-black/40 text-white backdrop-blur-md">
+              <Maximize2 size={13} />
+            </span>
+          )}
+        </div>
+      )}
 
       {item.type === 'code' && (
         <span className="absolute right-2.5 top-2.5 flex items-center gap-1 rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-white/80 opacity-0 transition group-hover:opacity-100">

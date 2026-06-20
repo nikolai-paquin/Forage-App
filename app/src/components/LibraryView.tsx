@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item, LibraryTab } from '../types';
 import { MasonryGrid } from './MasonryGrid';
+import { BookmarksList } from './BookmarksList';
 import { CollectionCover } from './CollectionCover';
 import { FilterMenu, type Option } from './FilterMenu';
 import type { ItemType, SortBy } from '../types';
@@ -209,20 +210,24 @@ export function LibraryView({ onOpen, onCapture }: { onOpen: (i: Item) => void; 
             <MasonryGrid items={visibleItems} onOpen={onOpen} targetWidth={density} />
           </>
         )
-      ) : tab === 'bookmarks' && visibleItems.length === 0 ? (
-        <Empty
-          icon={<Bookmark size={34} strokeWidth={1.5} />}
-          title="No bookmarks yet"
-          sub="Sync your X bookmarks once the Forage extension is installed."
-        >
-          <button
-            onClick={onCapture}
-            className="mt-5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink"
-            style={{ background: 'var(--ink)' }}
+      ) : tab === 'bookmarks' ? (
+        visibleItems.length === 0 ? (
+          <Empty
+            icon={<Bookmark size={34} strokeWidth={1.5} />}
+            title="No bookmarks yet"
+            sub="Every web page or link you save lands here — like browser bookmarks, but better. Paste a URL or use the extension to add one."
           >
-            Get the extension
-          </button>
-        </Empty>
+            <button
+              onClick={onCapture}
+              className="mt-5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink"
+              style={{ background: 'var(--ink)' }}
+            >
+              Add a link
+            </button>
+          </Empty>
+        ) : (
+          <BookmarksList items={visibleItems} onOpen={onOpen} />
+        )
       ) : tab === 'unsorted' && visibleItems.length === 0 ? (
         <Empty
           icon={<Inbox size={34} strokeWidth={1.5} />}

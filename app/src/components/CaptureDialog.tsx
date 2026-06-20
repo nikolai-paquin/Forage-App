@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import { detectFromInput } from '../lib/util';
 import { toast } from '../lib/toast';
-import { Code, Image, Link, Play, Sparkle } from './icons';
+import { Code, Image, Link, Play, Sparkle, Upload } from './icons';
 
 const TYPE_META: Record<string, { label: string; icon: React.ReactNode }> = {
   link: { label: 'Link', icon: <Link width={13} height={13} /> },
@@ -14,12 +14,29 @@ const TYPE_META: Record<string, { label: string; icon: React.ReactNode }> = {
   ai_asset: { label: 'AI asset', icon: <Sparkle width={13} height={13} /> },
 };
 
-export function CaptureDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function CaptureDialog({
+  open,
+  onClose,
+  onFiles,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onFiles?: (files: FileList | File[]) => void;
+}) {
   const { addItem, projects, findDuplicate } = useForage();
   const [text, setText] = useState('');
   const [projectId, setProjectId] = useState('');
   const [tags, setTags] = useState('');
+  const [over, setOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const pickFiles = (files: FileList | File[] | null) => {
+    if (files && files.length && onFiles) {
+      onFiles(files);
+      onClose();
+    }
+  };
 
   useEffect(() => {
     if (open) {
@@ -97,6 +114,39 @@ export function CaptureDialog({ open, onClose }: { open: boolean; onClose: () =>
               />
             </div>
 
+            {onFiles && !text.trim() && (
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setOver(true);
+                }}
+                onDragLeave={() => setOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setOver(false);
+                  pickFiles(e.dataTransfer.files);
+                }}
+                onClick={() => fileRef.current?.click()}
+                className={`mx-4 mb-3 flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed px-4 py-7 text-center transition ${
+                  over ? 'border-ink bg-surface-2' : 'border-border-strong hover:bg-surface-2/50'
+                }`}
+              >
+                <Upload size={18} className="text-faint" />
+                <p className="text-[12.5px] text-muted">Drag &amp; drop images here, or click to browse</p>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    pickFiles(e.target.files);
+                    e.target.value = '';
+                  }}
+                />
+              </div>
+            )}
+
             <AnimatePresence>
               {detected && (
                 <motion.div
@@ -155,7 +205,7 @@ export function CaptureDialog({ open, onClose }: { open: boolean; onClose: () =>
                 className="flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[13px] font-medium text-accent-ink disabled:opacity-40"
                 style={{ background: 'var(--accent)' }}
               >
-                Forage it
+                Add
                 <span className="rounded bg-black/15 px-1 text-[10px] opacity-80">⌘↵</span>
               </motion.button>
             </div>

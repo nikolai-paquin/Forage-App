@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item, Project } from '../types';
+import { Trash2 } from './icons';
 
 const thumb = (i: Item) => (i.type === 'video' ? i.poster : i.media);
 
@@ -8,10 +9,12 @@ const thumb = (i: Item) => (i.type === 'video' ? i.poster : i.media);
 export function CollectionCover({
   project,
   onOpen,
+  onDelete,
   size = 'md',
 }: {
   project: Project;
   onOpen: () => void;
+  onDelete?: () => void;
   size?: 'md' | 'lg';
 }) {
   const { items, projectItemCount } = useForage();
@@ -39,6 +42,18 @@ export function CollectionCover({
       <div
         className={`relative ${dims} grid place-items-center rounded-2xl border border-border bg-surface-2/40`}
       >
+        {onDelete && (
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            title="Delete collection"
+            className="absolute right-2 top-2 z-[5] grid h-7 w-7 cursor-pointer place-items-center rounded-full bg-black/45 text-white opacity-0 backdrop-blur-md transition hover:bg-red-500 group-hover:opacity-100"
+          >
+            <Trash2 size={13} />
+          </span>
+        )}
         {[0, 1, 2].map((i) => {
           const l = layout[i];
           const src = thumbs[i];

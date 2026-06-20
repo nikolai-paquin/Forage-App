@@ -43,7 +43,7 @@ function SmartCard({ label, items, onOpen }: { label: string; items: Item[]; onO
 }
 
 export function CollectionsView({ onCapture }: { onCapture: () => void }) {
-  const { projects, items, setView, setTypeFilter, setSourceFilter } = useForage();
+  const { projects, items, setView, setTypeFilter, setSourceFilter, deleteProject } = useForage();
   const live = items.filter((i) => !i.deletedAt);
 
   const byType = Array.from(new Set(live.map((i) => i.type)))
@@ -79,7 +79,15 @@ export function CollectionsView({ onCapture }: { onCapture: () => void }) {
           <span className="text-[13px]">New collection</span>
         </button>
         {projects.map((p) => (
-          <CollectionCover key={p.id} project={p} size="lg" onOpen={() => setView({ kind: 'collection', id: p.id })} />
+          <CollectionCover
+            key={p.id}
+            project={p}
+            size="lg"
+            onOpen={() => setView({ kind: 'collection', id: p.id })}
+            onDelete={() => {
+              if (confirm(`Delete “${p.name}”? Saves inside it are kept.`)) deleteProject(p.id);
+            }}
+          />
         ))}
       </div>
 

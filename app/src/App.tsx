@@ -16,7 +16,7 @@ import { Onboarding } from './components/Onboarding';
 import { Fab } from './components/Fab';
 import { BulkBar } from './components/BulkBar';
 import { detectFromInput } from './lib/util';
-import { extractPalette } from './lib/color';
+import { extractPalette, imageRatio } from './lib/color';
 import { consumeShareUrl } from './lib/ingest';
 import { exportBackup } from './lib/backup';
 import { aiEnabled } from './lib/ai';
@@ -71,6 +71,7 @@ function Workspace() {
           projectIds: targetCollection,
         });
         extractPalette(dataUrl).then((p) => p.length && updateItem(created.id, { palette: p }));
+        imageRatio(dataUrl).then((r) => r && updateItem(created.id, { ratio: r }));
       };
       reader.readAsDataURL(file);
     });
@@ -97,7 +98,11 @@ function Workspace() {
       code,
       projectIds: targetCollection,
     });
-    if (d.media) extractPalette(d.media).then((p) => p.length && updateItem(created.id, { palette: p }));
+    if (d.media) {
+      extractPalette(d.media).then((p) => p.length && updateItem(created.id, { palette: p }));
+      if (d.type === 'image' || d.type === 'gif')
+        imageRatio(d.media).then((r) => r && updateItem(created.id, { ratio: r }));
+    }
     toast(`Saved “${created.title}”`);
   };
 
@@ -326,7 +331,7 @@ function Workspace() {
       <Toaster />
 
       <ItemDetail item={selected} onClose={() => setSelected(null)} onOpen={open} />
-      <CaptureDialog open={capture} onClose={() => setCapture(false)} />
+      <CaptureDialog open={capture} onClose={() => setCapture(false)} onFiles={addFiles} />
       <SearchOverlay
         open={search}
         onClose={() => setSearch(false)}

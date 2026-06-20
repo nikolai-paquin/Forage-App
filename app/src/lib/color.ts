@@ -94,6 +94,17 @@ export function matchColor(palette: string[], word: string): boolean {
   });
 }
 
+/** Measure an image's true aspect ratio (w/h) so it tiles without cropping. */
+export function imageRatio(src: string): Promise<number | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () =>
+      resolve(img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : null);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
 /** Extract up to 5 dominant colors from an image URL (works for same-origin / data URLs). */
 export function extractPalette(src: string): Promise<string[]> {
   return new Promise((resolve) => {
