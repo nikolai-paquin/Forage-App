@@ -1,7 +1,7 @@
 import { detectFromInput } from './util';
 
 export interface IngestPayload {
-  type: 'image' | 'gif' | 'link' | 'code' | 'video';
+  type: 'image' | 'gif' | 'link' | 'code' | 'video' | 'audio';
   title: string;
   url?: string;
   media?: string;

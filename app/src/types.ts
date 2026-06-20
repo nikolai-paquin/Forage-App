@@ -8,6 +8,7 @@ export type ItemType =
   | 'vector'
   | 'link'
   | 'code'
+  | 'audio'
   | 'ai_asset';
 
 export interface AiMeta {

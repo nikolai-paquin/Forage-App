@@ -55,7 +55,9 @@ function Workspace() {
 
   const addFiles = (files: FileList | File[]) => {
     Array.from(files).forEach((file) => {
-      if (!file.type.startsWith('image/')) return;
+      const isImage = file.type.startsWith('image/');
+      const isAudio = file.type.startsWith('audio/');
+      if (!isImage && !isAudio) return;
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = String(reader.result);
@@ -64,14 +66,17 @@ function Workspace() {
           return;
         }
         const created = addItem({
-          type: file.type === 'image/gif' ? 'gif' : 'image',
+          type: isAudio ? 'audio' : file.type === 'image/gif' ? 'gif' : 'image',
           title: file.name.replace(/\.[^.]+$/, ''),
           media: dataUrl,
           source: 'upload',
+          ratio: isAudio ? 1.5 : undefined,
           projectIds: targetCollection,
         });
-        extractPalette(dataUrl).then((p) => p.length && updateItem(created.id, { palette: p }));
-        imageRatio(dataUrl).then((r) => r && updateItem(created.id, { ratio: r }));
+        if (isImage) {
+          extractPalette(dataUrl).then((p) => p.length && updateItem(created.id, { palette: p }));
+          imageRatio(dataUrl).then((r) => r && updateItem(created.id, { ratio: r }));
+        }
       };
       reader.readAsDataURL(file);
     });
@@ -98,7 +103,7 @@ function Workspace() {
       code,
       projectIds: targetCollection,
     });
-    if (d.media) {
+    if (d.media && d.type !== 'audio') {
       extractPalette(d.media).then((p) => p.length && updateItem(created.id, { palette: p }));
       if (d.type === 'image' || d.type === 'gif')
         imageRatio(d.media).then((r) => r && updateItem(created.id, { ratio: r }));

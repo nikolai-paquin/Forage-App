@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import { detectFromInput } from '../lib/util';
 import { toast } from '../lib/toast';
-import { Code, Image, Link, Play, Sparkle, Upload } from './icons';
+import { Code, Image, Link, Music, Play, Sparkle, Upload } from './icons';
 
 const TYPE_META: Record<string, { label: string; icon: React.ReactNode }> = {
   link: { label: 'Link', icon: <Link width={13} height={13} /> },
@@ -11,6 +11,7 @@ const TYPE_META: Record<string, { label: string; icon: React.ReactNode }> = {
   gif: { label: 'GIF', icon: <Image width={13} height={13} /> },
   video: { label: 'Video', icon: <Play width={13} height={13} /> },
   code: { label: 'Code', icon: <Code width={13} height={13} /> },
+  audio: { label: 'Audio', icon: <Music width={13} height={13} /> },
   ai_asset: { label: 'AI asset', icon: <Sparkle width={13} height={13} /> },
 };
 
@@ -132,11 +133,13 @@ export function CaptureDialog({
                 }`}
               >
                 <Upload size={18} className="text-faint" />
-                <p className="text-[12.5px] text-muted">Drag &amp; drop images here, or click to browse</p>
+                <p className="text-[12.5px] text-muted">
+                  Drag &amp; drop images or audio here, or click to browse
+                </p>
                 <input
                   ref={fileRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/*,audio/*"
                   multiple
                   className="hidden"
                   onChange={(e) => {

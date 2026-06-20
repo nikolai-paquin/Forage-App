@@ -145,6 +145,12 @@ describe('youTubeId', () => {
 });
 
 describe('detectFromInput', () => {
+  it('detects an audio URL as an audio item', () => {
+    const d = detectFromInput('https://example.com/track.mp3');
+    expect(d.type).toBe('audio');
+    expect(d.media).toContain('track.mp3');
+  });
+
   it('detects a YouTube link as video with a thumbnail', () => {
     const d = detectFromInput('https://youtu.be/dQw4w9WgXcQ');
     expect(d.type).toBe('video');

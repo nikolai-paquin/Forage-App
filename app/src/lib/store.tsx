@@ -49,7 +49,14 @@ const DEFAULT_TYPES: FilterEntry[] = [
   { value: 'ai_asset', label: 'AI assets', enabled: true },
   { value: 'vector', label: 'Vectors', enabled: true },
   { value: 'code', label: 'Code', enabled: true },
+  { value: 'audio', label: 'Audio', enabled: true },
 ];
+
+/** Merge stored filter entries with defaults so new built-in types appear on upgrade. */
+function mergeTypes(stored: FilterEntry[]): FilterEntry[] {
+  const have = new Set(stored.map((t) => t.value));
+  return [...stored, ...DEFAULT_TYPES.filter((d) => !have.has(d.value))];
+}
 
 const slug = (s: string) => s.trim().toLowerCase().replace(/\s+/g, '_');
 
@@ -192,7 +199,9 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [tagFilter, setTagFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortBy>('recent');
-  const [fileTypes, setFileTypes] = useState<FilterEntry[]>(() => loadJSON(TYPES_KEY, DEFAULT_TYPES));
+  const [fileTypes, setFileTypes] = useState<FilterEntry[]>(() =>
+    mergeTypes(loadJSON(TYPES_KEY, DEFAULT_TYPES)),
+  );
   const [sources, setSources] = useState<FilterEntry[]>(() =>
     loadJSON(SOURCES_KEY, deriveSources(sampleItems)),
   );

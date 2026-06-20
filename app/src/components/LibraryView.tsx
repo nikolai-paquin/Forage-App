@@ -18,6 +18,7 @@ import {
   Inbox,
   Layers,
   Link,
+  Music,
   Play,
   Plus,
   Sparkle,
@@ -39,6 +40,7 @@ const TYPE_ICON: Record<string, React.ReactNode> = {
   ai_asset: <Sparkle size={14} />,
   vector: <Layers size={14} />,
   code: <Code size={14} />,
+  audio: <Music size={14} />,
 };
 
 const TABS: { id: LibraryTab; label: string; icon: React.ReactNode }[] = [

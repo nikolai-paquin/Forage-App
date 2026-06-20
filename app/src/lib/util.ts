@@ -44,7 +44,7 @@ export function timeAgo(ms: number): string {
 }
 
 export interface Detected {
-  type: 'link' | 'image' | 'gif' | 'code' | 'video';
+  type: 'link' | 'image' | 'gif' | 'code' | 'video' | 'audio';
   title: string;
   source?: string;
   url?: string;
@@ -125,6 +125,8 @@ export function detectFromInput(raw: string): Detected {
       return { type: 'image', title: 'Pasted image', source: host, url: text, media: text };
     if (/\.gif(\?|$)/i.test(text))
       return { type: 'gif', title: 'Pasted GIF', source: host, url: text, media: text };
+    if (/\.(mp3|wav|ogg|m4a|flac|aac)(\?|$)/i.test(text))
+      return { type: 'audio', title: 'Audio track', source: host, url: text, media: text, ratio: 1.5 };
     return { type: 'link', title: host, source: host, url: text };
   }
   if (/[{};=>]|function |const |=>/.test(text) && text.length > 12)

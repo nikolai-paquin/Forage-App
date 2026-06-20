@@ -15,6 +15,7 @@ const TYPE_LABEL: Record<string, string> = {
   ai_asset: 'AI assets',
   vector: 'Vectors',
   code: 'Code',
+  audio: 'Audio',
 };
 
 function SmartCard({ label, items, onOpen }: { label: string; items: Item[]; onOpen: () => void }) {

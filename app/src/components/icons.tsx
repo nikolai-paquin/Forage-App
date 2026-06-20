@@ -7,6 +7,8 @@ export {
   Moon,
   Heart,
   Play,
+  Pause,
+  Music,
   Code,
   Clock,
   Layers,

@@ -9,10 +9,58 @@ import {
   Code as CodeIcon,
   Link as LinkIcon,
   Maximize2,
+  Music,
+  Pause,
   Play,
   RotateCcw,
   Trash2,
 } from './icons';
+
+/** Deterministic equalizer bar heights so a tile looks stable across renders. */
+const BARS = [0.4, 0.7, 0.55, 0.9, 0.65, 0.35, 0.8, 0.5, 0.7, 0.45, 0.85, 0.6, 0.3, 0.75, 0.5];
+
+function AudioArt({ item }: { item: Item }) {
+  const ref = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const toggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const a = ref.current;
+    if (!a) return;
+    if (a.paused) {
+      a.play().then(() => setPlaying(true)).catch(() => {});
+    } else {
+      a.pause();
+      setPlaying(false);
+    }
+  };
+  return (
+    <div className="flex h-full w-full flex-col bg-gradient-to-br from-[#26262f] to-[#383844]">
+      <div className="relative grid min-h-0 flex-1 place-items-center overflow-hidden">
+        <div className="flex h-9 items-end gap-[3px]">
+          {BARS.map((h, i) => (
+            <span
+              key={i}
+              className={`w-[3px] rounded-full bg-white/35 ${playing ? 'animate-pulse' : ''}`}
+              style={{ height: `${h * 100}%`, animationDelay: `${i * 80}ms` }}
+            />
+          ))}
+        </div>
+        <span
+          onClick={toggle}
+          className="absolute grid h-11 w-11 cursor-pointer place-items-center rounded-full bg-white/15 text-white backdrop-blur-md transition hover:bg-white/25"
+        >
+          {playing ? <Pause size={17} fill="currentColor" stroke="none" /> : <Play size={17} fill="currentColor" stroke="none" className="ml-0.5" />}
+        </span>
+      </div>
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        <Music size={15} className="shrink-0 text-muted" />
+        <span className="truncate text-[12.5px] font-medium text-ink">{item.title}</span>
+      </div>
+      <audio ref={ref} src={item.media} preload="none" onEnded={() => setPlaying(false)} />
+    </div>
+  );
+}
 
 const isYouTube = (item: Item) =>
   item.type === 'video' && (item.source === 'youtube.com' || /youtu\.?be/.test(item.url ?? ''));
@@ -122,7 +170,7 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
   };
 
   const youtube = isYouTube(item);
-  const isCard = item.type === 'link' || item.type === 'code' || youtube;
+  const isCard = item.type === 'link' || item.type === 'code' || item.type === 'audio' || youtube;
 
   return (
     <motion.button
@@ -148,6 +196,8 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
           <CodeArt item={item} />
         ) : item.type === 'link' ? (
           <LinkArt item={item} />
+        ) : item.type === 'audio' ? (
+          <AudioArt item={item} />
         ) : youtube ? (
           <YouTubeArt item={item} />
         ) : item.type === 'video' ? (

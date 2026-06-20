@@ -45,6 +45,7 @@ import {
   Folder,
   Hash,
   Info,
+  Music,
   Pipette,
   Plus,
   Sparkle,
@@ -112,6 +113,7 @@ const EXT: Record<Item['type'], string> = {
   vector: 'SVG',
   link: 'LINK',
   code: 'CODE',
+  audio: 'AUDIO',
 };
 
 const thumb = (i: Item) => (i.type === 'video' ? i.poster : i.media);
@@ -135,6 +137,16 @@ function Media({ item }: { item: Item }) {
       <pre className="max-h-full max-w-full overflow-auto rounded-lg bg-[#0e0f12] p-6 font-mono text-[13px] leading-relaxed text-[#c9cdd6] shadow-2xl">
         <code>{item.code}</code>
       </pre>
+    );
+  if (item.type === 'audio')
+    return (
+      <div className="flex w-full max-w-md flex-col items-center gap-5 rounded-2xl bg-gradient-to-br from-[#26262f] to-[#383844] p-10 shadow-2xl">
+        <div className="grid h-20 w-20 place-items-center rounded-full bg-white/10 text-white">
+          <Music size={34} />
+        </div>
+        <p className="text-center text-[15px] font-medium text-white">{item.title}</p>
+        <audio src={item.media} controls autoPlay className="w-full" />
+      </div>
     );
   if (thumb(item))
     return (
