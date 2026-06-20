@@ -510,9 +510,10 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 <>
                   <h2 className="text-[24px] font-semibold tracking-tight">AI Usage</h2>
                   <p className="mt-2 mb-6 max-w-md text-[13.5px] text-muted">
-                    Auto-tag and prompt generation run on-device by default. Point Forage at your own
-                    backend endpoint to use a real model — your API key stays on the server, never in
-                    this app.
+                    Auto-tag and prompt generation run on-device by default — but those heuristics
+                    can't see your images, so they describe only the title/colors. Point Forage at
+                    your own backend endpoint to use a real <strong>vision</strong> model that looks
+                    at the actual image. Your API key stays on the server, never in this app.
                   </p>
 
                   <label className="mb-1.5 block text-[13px] font-medium text-ink">Model endpoint URL</label>

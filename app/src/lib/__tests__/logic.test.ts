@@ -4,6 +4,7 @@ import { normalizeUrl, findDuplicate } from '../dedupe';
 import { mergeById, mergeSnapshots, generateSyncKey, type SyncSnapshot } from '../sync';
 import { cosine, hashText, itemText } from '../semantic';
 import { youTubeId, detectFromInput } from '../util';
+import { suggestTags, generatePrompt } from '../ai';
 
 function item(partial: Partial<Item> & { id: string }): Item {
   return {
@@ -168,5 +169,39 @@ describe('detectFromInput', () => {
     const d = detectFromInput('https://example.com/some/article');
     expect(d.type).toBe('link');
     expect(d.source).toBe('example.com');
+  });
+});
+
+describe('local AI heuristics (text-only fallback)', () => {
+  it('does not emit junk tags for an unread image (generic title + gray palette)', () => {
+    const it = item({
+      id: 'a',
+      title: 'Pasted image',
+      source: 'i.pinimg.com',
+      palette: ['#3b3b3b', '#9a9a9a', '#e6e6e6'],
+    });
+    const tags = suggestTags(it);
+    for (const junk of ['pasted', 'image', 'i', 'grey', 'gray', 'white']) {
+      expect(tags).not.toContain(junk);
+    }
+  });
+
+  it('keeps meaningful title words and a real palette color', () => {
+    const it = item({
+      id: 'b',
+      title: 'Brutalist concrete typography',
+      palette: ['#c83a2b'],
+    });
+    const tags = suggestTags(it);
+    expect(tags).toContain('brutalist');
+    expect(tags).toContain('typography');
+  });
+
+  it('omits the generic title and gray palette from the fallback prompt', () => {
+    const prompt = generatePrompt(
+      item({ id: 'c', title: 'Pasted image', palette: ['#3b3b3b', '#9a9a9a', '#e6e6e6'] }),
+    );
+    expect(prompt.toLowerCase()).not.toContain('pasted');
+    expect(prompt.toLowerCase()).not.toContain('grey');
   });
 });

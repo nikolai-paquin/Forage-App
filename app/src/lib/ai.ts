@@ -45,13 +45,21 @@ function itemContext(item: Item) {
   };
 }
 
+/** The visual to hand a vision model, when the item has one. */
+function imageForAI(item: Item): string | undefined {
+  if (item.type === 'image' || item.type === 'gif' || item.type === 'ai_asset') return item.media;
+  if (item.type === 'video') return item.poster ?? item.media;
+  if (item.type === 'link') return item.media; // OpenGraph preview
+  return undefined;
+}
+
 async function callBackend(task: 'tags' | 'prompt', item: Item, signal?: AbortSignal) {
   const endpoint = getAiEndpoint();
   if (!endpoint) throw new Error('no endpoint');
   const res = await fetch(endpoint, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ task, item: itemContext(item) }),
+    body: JSON.stringify({ task, item: itemContext(item), image: imageForAI(item) }),
     signal,
   });
   if (!res.ok) throw new Error(`backend ${res.status}`);
@@ -93,7 +101,17 @@ export async function generatePromptAsync(item: Item, signal?: AbortSignal): Pro
 const STOP = new Set([
   'the', 'and', 'for', 'with', 'from', 'that', 'this', 'your', 'design', 'designs',
   'poster', 'study', 'ref', 'refs', 'a', 'an', 'of', 'to', 'in', 'on',
+  // generic capture/file noise — these described nothing about the actual save
+  'pasted', 'image', 'images', 'untitled', 'saved', 'screenshot', 'img', 'photo',
+  'photos', 'file', 'copy', 'thumbnail', 'preview', 'www', 'com', 'net', 'org',
+  'http', 'https', 'jpg', 'jpeg', 'png', 'webp', 'gif', 'pinimg', 'video',
 ]);
+
+const DEFAULT_PALETTE = '#3b3b3b,#9a9a9a,#e6e6e6';
+/** True only when an item has a real (extracted) palette, not the gray placeholder. */
+function hasRealPalette(item: Item): boolean {
+  return item.palette.length > 0 && item.palette.join(',').toLowerCase() !== DEFAULT_PALETTE;
+}
 
 const KEYWORDS: [RegExp, string][] = [
   [/type|font|serif|letter|grotesk/i, 'typography'],
@@ -109,10 +127,16 @@ const KEYWORDS: [RegExp, string][] = [
   [/\bui\b|interface|product/i, 'ui'],
 ];
 
-/** Suggest tags from a save's title, notes, source, type, and palette. */
+/**
+ * Local fallback tags from a save's title, notes, source, type, and palette.
+ * Note: this is text-only — it cannot see the image. For tags that describe the
+ * actual picture, configure the AI endpoint (a vision model). Kept honest here:
+ * we drop generic file/capture noise and the gray placeholder palette so it
+ * never emits things like "pasted", "image", or "grey" for an unread image.
+ */
 export function suggestTags(item: Item): string[] {
   const out = new Set<string>();
-  const text = [item.title, item.note, ...item.tags].filter(Boolean).join(' ');
+  const text = [item.title, item.note, item.summary, ...item.tags].filter(Boolean).join(' ');
   for (const [re, tag] of KEYWORDS) if (re.test(text)) out.add(tag);
 
   item.title
@@ -123,12 +147,14 @@ export function suggestTags(item: Item): string[] {
       if (w.length > 3 && !STOP.has(w)) out.add(w);
     });
 
-  if (item.source && item.source !== 'upload')
-    out.add(sourceLabel(item.source).toLowerCase().replace(/\s+/g, '-'));
-  if (item.palette[0]) out.add(colorName(item.palette[0]));
+  if (item.source && item.source !== 'upload' && !/pinimg|gstatic|cdn/.test(item.source)) {
+    const s = sourceLabel(item.source).toLowerCase().replace(/\s+/g, '-');
+    if (s.length > 2 && !STOP.has(s)) out.add(s);
+  }
+  if (hasRealPalette(item)) out.add(colorName(item.palette[0]));
 
   item.tags.forEach((t) => out.delete(t.toLowerCase()));
-  return [...out].slice(0, 6);
+  return [...out].filter((t) => t.length > 1 && !STOP.has(t)).slice(0, 6);
 }
 
 const STYLE_BY_TYPE: Record<string, string> = {
@@ -141,17 +167,26 @@ const STYLE_BY_TYPE: Record<string, string> = {
   code: 'refined UI concept',
 };
 
-/** Compose a descriptive image prompt from a save's metadata. */
+/**
+ * Local fallback prompt from a save's metadata (text-only — it can't see the
+ * image; configure the AI endpoint for an image-aware prompt). Skips the generic
+ * title and gray placeholder palette so it doesn't read like "Pasted image, grey".
+ */
 export function generatePrompt(item: Item): string {
-  const colors = Array.from(new Set(item.palette.map(colorName))).slice(0, 3).join(', ');
-  const descriptors = item.tags.slice(0, 4).join(', ');
+  const colors = hasRealPalette(item)
+    ? Array.from(new Set(item.palette.map(colorName))).slice(0, 3).join(', ')
+    : '';
+  const descriptors = item.tags.filter((t) => !STOP.has(t.toLowerCase())).slice(0, 4).join(', ');
   const style = STYLE_BY_TYPE[item.type] ?? 'design';
+  const title = /^(pasted|untitled|saved|screenshot|image)\b/i.test(item.title.trim())
+    ? ''
+    : item.title;
   return [
-    item.title,
+    title,
     descriptors,
     colors && `${colors} palette`,
     style,
-    'balanced composition, high detail, refined',
+    'balanced composition, high detail',
   ]
     .filter(Boolean)
     .join(', ');

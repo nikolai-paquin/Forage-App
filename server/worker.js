@@ -29,6 +29,17 @@ const json = (data, status = 200) =>
     headers: { 'content-type': 'application/json', ...CORS },
   });
 
+// Turn an image URL (or data: URL) into an Anthropic image content block, so the
+// model can see the actual save. Claude fetches http(s) URLs itself; data URLs
+// are passed through as base64. Returns null for anything it can't use.
+function imageBlock(image) {
+  if (typeof image !== 'string' || !image) return null;
+  const data = image.match(/^data:([^;,]+);base64,(.*)$/);
+  if (data) return { type: 'image', source: { type: 'base64', media_type: data[1], data: data[2] } };
+  if (/^https?:\/\//i.test(image)) return { type: 'image', source: { type: 'url', url: image } };
+  return null;
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
@@ -41,7 +52,7 @@ export default {
       return json({ error: 'invalid JSON' }, 400);
     }
 
-    const { task, item, text } = body || {};
+    const { task, item, text, image } = body || {};
 
     // --- Semantic embeddings (Cloudflare Workers AI) ---
     if (task === 'embed') {
@@ -64,10 +75,19 @@ export default {
     }
 
     const context = JSON.stringify(item);
+    const imgBlock = imageBlock(image);
     const system =
       task === 'tags'
-        ? 'You tag visual inspiration for a designer. Given a saved item, reply with ONLY a JSON array of 3-6 short, lowercase, single-or-hyphenated tags (e.g. ["editorial","muted-palette","typography"]). No prose, no code fences.'
-        : 'You write vivid image-generation prompts. Given a saved item, reply with ONLY a single richly descriptive prompt (one or two sentences) capturing its subject, style, palette, and mood. No prose, no preamble, no quotes.';
+        ? 'You tag visual inspiration for a designer. Look at the image (when provided) and reply with ONLY a JSON array of 4-6 short, lowercase, single-or-hyphenated tags that name the concrete subject, medium/style, palette, and mood of what is actually shown (e.g. ["pixel-art","isometric","island","autumn","vibrant"]). No prose, no code fences.'
+        : 'You write vivid image-generation prompts. Look at the image (when provided) and reply with ONLY a single richly descriptive prompt (one or two sentences) capturing the actual subject, composition, style, palette, and mood you see. No prose, no preamble, no quotes.';
+
+    // Vision when an image is supplied; the metadata is extra context.
+    const content = [];
+    if (imgBlock) content.push(imgBlock);
+    content.push({
+      type: 'text',
+      text: imgBlock ? `Metadata for context: ${context}` : context,
+    });
 
     let res;
     try {
@@ -82,7 +102,7 @@ export default {
           model: env.MODEL || MODEL,
           max_tokens: 300,
           system,
-          messages: [{ role: 'user', content: context }],
+          messages: [{ role: 'user', content }],
         }),
       });
     } catch (e) {
