@@ -5,13 +5,27 @@ import { useForage } from '../lib/store';
 import { exportBackup, importBackup, storageStats, formatBytes } from '../lib/backup';
 import { getAiEndpoint, setAiEndpoint } from '../lib/ai';
 import { getUnfurlEndpoint, setUnfurlEndpoint } from '../lib/unfurl';
-import { getSoundEnabled, setSoundEnabled, playPop } from '../lib/sound';
+import {
+  SOUNDS,
+  getSoundEnabled,
+  setSoundEnabled,
+  getSoundId,
+  setSoundId,
+  playSound,
+} from '../lib/sound';
+import {
+  getDefaultCollection,
+  setDefaultCollection,
+  getAutoTagOnSave,
+  setAutoTagOnSave,
+} from '../lib/capture';
 import { generateSyncKey } from '../lib/sync';
 import { usePwaInstall } from '../lib/pwa';
 import { toast } from '../lib/toast';
 import { timeAgo } from '../lib/util';
 import type { FilterEntry } from '../types';
 import {
+  Camera,
   Check,
   Close,
   Database,
@@ -22,6 +36,7 @@ import {
   Filter,
   Hash,
   Info,
+  LibraryIcon,
   Palette,
   Plus,
   Sparkle,
@@ -36,8 +51,10 @@ const NAV = [
   { id: 'account', label: 'Account', icon: <User size={16} /> },
   { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
   { id: 'filters', label: 'Filters', icon: <Filter size={16} /> },
+  { id: 'libraries', label: 'Libraries', icon: <LibraryIcon size={16} /> },
   { id: 'ai', label: 'AI Usage', icon: <Sparkle size={16} /> },
   { id: 'tags', label: 'Tags', icon: <Hash size={16} /> },
+  { id: 'capture', label: 'Capture', icon: <Camera size={16} /> },
   { id: 'sound', label: 'Sound', icon: <Volume2 size={16} /> },
   { id: 'updates', label: 'Updates', icon: <Download size={16} /> },
   { id: 'sync', label: 'Sync', icon: <Share2 size={16} /> },
@@ -164,6 +181,10 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   const [stats, setStats] = useState({ items: 0, bytes: 0 });
   const [confirmReset, setConfirmReset] = useState(false);
   const [soundOn, setSoundOn] = useState(getSoundEnabled());
+  const [soundChoice, setSoundChoice] = useState(getSoundId());
+  const [defColl, setDefColl] = useState(getDefaultCollection());
+  const [autoTag, setAutoTag] = useState(getAutoTagOnSave());
+  const [newLib, setNewLib] = useState('');
 
   useEffect(() => {
     if (open && active === 'data') storageStats().then(setStats);
@@ -192,6 +213,13 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   };
   const {
     items,
+    projects,
+    libraries,
+    activeLibrary,
+    createLibrary,
+    switchLibrary,
+    renameLibrary,
+    deleteLibrary,
     fileTypes,
     sources,
     addFileType,
@@ -637,6 +665,133 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                     </p>
                   )}
                 </>
+              ) : active === 'libraries' ? (
+                <>
+                  <h2 className="text-[24px] font-semibold tracking-tight">Libraries</h2>
+                  <p className="mt-2 mb-6 max-w-md text-[13.5px] text-muted">
+                    Separate workspaces — each with its own saves, collections, moodboards, and
+                    storyboards. Switch between them without anything mixing.
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {libraries.map((l) => (
+                      <div
+                        key={l.id}
+                        className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${
+                          l.id === activeLibrary ? 'border-ink bg-surface-2' : 'border-border bg-surface'
+                        }`}
+                      >
+                        <input
+                          value={l.name}
+                          onChange={(e) => renameLibrary(l.id, e.target.value)}
+                          className="min-w-0 flex-1 bg-transparent text-[13.5px] font-medium text-ink outline-none"
+                        />
+                        {l.id === activeLibrary ? (
+                          <span className="flex items-center gap-1 text-[12px] font-medium text-emerald-500">
+                            <Check size={13} /> Active
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => switchLibrary(l.id)}
+                            className="rounded-lg border border-border px-2.5 py-1 text-[12.5px] text-muted transition hover:text-ink"
+                          >
+                            Switch
+                          </button>
+                        )}
+                        {l.id !== 'default' && l.id !== activeLibrary && (
+                          <button
+                            onClick={() => {
+                              if (confirm(`Delete the library “${l.name}” and everything in it?`))
+                                deleteLibrary(l.id);
+                            }}
+                            title="Delete library"
+                            className="grid h-7 w-7 place-items-center rounded-lg text-muted transition hover:bg-surface hover:text-red-500"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <input
+                      value={newLib}
+                      onChange={(e) => setNewLib(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && newLib.trim()) {
+                          createLibrary(newLib);
+                          setNewLib('');
+                        }
+                      }}
+                      placeholder="New library name…"
+                      className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-[13px] text-ink outline-none placeholder:text-faint focus:border-border-strong"
+                    />
+                    <button
+                      onClick={() => {
+                        if (!newLib.trim()) return;
+                        createLibrary(newLib);
+                        setNewLib('');
+                      }}
+                      className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-medium text-accent-ink"
+                      style={{ background: 'var(--ink)' }}
+                    >
+                      <Plus size={15} /> Create
+                    </button>
+                  </div>
+                  <p className="mt-4 flex items-start gap-2 text-[12px] text-faint">
+                    <Info size={14} className="mt-0.5 shrink-0" />
+                    <span>
+                      Switching reloads that library’s data. Export (Settings → Data) backs up the
+                      library you’re currently in.
+                    </span>
+                  </p>
+                </>
+              ) : active === 'capture' ? (
+                <>
+                  <h2 className="text-[24px] font-semibold tracking-tight">Capture</h2>
+                  <p className="mt-2 mb-6 max-w-md text-[13.5px] text-muted">
+                    Defaults applied to every new save — however you capture it (paste, drop,
+                    extension, share).
+                  </p>
+                  <label className="mb-1.5 block text-[13px] font-medium text-ink">
+                    Default collection
+                  </label>
+                  <p className="mb-2 text-[12.5px] text-muted">
+                    New saves with no collection chosen go here.
+                  </p>
+                  <select
+                    value={defColl}
+                    onChange={(e) => {
+                      setDefColl(e.target.value);
+                      setDefaultCollection(e.target.value);
+                    }}
+                    className="mb-6 w-full max-w-xs rounded-lg border border-border bg-surface px-3 py-2 text-[13px] text-ink outline-none"
+                  >
+                    <option value="">None</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="flex items-center justify-between border-t border-border py-3.5">
+                    <div>
+                      <p className="text-[13.5px] font-medium text-ink">Auto-tag new saves</p>
+                      <p className="text-[12.5px] text-muted">
+                        Suggest tags automatically when something is saved (uses your AI endpoint if
+                        set, otherwise on-device).
+                      </p>
+                    </div>
+                    <Toggle
+                      on={autoTag}
+                      onClick={() => {
+                        const next = !autoTag;
+                        setAutoTag(next);
+                        setAutoTagOnSave(next);
+                      }}
+                    />
+                  </div>
+                </>
               ) : active === 'sound' ? (
                 <>
                   <h2 className="text-[24px] font-semibold tracking-tight">Sound</h2>
@@ -656,10 +811,35 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                         const next = !soundOn;
                         setSoundOn(next);
                         setSoundEnabled(next);
-                        if (next) playPop();
+                        if (next) playSound(soundChoice);
                       }}
                     />
                   </div>
+
+                  <p className="mb-2.5 mt-6 text-[12px] font-medium uppercase tracking-[0.16em] text-faint">
+                    Choose a sound
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {SOUNDS.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => {
+                          setSoundChoice(s.id);
+                          setSoundId(s.id);
+                          playSound(s.id);
+                        }}
+                        className={`flex items-center justify-between rounded-lg border px-3 py-2.5 text-[13px] transition ${
+                          soundChoice === s.id
+                            ? 'border-ink bg-surface-2 text-ink'
+                            : 'border-border bg-surface text-muted hover:text-ink'
+                        }`}
+                      >
+                        {s.name}
+                        {soundChoice === s.id && <Check size={14} />}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-[12px] text-faint">Click any sound to preview it.</p>
                 </>
               ) : active === 'about' ? (
                 <>

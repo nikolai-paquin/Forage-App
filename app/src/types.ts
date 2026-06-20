@@ -57,6 +57,12 @@ export interface Item {
   deletedAt?: number;
 }
 
+/** A separate, switchable workspace — its own items, collections, boards. */
+export interface Library {
+  id: string;
+  name: string;
+}
+
 export interface Project {
   id: string;
   name: string;

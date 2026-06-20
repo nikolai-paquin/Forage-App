@@ -9,6 +9,7 @@ import {
 import type {
   FilterEntry,
   Item,
+  Library,
   Project,
   SortBy,
   Space,
@@ -23,7 +24,15 @@ import { sampleItems, sampleProjects } from '../data/sample';
 import { fetchYouTubeMeta, itemInProject, sourceLabel, uid } from './util';
 import { unfurl, unfurlEnabled } from './unfurl';
 import { extractPalette } from './color';
-import { idbGet, idbSet } from './idb';
+import { getDefaultCollection, getAutoTagOnSave } from './capture';
+import { suggestTagsAsync } from './ai';
+import { idbGet, idbSet, idbDel } from './idb';
+import {
+  ACTIVE_LIB_KEY,
+  DEFAULT_LIBRARY,
+  LIBRARIES_KEY,
+  libKey,
+} from './libs';
 import { findDuplicate, type DupeCandidate } from './dedupe';
 import {
   getAutoSync,
@@ -167,6 +176,13 @@ interface ForageStore {
   assignSelectedTo: (projectId: string) => void;
   restoreSelected: () => void;
   deleteSelectedForever: () => void;
+  // libraries (workspaces)
+  libraries: Library[];
+  activeLibrary: string;
+  createLibrary: (name: string) => void;
+  switchLibrary: (id: string) => void;
+  renameLibrary: (id: string, name: string) => void;
+  deleteLibrary: (id: string) => void;
   projectById: (id: string) => Project | undefined;
   createProject: (name: string, autoTags?: string[], navigate?: boolean) => string;
   deleteProject: (id: string) => void;
@@ -242,6 +258,17 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   const [focusedId, setFocusedId] = useState<string | undefined>(undefined);
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [storyboards, setStoryboards] = useState<Storyboard[]>([]);
+  const [libraries, setLibraries] = useState<Library[]>(() => {
+    const stored = loadJSON<Library[]>(LIBRARIES_KEY, [DEFAULT_LIBRARY]);
+    return stored.length ? stored : [DEFAULT_LIBRARY];
+  });
+  const [activeLibrary, setActiveLibrary] = useState<string>(() => {
+    try {
+      return localStorage.getItem(ACTIVE_LIB_KEY) || 'default';
+    } catch {
+      return 'default';
+    }
+  });
   const [syncCfg, setSyncCfg] = useState<SyncCfg>(() => ({
     endpoint: getSyncEndpoint(),
     key: getSyncKey(),
@@ -254,18 +281,20 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   // data, and seeding samples only on a genuine first run).
   useEffect(() => {
     let cancelled = false;
+    const lib = activeLibrary;
+    const isDefault = lib === 'default';
     (async () => {
-      let loadedItems = await idbGet<Item[]>(IDB_ITEMS);
+      let loadedItems = await idbGet<Item[]>(libKey(IDB_ITEMS, lib));
       if (loadedItems === undefined) {
-        loadedItems = migrateLegacy<Item[]>(STORE_KEY) ?? sampleItems;
+        loadedItems = isDefault ? (migrateLegacy<Item[]>(STORE_KEY) ?? sampleItems) : [];
       }
-      let loadedSpaces = await idbGet<Space[]>(IDB_SPACES);
+      let loadedSpaces = await idbGet<Space[]>(libKey(IDB_SPACES, lib));
       if (loadedSpaces === undefined) {
-        loadedSpaces = migrateLegacy<Space[]>(SPACES_KEY) ?? [];
+        loadedSpaces = isDefault ? (migrateLegacy<Space[]>(SPACES_KEY) ?? []) : [];
       }
-      let loadedProjects = await idbGet<Project[]>(IDB_PROJECTS);
-      if (loadedProjects === undefined) loadedProjects = sampleProjects;
-      const loadedStoryboards = (await idbGet<Storyboard[]>(IDB_STORYBOARDS)) ?? [];
+      let loadedProjects = await idbGet<Project[]>(libKey(IDB_PROJECTS, lib));
+      if (loadedProjects === undefined) loadedProjects = isDefault ? sampleProjects : [];
+      const loadedStoryboards = (await idbGet<Storyboard[]>(libKey(IDB_STORYBOARDS, lib))) ?? [];
       if (cancelled) return;
       // Trash was removed — purge any legacy soft-deleted saves so they don't
       // linger invisibly in storage (delete is permanent now).
@@ -273,31 +302,47 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       setSpaces(loadedSpaces);
       setProjects(loadedProjects);
       setStoryboards(loadedStoryboards);
+      setSelectedIds([]);
+      setFocusedId(undefined);
       setHydrated(true);
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [activeLibrary]);
 
   // Persist the library to IndexedDB (only after hydration, so we never clobber
   // stored data with the empty initial state).
   useEffect(() => {
     if (!hydrated) return;
-    idbSet(IDB_ITEMS, items).catch(() => {});
-  }, [items, hydrated]);
+    idbSet(libKey(IDB_ITEMS, activeLibrary), items).catch(() => {});
+  }, [items, hydrated, activeLibrary]);
   useEffect(() => {
     if (!hydrated) return;
-    idbSet(IDB_SPACES, spaces).catch(() => {});
-  }, [spaces, hydrated]);
+    idbSet(libKey(IDB_SPACES, activeLibrary), spaces).catch(() => {});
+  }, [spaces, hydrated, activeLibrary]);
   useEffect(() => {
     if (!hydrated) return;
-    idbSet(IDB_PROJECTS, projects).catch(() => {});
-  }, [projects, hydrated]);
+    idbSet(libKey(IDB_PROJECTS, activeLibrary), projects).catch(() => {});
+  }, [projects, hydrated, activeLibrary]);
   useEffect(() => {
     if (!hydrated) return;
-    idbSet(IDB_STORYBOARDS, storyboards).catch(() => {});
-  }, [storyboards, hydrated]);
+    idbSet(libKey(IDB_STORYBOARDS, activeLibrary), storyboards).catch(() => {});
+  }, [storyboards, hydrated, activeLibrary]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(LIBRARIES_KEY, JSON.stringify(libraries));
+    } catch {
+      /* non-fatal */
+    }
+  }, [libraries]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(ACTIVE_LIB_KEY, activeLibrary);
+    } catch {
+      /* non-fatal */
+    }
+  }, [activeLibrary]);
 
   useEffect(() => {
     try {
@@ -469,6 +514,15 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       toggleSource: (value) =>
         setSources((prev) => prev.map((s) => (s.value === value ? { ...s, enabled: !s.enabled } : s))),
       addItem: (input) => {
+        // Capture preference: file new saves into a default collection when the
+        // caller didn't specify one (and it still exists).
+        const defColl = getDefaultCollection();
+        const projectIds =
+          input.projectIds && input.projectIds.length
+            ? input.projectIds
+            : defColl && projects.some((p) => p.id === defColl)
+              ? [defColl]
+              : [];
         const item: Item = {
           id: uid(),
           type: input.type,
@@ -483,13 +537,20 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           ratio: input.ratio ?? (input.type === 'link' ? 1.6 : 0.7 + Math.random() * 0.7),
           palette: ['#3b3b3b', '#9a9a9a', '#e6e6e6'],
           tags: input.tags ?? [],
-          projectIds: input.projectIds ?? [],
+          projectIds,
           createdAt: Date.now(),
           updatedAt: Date.now(),
           lastSeenAt: Date.now(),
         };
         setItems((prev) => [item, ...prev]);
         registerSource(item.source);
+        // Capture preference: auto-tag new saves (best-effort, async).
+        if (getAutoTagOnSave()) {
+          suggestTagsAsync(item).then((tags) => {
+            if (tags.length)
+              patch(item.id, (i) => ({ ...i, tags: [...new Set([...i.tags, ...tags])] }));
+          });
+        }
         // Enrich a YouTube save with its real video title + creator (async, best-effort).
         if (item.type === 'video' && item.source === 'youtube.com' && item.url) {
           fetchYouTubeMeta(item.url).then((meta) => {
@@ -578,6 +639,35 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         const ids = new Set(selectedIds);
         setItems((prev) => prev.filter((i) => !ids.has(i.id)));
         setSelectedIds([]);
+      },
+      libraries,
+      activeLibrary,
+      createLibrary: (name) => {
+        const lib: Library = { id: uid(), name: name.trim() || 'New Library' };
+        setLibraries((prev) => [...prev, lib]);
+        setHydrated(false);
+        setActiveLibrary(lib.id);
+        setView({ kind: 'library', tab: 'all' });
+      },
+      switchLibrary: (id) => {
+        if (id === activeLibrary) return;
+        setHydrated(false);
+        setActiveLibrary(id);
+        setView({ kind: 'library', tab: 'all' });
+      },
+      renameLibrary: (id, name) =>
+        setLibraries((prev) => prev.map((l) => (l.id === id ? { ...l, name } : l))),
+      deleteLibrary: (id) => {
+        if (id === 'default') return; // the default library can't be removed
+        for (const base of [IDB_ITEMS, IDB_SPACES, IDB_PROJECTS, IDB_STORYBOARDS]) {
+          idbDel(libKey(base, id)).catch(() => {});
+        }
+        setLibraries((prev) => prev.filter((l) => l.id !== id));
+        if (activeLibrary === id) {
+          setHydrated(false);
+          setActiveLibrary('default');
+          setView({ kind: 'library', tab: 'all' });
+        }
       },
       projectById,
       createProject: (name, autoTags, navigate = true) => {
@@ -722,7 +812,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, projects, view, query, typeFilter, sourceFilter, tagFilter, sortBy, fileTypes, sources, selectedIds, focusedId, hydrated, spaces, storyboards, syncCfg, syncBusy, lastSyncedAt]);
+  }, [items, projects, view, query, typeFilter, sourceFilter, tagFilter, sortBy, fileTypes, sources, selectedIds, focusedId, hydrated, spaces, storyboards, libraries, activeLibrary, syncCfg, syncBusy, lastSyncedAt]);
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }

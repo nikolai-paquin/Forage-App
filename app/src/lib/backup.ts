@@ -3,12 +3,15 @@
 // endpoint) lives in localStorage. A backup captures both so a restore — or a move
 // to a new machine — is lossless. Plain JSON, so it stays inspectable by hand.
 import { idbGet, idbSet } from './idb';
+import { libKey } from './libs';
 
 const PREFIX = 'forage.';
-const IDB_ITEMS = 'items';
-const IDB_SPACES = 'spaces';
-const IDB_PROJECTS = 'projects';
-const IDB_STORYBOARDS = 'storyboards';
+// Computed per call (not at import) so they always target the *active* library —
+// export/restore matches the library you're currently viewing.
+const IDB_ITEMS = () => libKey('items');
+const IDB_SPACES = () => libKey('spaces');
+const IDB_PROJECTS = () => libKey('projects');
+const IDB_STORYBOARDS = () => libKey('storyboards');
 
 export interface Backup {
   app: 'forage';
@@ -38,10 +41,10 @@ function snapshotLocal(): Record<string, unknown> {
 
 export async function buildBackup(): Promise<Backup> {
   const [items, spaces, projects, storyboards] = await Promise.all([
-    idbGet<unknown[]>(IDB_ITEMS),
-    idbGet<unknown[]>(IDB_SPACES),
-    idbGet<unknown[]>(IDB_PROJECTS),
-    idbGet<unknown[]>(IDB_STORYBOARDS),
+    idbGet<unknown[]>(IDB_ITEMS()),
+    idbGet<unknown[]>(IDB_SPACES()),
+    idbGet<unknown[]>(IDB_PROJECTS()),
+    idbGet<unknown[]>(IDB_STORYBOARDS()),
   ]);
   return {
     app: 'forage',
@@ -125,9 +128,9 @@ export async function importBackup(file: File): Promise<ImportResult> {
     throw new Error('That backup is missing its data.');
   }
 
-  const writes = [idbSet(IDB_ITEMS, items), idbSet(IDB_SPACES, spaces)];
-  if (projects !== undefined) writes.push(idbSet(IDB_PROJECTS, projects));
-  if (storyboards !== undefined) writes.push(idbSet(IDB_STORYBOARDS, storyboards));
+  const writes = [idbSet(IDB_ITEMS(), items), idbSet(IDB_SPACES(), spaces)];
+  if (projects !== undefined) writes.push(idbSet(IDB_PROJECTS(), projects));
+  if (storyboards !== undefined) writes.push(idbSet(IDB_STORYBOARDS(), storyboards));
   await Promise.all(writes);
   return { items: Array.isArray(items) ? items.length : 0 };
 }
@@ -135,8 +138,8 @@ export async function importBackup(file: File): Promise<ImportResult> {
 /** Rough stats for the Data settings pane. */
 export async function storageStats(): Promise<{ items: number; bytes: number }> {
   const [items, spaces] = await Promise.all([
-    idbGet<unknown[]>(IDB_ITEMS),
-    idbGet<unknown[]>(IDB_SPACES),
+    idbGet<unknown[]>(IDB_ITEMS()),
+    idbGet<unknown[]>(IDB_SPACES()),
   ]);
   let bytes = JSON.stringify(items ?? []).length + JSON.stringify(spaces ?? []).length;
   for (let i = 0; i < localStorage.length; i++) {

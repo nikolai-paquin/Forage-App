@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { onToast } from '../lib/toast';
-import { playPop } from '../lib/sound';
+import { playAction } from '../lib/sound';
 import { CheckCircle2, RotateCcw } from './icons';
 
 interface Toast {
@@ -17,7 +17,7 @@ export function Toaster() {
     let n = 0;
     return onToast((message, opts) => {
       const id = ++n;
-      playPop();
+      playAction();
       setToasts((prev) => [...prev, { id, message, undo: opts?.undo }]);
       // Undo toasts linger so there's time to click; plain ones are brief.
       setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), opts?.undo ? 6000 : 2600);
