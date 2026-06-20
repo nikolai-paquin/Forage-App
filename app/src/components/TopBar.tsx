@@ -3,7 +3,6 @@ import { useForage } from '../lib/store';
 import { useTheme } from '../lib/theme';
 import type { View } from '../types';
 import {
-  ChevronsUpDown,
   Compass,
   Film,
   Frame,
@@ -69,10 +68,7 @@ export function TopBar({
             <path d="M12 3c0 5-2.4 7.6-6 9 3.6 1.4 6 4 6 9 0-5 2.4-7.6 6-9-3.6-1.4-6-4-6-9Z" />
           </svg>
         </span>
-        <button className="flex items-center gap-1 text-[15px] font-medium tracking-tight text-ink">
-          Library
-          <ChevronsUpDown size={14} className="text-faint" />
-        </button>
+        <span className="text-[16px] font-bold tracking-tight text-ink">Forage</span>
       </div>
 
       {/* Center: segmented pill */}
