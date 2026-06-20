@@ -8,64 +8,15 @@ function hostOf(u) {
   }
 }
 
-// Injected into the page to read OpenGraph/meta tags for a rich bookmark.
-function readPageMeta() {
-  const pick = (sel) => document.querySelector(sel)?.getAttribute('content')?.trim() || '';
-  const meta = {
-    title:
-      pick('meta[property="og:title"]') ||
-      pick('meta[name="twitter:title"]') ||
-      document.title ||
-      '',
-    description:
-      pick('meta[property="og:description"]') ||
-      pick('meta[name="description"]') ||
-      pick('meta[name="twitter:description"]') ||
-      '',
-    image:
-      pick('meta[property="og:image"]') ||
-      pick('meta[property="og:image:url"]') ||
-      pick('meta[name="twitter:image"]') ||
-      pick('meta[name="twitter:image:src"]') ||
-      '',
-    author:
-      pick('meta[property="og:site_name"]') ||
-      pick('meta[name="author"]') ||
-      pick('meta[property="article:author"]') ||
-      '',
-  };
-  if (meta.image) {
-    try {
-      meta.image = new URL(meta.image, location.href).href;
-    } catch {
-      /* leave as-is */
-    }
-  }
-  return meta;
-}
-
-async function readMeta(tabId) {
-  if (tabId == null || !chrome.scripting) return {};
+// Hand a capture to the background worker, which enriches it and either opens
+// the app or saves it silently to the sync endpoint.
+async function send(payload, enrich) {
   try {
-    const [res] = await chrome.scripting.executeScript({ target: { tabId }, func: readPageMeta });
-    return res?.result || {};
+    await chrome.runtime.sendMessage({ type: 'capture', payload, enrich });
   } catch {
-    return {};
+    /* worker may have closed the popup already */
   }
-}
-
-function openForage(payload) {
-  const target = APP_URL + '?forage=' + encodeURIComponent(JSON.stringify(payload));
-  chrome.tabs.query({}, (tabs) => {
-    const existing = tabs.find((t) => t.url && t.url.startsWith(APP_URL));
-    if (existing && existing.id != null) {
-      chrome.tabs.update(existing.id, { url: target, active: true });
-      if (existing.windowId != null) chrome.windows.update(existing.windowId, { focused: true });
-    } else {
-      chrome.tabs.create({ url: target });
-    }
-    window.close();
-  });
+  window.close();
 }
 
 chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
@@ -73,17 +24,11 @@ chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
   document.getElementById('url').textContent = tab?.url || '';
   document.getElementById('open').href = APP_URL;
 
-  document.getElementById('save').addEventListener('click', async () => {
-    const meta = await readMeta(tab?.id);
-    openForage({
-      type: 'link',
-      title: meta.title || tab?.title || 'Saved page',
-      url: tab?.url,
-      media: meta.image || undefined,
-      summary: meta.description || undefined,
-      author: meta.author || undefined,
-      source: hostOf(tab?.url || ''),
-    });
+  document.getElementById('save').addEventListener('click', () => {
+    send(
+      { type: 'link', title: tab?.title || 'Saved page', url: tab?.url, source: hostOf(tab?.url || '') },
+      tab?.id != null ? { kind: 'tab', tabId: tab.id } : null,
+    );
   });
 
   const link = document.getElementById('link');
@@ -91,16 +36,54 @@ chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
     const v = link.value.trim();
     if (!v) return;
     const isImg = /\.(png|jpe?g|webp|avif|gif)(\?|$)/i.test(v);
-    openForage({
-      type: isImg ? 'image' : 'link',
-      title: hostOf(v) || v.slice(0, 60),
-      url: /^https?:/i.test(v) ? v : undefined,
-      media: isImg ? v : undefined,
-      source: hostOf(v),
-    });
+    const url = /^https?:/i.test(v) ? v : undefined;
+    send(
+      {
+        type: isImg ? 'image' : 'link',
+        title: hostOf(v) || v.slice(0, 60),
+        url,
+        media: isImg ? v : undefined,
+        source: hostOf(v),
+      },
+      // Non-image links get enriched by fetching + parsing their meta tags.
+      !isImg && url ? { kind: 'fetch', url } : null,
+    );
   };
   document.getElementById('saveLink').addEventListener('click', addLink);
   link.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') addLink();
   });
+});
+
+// ---- Settings panel (background save & sync) ----
+const gear = document.getElementById('gear');
+const settings = document.getElementById('settings');
+const epEl = document.getElementById('endpoint');
+const keyEl = document.getElementById('key');
+const bgEl = document.getElementById('background');
+const statusEl = document.getElementById('status');
+
+gear.addEventListener('click', async () => {
+  settings.classList.toggle('open');
+  if (settings.classList.contains('open')) {
+    try {
+      const s = await chrome.runtime.sendMessage({ type: 'getSettings' });
+      epEl.value = s?.endpoint || '';
+      keyEl.value = s?.key || '';
+      bgEl.checked = !!s?.background;
+    } catch {
+      /* ignore */
+    }
+  }
+});
+
+document.getElementById('saveSettings').addEventListener('click', async () => {
+  await chrome.runtime.sendMessage({
+    type: 'setSettings',
+    settings: { endpoint: epEl.value.trim(), key: keyEl.value.trim(), background: bgEl.checked },
+  });
+  statusEl.textContent = bgEl.checked
+    ? 'Saved — captures now save in the background.'
+    : 'Saved.';
+  setTimeout(() => (statusEl.textContent = ''), 2000);
 });

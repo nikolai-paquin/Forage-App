@@ -34,9 +34,22 @@ local dev.
 ## Use (more)
 
 - The popup also has a **"forage any link / image URL"** field — paste a URL,
-  hit Add.
+  hit Add. Links are fetched and their meta tags parsed, so they arrive as rich
+  bookmarks (title · description · preview image).
+- Right-click **link** saves fetch + parse the target page too; **image** saves
+  borrow the host page's title/description; **page** saves read the open page.
 - Saves **reuse an open Forage tab** instead of opening a new one each time, and
   the app shows a **toast** when the save lands.
+
+## Background save (no tab)
+
+Open the popup → **⚙ Background save & sync** → paste the same **Sync endpoint
+URL** and **Sync key** you use in Forage → Settings → Sync, then tick **Save in
+background**. Captures now push straight to your library via the sync Worker —
+no tab opens. The toolbar icon flashes a ✓ on success (or ! on failure, in which
+case it falls back to opening a tab). The new save shows up on your devices on
+their next sync pull. Requires the Sync Worker (`server/sync-worker.js`) and
+auto-sync enabled in the app.
 
 ## Firefox
 
@@ -49,5 +62,8 @@ Firefox needs a slightly different manifest (background `scripts` instead of a
 
 ## Notes
 
-- Manifest V3, permissions: `contextMenus`, `activeTab`, `tabs` (the last is for
-  reusing an existing Forage tab).
+- Manifest V3, permissions: `contextMenus`, `activeTab`, `tabs`, `scripting`,
+  `storage`, and `host_permissions: *://*/*`. The host permission is what lets
+  the extension fetch a link's page to read its preview metadata; `storage`
+  holds your background-save settings locally. Your sync key never leaves the
+  extension except in requests to your own sync endpoint.

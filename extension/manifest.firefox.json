@@ -9,7 +9,8 @@
     "default_icon": { "128": "icon-128.png" }
   },
   "background": { "scripts": ["background.js"] },
-  "permissions": ["contextMenus", "activeTab", "tabs", "scripting"],
+  "permissions": ["contextMenus", "activeTab", "tabs", "scripting", "storage"],
+  "host_permissions": ["*://*/*"],
   "browser_specific_settings": {
     "gecko": { "id": "forage@nikolaipaquin.com", "strict_min_version": "115.0" }
   }

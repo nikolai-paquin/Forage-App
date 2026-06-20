@@ -25,6 +25,15 @@
       .ghost { padding: 8px 10px; border: 1px solid #e5e7e9; border-radius: 8px; background: #fff; color: #16171b; font-size: 12px; cursor: pointer; width: auto; margin: 0; }
       .sep { margin-top: 12px; border-top: 1px solid #e5e7e9; padding-top: 10px; font-size: 11px; color: #9a9ea5; }
       .open { display: block; margin-top: 10px; text-align: center; font-size: 12px; color: #696c73; text-decoration: none; }
+      .gear { margin-top: 10px; font-size: 12px; color: #696c73; background: none; border: 0; padding: 0; width: auto; cursor: pointer; font-weight: 500; }
+      .settings { margin-top: 10px; display: none; }
+      .settings.open { display: block; }
+      .settings label { display: block; font-size: 11px; color: #9a9ea5; margin: 8px 0 4px; }
+      .settings input[type='text'] { width: 100%; box-sizing: border-box; }
+      .check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; color: #16171b; }
+      .check input { flex: 0; }
+      .status { margin-top: 8px; font-size: 11px; color: #16a34a; min-height: 14px; }
+      @media (prefers-color-scheme: dark) { .check { color: #f2f3f5; } }
       @media (prefers-color-scheme: dark) {
         body { background: #151619; color: #f2f3f5; }
         .dot { background: #f2f3f5; }
@@ -44,6 +53,21 @@
         <button id="saveLink" class="ghost">Add</button>
       </div>
       <a id="open" class="open" href="#" target="_blank">Open library</a>
+
+      <button id="gear" class="gear">⚙ Background save & sync</button>
+      <div id="settings" class="settings">
+        <div class="sep" style="margin-top: 4px">
+          Save silently to your Sync endpoint instead of opening a tab. Use the same
+          endpoint + key as Forage → Settings → Sync.
+        </div>
+        <label for="endpoint">Sync endpoint URL</label>
+        <input id="endpoint" type="text" placeholder="https://forage-sync.you.workers.dev" />
+        <label for="key">Sync key</label>
+        <input id="key" type="text" placeholder="fk_…" />
+        <label class="check"><input id="background" type="checkbox" /> Save in background (no tab)</label>
+        <button id="saveSettings" class="ghost" style="width: 100%; margin-top: 10px">Save settings</button>
+        <div id="status" class="status"></div>
+      </div>
     </div>
     <script src="popup.js"></script>
   </body>
