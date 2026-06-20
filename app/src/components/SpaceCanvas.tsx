@@ -6,7 +6,6 @@ import { uid } from '../lib/util';
 import { ArrowLeft, Close, Image as ImageIcon, Maximize2, StickyNote, Trash2, ZoomIn, ZoomOut } from './icons';
 
 const thumb = (i?: Item) => (i ? (i.type === 'video' ? i.poster : i.media) : undefined);
-const NOTE_COLORS = ['#fde68a', '#bbf7d0', '#bfdbfe', '#fbcfe8', '#e9d5ff'];
 
 interface DragState {
   type: 'pan' | 'el' | 'resize';
@@ -128,10 +127,9 @@ export function SpaceCanvas() {
       id: uid(),
       kind: 'note',
       text: '',
-      color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
-      x: c.x - 90,
+      x: c.x - 100,
       y: c.y - 60,
-      w: 180,
+      w: 200,
       z: nextZ(),
     });
   };
@@ -259,18 +257,19 @@ export function SpaceCanvas() {
                 className="group absolute"
                 style={{ left: el.x, top: el.y, width: el.w, zIndex: el.z }}
               >
-                <div className="overflow-hidden rounded-lg shadow-xl" style={{ background: el.color }}>
+                <div className="overflow-hidden rounded-md border border-black/10 bg-white shadow-md ring-1 ring-black/5">
                   <div
                     onPointerDown={(e) => startEl(e, el)}
-                    className="h-5 cursor-grab active:cursor-grabbing"
-                    style={{ background: 'rgba(0,0,0,0.06)' }}
-                  />
+                    className="flex h-4 cursor-grab items-center justify-center active:cursor-grabbing"
+                  >
+                    <span className="h-[3px] w-6 rounded-full bg-black/15 opacity-0 transition group-hover:opacity-100" />
+                  </div>
                   <textarea
                     value={el.text}
                     onPointerDown={(e) => e.stopPropagation()}
                     onChange={(e) => updateSpaceElement(space.id, el.id, { text: e.target.value })}
                     placeholder="Note…"
-                    className="block w-full resize-none bg-transparent p-2.5 text-[13px] text-[#1b1c1f] outline-none placeholder:text-black/30"
+                    className="block w-full resize-none bg-transparent px-3 pb-3 text-[13px] text-[#1b1c1f] outline-none placeholder:text-black/30"
                     rows={3}
                   />
                 </div>
@@ -330,7 +329,7 @@ export function SpaceCanvas() {
                     }
                     return (
                       <div key={el.id} className="absolute" style={{ left: el.x, top: el.y, width: el.w }}>
-                        <div className="overflow-hidden rounded-lg p-2.5 text-[13px] text-[#1b1c1f] shadow-xl" style={{ background: el.color }}>
+                        <div className="overflow-hidden rounded-md border border-black/10 bg-white p-3 text-[13px] text-[#1b1c1f] shadow-md ring-1 ring-black/5">
                           {el.text}
                         </div>
                       </div>
