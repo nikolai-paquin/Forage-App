@@ -5,23 +5,23 @@ import { useForage } from '../lib/store';
 import { exportBackup, importBackup, storageStats, formatBytes } from '../lib/backup';
 import { getAiEndpoint, setAiEndpoint } from '../lib/ai';
 import { getUnfurlEndpoint, setUnfurlEndpoint } from '../lib/unfurl';
+import { getSoundEnabled, setSoundEnabled, playPop } from '../lib/sound';
 import { generateSyncKey } from '../lib/sync';
 import { usePwaInstall } from '../lib/pwa';
 import { toast } from '../lib/toast';
 import { timeAgo } from '../lib/util';
 import type { FilterEntry } from '../types';
 import {
-  Camera,
   Check,
   Close,
   Database,
   Download,
+  ExternalLink,
   FileDown,
   FileUp,
   Filter,
   Hash,
   Info,
-  LibraryIcon,
   Palette,
   Plus,
   Sparkle,
@@ -36,15 +36,21 @@ const NAV = [
   { id: 'account', label: 'Account', icon: <User size={16} /> },
   { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
   { id: 'filters', label: 'Filters', icon: <Filter size={16} /> },
-  { id: 'libraries', label: 'Libraries', icon: <LibraryIcon size={16} /> },
   { id: 'ai', label: 'AI Usage', icon: <Sparkle size={16} /> },
   { id: 'tags', label: 'Tags', icon: <Hash size={16} /> },
-  { id: 'capture', label: 'Capture', icon: <Camera size={16} /> },
   { id: 'sound', label: 'Sound', icon: <Volume2 size={16} /> },
   { id: 'updates', label: 'Updates', icon: <Download size={16} /> },
   { id: 'sync', label: 'Sync', icon: <Share2 size={16} /> },
   { id: 'data', label: 'Data', icon: <Database size={16} /> },
   { id: 'about', label: 'About', icon: <Info size={16} /> },
+];
+
+const VERSION = '0.1.0';
+const REPO = 'https://github.com/nikolai-paquin/Forage-App';
+const ABOUT_LINKS = [
+  { label: 'GitHub repository', href: REPO },
+  { label: 'Live site', href: 'https://nikolai-paquin.github.io/Forage-App/' },
+  { label: 'Report an issue', href: `${REPO}/issues` },
 ];
 
 function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
@@ -157,6 +163,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   const [savedUnfurl, setSavedUnfurl] = useState(false);
   const [stats, setStats] = useState({ items: 0, bytes: 0 });
   const [confirmReset, setConfirmReset] = useState(false);
+  const [soundOn, setSoundOn] = useState(getSoundEnabled());
 
   useEffect(() => {
     if (open && active === 'data') storageStats().then(setStats);
@@ -629,6 +636,69 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                       </span>
                     </p>
                   )}
+                </>
+              ) : active === 'sound' ? (
+                <>
+                  <h2 className="text-[24px] font-semibold tracking-tight">Sound</h2>
+                  <p className="mt-2 mb-6 max-w-md text-[13.5px] text-muted">
+                    A subtle pop when a save lands or an action completes. Off by default.
+                  </p>
+                  <div className="flex items-center justify-between border-t border-border py-3.5">
+                    <div>
+                      <p className="text-[13.5px] font-medium text-ink">Sound effects</p>
+                      <p className="text-[12.5px] text-muted">
+                        Play a soft cue on saves and confirmations.
+                      </p>
+                    </div>
+                    <Toggle
+                      on={soundOn}
+                      onClick={() => {
+                        const next = !soundOn;
+                        setSoundOn(next);
+                        setSoundEnabled(next);
+                        if (next) playPop();
+                      }}
+                    />
+                  </div>
+                </>
+              ) : active === 'about' ? (
+                <>
+                  <h2 className="text-[24px] font-semibold tracking-tight">About</h2>
+                  <div className="mt-4 flex items-center gap-3">
+                    <span
+                      className="grid h-11 w-11 place-items-center rounded-xl text-accent-ink"
+                      style={{ background: 'var(--ink)' }}
+                    >
+                      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                        <path d="M12 3c0 5-2.4 7.6-6 9 3.6 1.4 6 4 6 9 0-5 2.4-7.6 6-9-3.6-1.4-6-4-6-9Z" />
+                      </svg>
+                    </span>
+                    <div>
+                      <p className="text-[16px] font-semibold text-ink">Forage</p>
+                      <p className="text-[12.5px] text-muted">Version {VERSION}</p>
+                    </div>
+                  </div>
+                  <p className="mt-5 max-w-md text-[13.5px] leading-relaxed text-muted">
+                    A fast, local-first home for everything you save — images, links, video, audio,
+                    and AI work — organized into collections, moodboards, and storyboards.
+                  </p>
+                  <div className="mt-6 flex flex-col gap-1.5">
+                    {ABOUT_LINKS.map((l) => (
+                      <a
+                        key={l.href}
+                        href={l.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-between rounded-lg border border-border bg-surface px-3.5 py-2.5 text-[13.5px] text-ink transition hover:bg-surface-2"
+                      >
+                        {l.label}
+                        <ExternalLink size={15} className="text-faint" />
+                      </a>
+                    ))}
+                  </div>
+                  <p className="mt-6 text-[12px] text-faint">
+                    Your library lives in this browser — back it up from Settings → Data.
+                  </p>
                 </>
               ) : (
                 <>
