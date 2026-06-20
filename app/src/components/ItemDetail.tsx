@@ -196,7 +196,8 @@ export function ItemDetail({
     updateItem,
     addTag,
     removeTag,
-    trashItem,
+    deleteForever,
+    reinsertItem,
     setDerivedFrom,
     outputsOf,
   } = useForage();
@@ -292,11 +293,13 @@ export function ItemDetail({
               </a>
               <button
                 onClick={() => {
-                  trashItem(item.id);
+                  const deleted = live;
+                  deleteForever(item.id);
                   onClose();
+                  toast('Deleted', { undo: () => reinsertItem(deleted) });
                 }}
                 className={iconBtn}
-                title="Move to Trash"
+                title="Delete"
               >
                 <Trash2 size={17} />
               </button>

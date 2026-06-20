@@ -15,14 +15,12 @@ import {
   Grid,
   Hash,
   Image as ImageIcon,
-  Inbox,
   Layers,
   Link,
   Music,
   Play,
   Plus,
   Sparkle,
-  Trash2,
 } from './icons';
 
 const SORT_OPTIONS: Option[] = [
@@ -46,8 +44,6 @@ const TYPE_ICON: Record<string, React.ReactNode> = {
 const TABS: { id: LibraryTab; label: string; icon: React.ReactNode }[] = [
   { id: 'all', label: 'All', icon: <ImageIcon size={15} /> },
   { id: 'bookmarks', label: 'Bookmarks', icon: <Bookmark size={15} /> },
-  { id: 'unsorted', label: 'Unsorted', icon: <Inbox size={15} /> },
-  { id: 'trash', label: 'Trash', icon: <Trash2 size={15} /> },
 ];
 
 function Empty({
@@ -98,7 +94,6 @@ export function LibraryView({
     setTagFilter,
     sortBy,
     setSortBy,
-    emptyTrash,
   } = useForage();
   const [density, setDensity] = useState(235);
   if (view.kind !== 'library') return null;
@@ -167,29 +162,25 @@ export function LibraryView({
             />
             <span className="h-3.5 w-3.5 rounded-[3px] border border-border-strong" />
           </div>
-          {tab !== 'trash' && (
-            <>
-              <FilterMenu
-                icon={<ImageIcon size={14} className="text-faint" />}
-                options={typeOptions}
-                value={typeFilter}
-                onChange={(v) => setTypeFilter(v as ItemType | 'all')}
-              />
-              <FilterMenu
-                icon={<Compass size={14} className="text-faint" />}
-                options={sourceOptions}
-                value={sourceFilter}
-                onChange={setSourceFilter}
-              />
-              {tagOptions.length > 1 && (
-                <FilterMenu
-                  icon={<Hash size={14} className="text-faint" />}
-                  options={tagOptions}
-                  value={tagFilter}
-                  onChange={setTagFilter}
-                />
-              )}
-            </>
+          <FilterMenu
+            icon={<ImageIcon size={14} className="text-faint" />}
+            options={typeOptions}
+            value={typeFilter}
+            onChange={(v) => setTypeFilter(v as ItemType | 'all')}
+          />
+          <FilterMenu
+            icon={<Compass size={14} className="text-faint" />}
+            options={sourceOptions}
+            value={sourceFilter}
+            onChange={setSourceFilter}
+          />
+          {tagOptions.length > 1 && (
+            <FilterMenu
+              icon={<Hash size={14} className="text-faint" />}
+              options={tagOptions}
+              value={tagFilter}
+              onChange={setTagFilter}
+            />
           )}
           <FilterMenu
             neutral
@@ -202,27 +193,7 @@ export function LibraryView({
       </div>
 
       {/* body */}
-      {tab === 'trash' ? (
-        visibleItems.length === 0 ? (
-          <Empty
-            icon={<Trash2 size={34} strokeWidth={1.5} />}
-            title="Trash is empty"
-            sub="Deleted saves land here. Empty Trash to remove for good."
-          />
-        ) : (
-          <>
-            <div className="mb-4 flex justify-end">
-              <button
-                onClick={emptyTrash}
-                className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-muted transition hover:border-red-300 hover:text-red-500"
-              >
-                <Trash2 size={14} /> Empty Trash
-              </button>
-            </div>
-            <MasonryGrid items={visibleItems} onOpen={onOpen} targetWidth={density} />
-          </>
-        )
-      ) : tab === 'bookmarks' ? (
+      {tab === 'bookmarks' ? (
         visibleItems.length === 0 ? (
           <Empty
             icon={<Bookmark size={34} strokeWidth={1.5} />}
@@ -250,12 +221,6 @@ export function LibraryView({
             <BookmarksList items={visibleItems} onOpen={onOpen} />
           </div>
         )
-      ) : tab === 'unsorted' && visibleItems.length === 0 ? (
-        <Empty
-          icon={<Inbox size={34} strokeWidth={1.5} />}
-          title="Nothing unsorted"
-          sub="Every save belongs to at least one collection."
-        />
       ) : (
         <>
           {tab === 'all' && (

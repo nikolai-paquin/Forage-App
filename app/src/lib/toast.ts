@@ -1,10 +1,15 @@
 // Tiny global toast bus — call toast() from anywhere; <Toaster/> renders them.
-type Listener = (message: string) => void;
+export interface ToastOpts {
+  /** Show an "Undo" action; the toast lingers longer while it's offered. */
+  undo?: () => void;
+}
+
+type Listener = (message: string, opts?: ToastOpts) => void;
 
 const listeners = new Set<Listener>();
 
-export function toast(message: string) {
-  listeners.forEach((l) => l(message));
+export function toast(message: string, opts?: ToastOpts) {
+  listeners.forEach((l) => l(message, opts));
 }
 
 export function onToast(l: Listener) {

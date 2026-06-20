@@ -21,7 +21,7 @@ function faviconOf(url?: string): string {
 /** A browser-bookmarks-style list: preview · title + description · actions.
  *  Fills a left column to 10, overflows into a right column, paginates at 20. */
 export function BookmarksList({ items, onOpen }: { items: Item[]; onOpen: (i: Item) => void }) {
-  const { trashItem } = useForage();
+  const { deleteForever, reinsertItem } = useForage();
   const [page, setPage] = useState(0);
 
   const totalPages = Math.max(1, Math.ceil(items.length / PER_PAGE));
@@ -108,8 +108,8 @@ export function BookmarksList({ items, onOpen }: { items: Item[]; onOpen: (i: It
           )}
           <button
             onClick={() => {
-              trashItem(item.id);
-              toast('Moved to Trash');
+              deleteForever(item.id);
+              toast('Deleted', { undo: () => reinsertItem(item) });
             }}
             title="Delete"
             className="grid h-8 w-8 place-items-center rounded-full text-muted transition hover:bg-surface hover:text-red-500"

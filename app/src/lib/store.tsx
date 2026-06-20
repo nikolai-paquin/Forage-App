@@ -157,6 +157,7 @@ interface ForageStore {
   trashItem: (id: string) => void;
   restoreItem: (id: string) => void;
   deleteForever: (id: string) => void;
+  reinsertItem: (item: Item) => void;
   emptyTrash: () => void;
   // selection + bulk
   toggleSelect: (id: string) => void;
@@ -261,7 +262,9 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       if (loadedProjects === undefined) loadedProjects = sampleProjects;
       const loadedStoryboards = (await idbGet<Storyboard[]>(IDB_STORYBOARDS)) ?? [];
       if (cancelled) return;
-      setItems(loadedItems);
+      // Trash was removed — purge any legacy soft-deleted saves so they don't
+      // linger invisibly in storage (delete is permanent now).
+      setItems(loadedItems.filter((i) => !i.deletedAt));
       setSpaces(loadedSpaces);
       setProjects(loadedProjects);
       setStoryboards(loadedStoryboards);
@@ -373,13 +376,8 @@ export function ForageProvider({ children }: { children: ReactNode }) {
 
     let inView: Item[] = [];
     if (view.kind === 'library') {
-      if (view.tab === 'trash') inView = items.filter((i) => i.deletedAt);
-      else {
-        const live = items.filter((i) => !i.deletedAt);
-        if (view.tab === 'all') inView = live;
-        else if (view.tab === 'unsorted') inView = live.filter((i) => i.projectIds.length === 0);
-        else inView = live.filter((i) => i.type === 'link');
-      }
+      const live = items.filter((i) => !i.deletedAt);
+      inView = view.tab === 'bookmarks' ? live.filter((i) => i.type === 'link') : live;
     } else if (view.kind === 'collection') {
       const p = projectById(view.id);
       inView = p ? items.filter((i) => !i.deletedAt && itemInProject(i, p)) : [];
@@ -538,6 +536,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       trashItem: (id) => patch(id, (i) => ({ ...i, deletedAt: Date.now() })),
       restoreItem: (id) => patch(id, (i) => ({ ...i, deletedAt: undefined })),
       deleteForever: (id) => setItems((prev) => prev.filter((i) => i.id !== id)),
+      reinsertItem: (item) => setItems((prev) => (prev.some((i) => i.id === item.id) ? prev : [item, ...prev])),
       emptyTrash: () => setItems((prev) => prev.filter((i) => !i.deletedAt)),
       toggleSelect: (id) =>
         setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])),

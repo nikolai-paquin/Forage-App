@@ -67,7 +67,7 @@ export interface Project {
   autoTags?: string[];
 }
 
-export type LibraryTab = 'all' | 'bookmarks' | 'unsorted' | 'trash';
+export type LibraryTab = 'all' | 'bookmarks';
 
 export type View =
   | { kind: 'library'; tab: LibraryTab }

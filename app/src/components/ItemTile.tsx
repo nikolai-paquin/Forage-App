@@ -12,7 +12,6 @@ import {
   Music,
   Pause,
   Play,
-  RotateCcw,
   Trash2,
 } from './icons';
 
@@ -151,15 +150,13 @@ function LinkArt({ item }: { item: Item }) {
 }
 
 export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) => void }) {
-  const { selectedIds, focusedId, toggleSelect, view, restoreItem, deleteForever, trashItem } =
-    useForage();
+  const { selectedIds, focusedId, toggleSelect, deleteForever, reinsertItem } = useForage();
   const [hover, setHover] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const selected = selectedIds.includes(item.id);
   const focused = focusedId === item.id;
   const anySelected = selectedIds.length > 0;
-  const isTrash = view.kind === 'library' && view.tab === 'trash';
   const stop = (e: React.MouseEvent) => e.stopPropagation();
 
   const onEnter = () => {
@@ -242,53 +239,28 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
       </div>
 
       {/* select toggle */}
-      {!isTrash && (
-        <span
-          onClick={(e) => {
-            stop(e);
-            toggleSelect(item.id);
-          }}
-          className={`absolute left-2.5 top-2.5 z-[3] grid h-6 w-6 cursor-pointer place-items-center rounded-full backdrop-blur-md transition ${
-            selected
-              ? 'bg-white text-[#16171b] opacity-100'
-              : `bg-black/35 text-white ${anySelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`
-          }`}
-        >
-          {selected ? <CheckCircle2 size={15} /> : <Circle size={14} />}
-        </span>
-      )}
+      <span
+        onClick={(e) => {
+          stop(e);
+          toggleSelect(item.id);
+        }}
+        className={`absolute left-2.5 top-2.5 z-[3] grid h-6 w-6 cursor-pointer place-items-center rounded-full backdrop-blur-md transition ${
+          selected
+            ? 'bg-white text-[#16171b] opacity-100'
+            : `bg-black/35 text-white ${anySelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`
+        }`}
+      >
+        {selected ? <CheckCircle2 size={15} /> : <Circle size={14} />}
+      </span>
 
       {/* bottom-right controls */}
-      {isTrash ? (
+      {
         <div className="absolute bottom-2.5 right-2.5 z-[3] flex gap-1.5 opacity-0 transition group-hover:opacity-100">
-          <span
-            onClick={(e) => {
-              stop(e);
-              restoreItem(item.id);
-            }}
-            title="Restore"
-            className="grid h-7 w-7 cursor-pointer place-items-center rounded-full bg-black/55 text-white backdrop-blur-md transition hover:bg-black/75"
-          >
-            <RotateCcw size={13} />
-          </span>
           <span
             onClick={(e) => {
               stop(e);
               deleteForever(item.id);
-            }}
-            title="Delete forever"
-            className="grid h-7 w-7 cursor-pointer place-items-center rounded-full bg-black/55 text-white backdrop-blur-md transition hover:bg-red-500"
-          >
-            <Trash2 size={13} />
-          </span>
-        </div>
-      ) : (
-        <div className="absolute bottom-2.5 right-2.5 z-[3] flex gap-1.5 opacity-0 transition group-hover:opacity-100">
-          <span
-            onClick={(e) => {
-              stop(e);
-              trashItem(item.id);
-              toast('Moved to Trash');
+              toast('Deleted', { undo: () => reinsertItem(item) });
             }}
             title="Delete"
             className="grid h-7 w-7 cursor-pointer place-items-center rounded-full bg-black/45 text-white backdrop-blur-md transition hover:bg-red-500"
@@ -301,7 +273,7 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
             </span>
           )}
         </div>
-      )}
+      }
 
       {item.type === 'code' && (
         <span className="absolute right-2.5 top-2.5 flex items-center gap-1 rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-white/80 opacity-0 transition group-hover:opacity-100">

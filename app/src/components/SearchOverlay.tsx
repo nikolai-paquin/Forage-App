@@ -12,7 +12,6 @@ import {
   CornerDownLeft,
   Database,
   Folder,
-  Inbox,
   Film,
   Layers,
   LibraryIcon,
@@ -20,7 +19,6 @@ import {
   Search,
   Settings,
   Sun,
-  Trash2,
 } from './icons';
 
 const thumb = (i: Item) => (i.type === 'video' ? i.poster : i.media);
@@ -89,7 +87,6 @@ export function SearchOverlay({
       { id: 'capture', label: 'New capture', hint: '⌘N', icon: <Camera size={15} />, keywords: 'add save create forage new', run: act(actions.capture) },
       { id: 'lib', label: 'Go to Library', icon: <LibraryIcon size={15} />, keywords: 'all home', run: go({ kind: 'library', tab: 'all' }) },
       { id: 'bookmarks', label: 'Go to Bookmarks', icon: <Bookmark size={15} />, run: go({ kind: 'library', tab: 'bookmarks' }) },
-      { id: 'unsorted', label: 'Go to Unsorted', icon: <Inbox size={15} />, run: go({ kind: 'library', tab: 'unsorted' }) },
       { id: 'collections', label: 'Go to Collections', icon: <Folder size={15} />, keywords: 'projects', run: go({ kind: 'collections' }) },
       { id: 'spaces', label: 'Go to Moodboards', icon: <Layers size={15} />, keywords: 'canvas board space', run: go({ kind: 'spaces' }) },
       { id: 'newspace', label: 'New moodboard', icon: <Layers size={15} />, keywords: 'canvas board space create', run: act(actions.newSpace) },
@@ -98,7 +95,6 @@ export function SearchOverlay({
       { id: 'theme', label: dark ? 'Switch to light theme' : 'Switch to dark theme', icon: dark ? <Sun size={15} /> : <Moon size={15} />, keywords: 'dark light appearance', run: act(actions.toggleTheme) },
       { id: 'export', label: 'Export backup', icon: <Database size={15} />, keywords: 'download json save data', run: act(actions.exportBackup) },
       { id: 'settings', label: 'Open settings', icon: <Settings size={15} />, keywords: 'preferences', run: act(actions.settings) },
-      { id: 'trash', label: 'Go to Trash', icon: <Trash2 size={15} />, run: go({ kind: 'library', tab: 'trash' }) },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [actions, dark],
