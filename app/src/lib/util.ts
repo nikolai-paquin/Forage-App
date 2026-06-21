@@ -5,15 +5,13 @@ import type { Item, Project } from '../types';
 export const uid = () =>
   's_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
 
-/** Copy a hex color to the clipboard and confirm with a toast. */
-export async function copyHex(hex: string) {
-  const value = hex.toUpperCase();
+/** Copy text to the clipboard (with a legacy fallback). */
+export async function copyText(text: string) {
   try {
-    await navigator.clipboard.writeText(value);
+    await navigator.clipboard.writeText(text);
   } catch {
-    // Fallback for browsers without the async clipboard API.
     const ta = document.createElement('textarea');
-    ta.value = value;
+    ta.value = text;
     ta.style.position = 'fixed';
     ta.style.opacity = '0';
     document.body.appendChild(ta);
@@ -25,6 +23,12 @@ export async function copyHex(hex: string) {
     }
     ta.remove();
   }
+}
+
+/** Copy a hex color to the clipboard and confirm with a toast. */
+export async function copyHex(hex: string) {
+  const value = hex.toUpperCase();
+  await copyText(value);
   toast(`Copied ${value}`);
 }
 

@@ -18,6 +18,7 @@ import { FontDialog } from './components/FontDialog';
 import { SearchOverlay } from './components/SearchOverlay';
 import { ResurfacePanel } from './components/ResurfacePanel';
 import { SettingsModal } from './components/SettingsModal';
+import { ShortcutsModal } from './components/ShortcutsModal';
 import { Onboarding } from './components/Onboarding';
 import { Fab } from './components/Fab';
 import { BulkBar } from './components/BulkBar';
@@ -69,6 +70,7 @@ function Workspace() {
   const [search, setSearch] = useState(false);
   const [settings, setSettings] = useState(false);
   const [resurface, setResurface] = useState(false);
+  const [shortcuts, setShortcuts] = useState(false);
   const [dragging, setDragging] = useState(false);
 
   const targetCollection = view.kind === 'collection' ? [view.id] : [];
@@ -176,9 +178,18 @@ function Workspace() {
         e.preventDefault();
         openCapture();
       }
+      // "?" opens the shortcuts cheat sheet (ignore while typing in a field).
+      if (e.key === '?' && !meta) {
+        const t = e.target as HTMLElement | null;
+        if (!t || !/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) {
+          e.preventDefault();
+          setShortcuts((v) => !v);
+        }
+      }
       if (e.key === 'Escape') {
         setCapture(false);
         setSettings(false);
+        setShortcuts(false);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -318,7 +329,7 @@ function Workspace() {
     setFocusedId,
     toggleSelect,
     open,
-    blocked: capture || search || settings || resurface || selected !== null,
+    blocked: capture || search || settings || resurface || shortcuts || selected !== null,
     isGrid: view.kind === 'library' || view.kind === 'collection' || view.kind === 'smart',
   };
   useEffect(() => {
@@ -477,10 +488,12 @@ function Workspace() {
           },
           toggleTheme: toggle,
           newSpace: createSpace,
+          shortcuts: () => setShortcuts(true),
         }}
       />
       <ResurfacePanel open={resurface} onClose={() => setResurface(false)} onOpenItem={open} />
       <SettingsModal open={settings} onClose={() => setSettings(false)} />
+      <ShortcutsModal open={shortcuts} onClose={() => setShortcuts(false)} />
       <Onboarding onCapture={openCapture} />
     </div>
   );

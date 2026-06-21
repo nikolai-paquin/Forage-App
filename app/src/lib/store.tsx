@@ -23,7 +23,7 @@ import type {
 import { sampleItems, sampleProjects } from '../data/sample';
 import { fetchYouTubeMeta, itemInProject, sourceLabel, uid } from './util';
 import { unfurl, unfurlEnabled } from './unfurl';
-import { extractPalette } from './color';
+import { extractPalette, matchColor } from './color';
 import { getDefaultCollection, getAutoTagOnSave } from './capture';
 import { suggestTagsAsync } from './ai';
 import { idbGet, idbSet, idbDel } from './idb';
@@ -445,7 +445,9 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       inView =
         view.field === 'type'
           ? live.filter((i) => i.type === view.value)
-          : live.filter((i) => i.source === view.value);
+          : view.field === 'color'
+            ? live.filter((i) => matchColor(i.palette, view.value))
+            : live.filter((i) => i.source === view.value);
     }
 
     const q = query.trim().toLowerCase();

@@ -88,7 +88,7 @@ export type View =
   | { kind: 'library'; tab: LibraryTab }
   | { kind: 'collections' }
   | { kind: 'collection'; id: string }
-  | { kind: 'smart'; field: 'type' | 'source'; value: string }
+  | { kind: 'smart'; field: 'type' | 'source' | 'color'; value: string }
   | { kind: 'spaces' }
   | { kind: 'space'; id: string }
   | { kind: 'storyboards' }

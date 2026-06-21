@@ -13,6 +13,7 @@ import {
   Database,
   Folder,
   Film,
+  Keyboard,
   Layers,
   LibraryIcon,
   Moon,
@@ -40,6 +41,7 @@ export interface PaletteActions {
   exportBackup: () => void;
   toggleTheme: () => void;
   newSpace: () => void;
+  shortcuts: () => void;
 }
 
 export function SearchOverlay({
@@ -95,15 +97,26 @@ export function SearchOverlay({
       { id: 'theme', label: dark ? 'Switch to light theme' : 'Switch to dark theme', icon: dark ? <Sun size={15} /> : <Moon size={15} />, keywords: 'dark light appearance', run: act(actions.toggleTheme) },
       { id: 'export', label: 'Export backup', icon: <Database size={15} />, keywords: 'download json save data', run: act(actions.exportBackup) },
       { id: 'settings', label: 'Open settings', icon: <Settings size={15} />, keywords: 'preferences', run: act(actions.settings) },
+      { id: 'shortcuts', label: 'Keyboard shortcuts', hint: '?', icon: <Keyboard size={15} />, keywords: 'keys hotkeys help', run: act(actions.shortcuts) },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [actions, dark],
   );
 
   const cmdHits = useMemo(() => {
-    if (color) return [];
+    // With a color selected, surface a single shortcut to the full color grid.
+    if (color)
+      return [
+        {
+          id: 'viewcolor',
+          label: `View all ${color} saves`,
+          icon: <Search size={15} />,
+          run: go({ kind: 'smart', field: 'color', value: color }),
+        } as Command,
+      ];
     if (!query) return commands.slice(0, 6); // default palette
     return commands.filter((c) => `${c.label} ${c.keywords ?? ''}`.toLowerCase().includes(query));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [commands, query, color]);
 
   const collHits = useMemo(

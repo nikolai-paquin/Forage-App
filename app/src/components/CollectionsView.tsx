@@ -3,6 +3,7 @@ import { useForage } from '../lib/store';
 import type { Item, ItemType } from '../types';
 import { CollectionCover } from './CollectionCover';
 import { sourceLabel } from '../lib/util';
+import { COLOR_SWATCHES, matchColor } from '../lib/color';
 import { Plus } from './icons';
 
 const thumb = (i: Item) => (i.type === 'video' ? i.poster : i.media);
@@ -61,6 +62,12 @@ export function CollectionsView({ onNewCollection }: { onNewCollection: () => vo
   const openType = (t: ItemType) => setView({ kind: 'smart', field: 'type', value: t });
   const openSource = (s: string) => setView({ kind: 'smart', field: 'source', value: s });
 
+  // Colors that actually appear in the library, with a count, for the color row.
+  const colorRow = COLOR_SWATCHES.map((c) => ({
+    ...c,
+    count: live.filter((i) => matchColor(i.palette, c.word)).length,
+  })).filter((c) => c.count > 0);
+
   return (
     <div className="px-5 pb-32 pt-1">
       <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -83,6 +90,30 @@ export function CollectionsView({ onNewCollection }: { onNewCollection: () => vo
           />
         ))}
       </div>
+
+      {colorRow.length > 0 && (
+        <>
+          <h3 className="mb-4 mt-12 text-[11px] font-medium uppercase tracking-[0.18em] text-faint">
+            Browse by color
+          </h3>
+          <div className="flex flex-wrap gap-2.5">
+            {colorRow.map((c) => (
+              <button
+                key={c.word}
+                onClick={() => setView({ kind: 'smart', field: 'color', value: c.word })}
+                className="flex items-center gap-2 rounded-full border border-border bg-surface py-1.5 pl-1.5 pr-3 text-[12.5px] text-ink transition hover:bg-surface-2"
+              >
+                <span
+                  className="h-5 w-5 rounded-full ring-1 ring-border"
+                  style={{ background: c.hex }}
+                />
+                <span className="capitalize">{c.word}</span>
+                <span className="tnum text-faint">{c.count}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       {(byType.length > 0 || bySource.length > 0) && (
         <>

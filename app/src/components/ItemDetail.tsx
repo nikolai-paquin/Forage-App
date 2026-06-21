@@ -5,7 +5,14 @@ import type { Item } from '../types';
 import { suggestTagsAsync, generatePromptAsync, aiEnabled } from '../lib/ai';
 import { extractPalette } from '../lib/color';
 import { ensureFont, fontStack } from '../lib/fonts';
-import { copyHex } from '../lib/util';
+import { copyHex, copyText } from '../lib/util';
+import {
+  paletteToCss,
+  paletteToTailwind,
+  paletteToJson,
+  downloadPaletteImage,
+  fontToCss,
+} from '../lib/export';
 import { toast } from '../lib/toast';
 
 function TagAdder({ onAdd }: { onAdd: (t: string) => void }) {
@@ -223,6 +230,45 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 const iconBtn =
   'grid h-9 w-9 place-items-center rounded-lg text-white/60 transition hover:bg-white/10 hover:text-white';
+
+const exportBtn =
+  'flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[12px] text-white/75 transition hover:bg-white/10 hover:text-white';
+
+function ExportPanel({ item }: { item: Item }) {
+  const copy = (text: string, label: string) => {
+    copyText(text);
+    toast(`Copied ${label}`);
+  };
+  return (
+    <div className="border-t border-white/10 pt-4">
+      <p className="mb-2 flex items-center gap-1.5 text-[12px] text-white/45">
+        <Download size={13} /> Export
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {item.type === 'palette' ? (
+          <>
+            <button className={exportBtn} onClick={() => copy(paletteToCss(item), 'CSS variables')}>
+              <Copy size={12} /> CSS
+            </button>
+            <button className={exportBtn} onClick={() => copy(paletteToTailwind(item), 'Tailwind config')}>
+              <Copy size={12} /> Tailwind
+            </button>
+            <button className={exportBtn} onClick={() => copy(paletteToJson(item), 'JSON')}>
+              <Copy size={12} /> JSON
+            </button>
+            <button className={exportBtn} onClick={() => downloadPaletteImage(item)}>
+              <Download size={12} /> PNG
+            </button>
+          </>
+        ) : (
+          <button className={exportBtn} onClick={() => copy(fontToCss(item), 'font CSS')}>
+            <Copy size={12} /> Copy CSS
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function ItemDetail({
   item,
@@ -543,6 +589,11 @@ export function ItemDetail({
                   />
                 </Field>
 
+                {(live.type === 'palette' || live.type === 'font') && (
+                  <ExportPanel item={live} />
+                )}
+
+                {live.type !== 'palette' && live.type !== 'font' && (
                 <div>
                   <p className="mb-2 flex items-center gap-1.5 text-[12px] text-white/45">
                     <Sparkle size={13} /> Image Prompt
@@ -594,6 +645,7 @@ export function ItemDetail({
                     </button>
                   )}
                 </div>
+                )}
 
                 <div>
                   <p className="mb-2 flex items-center gap-1.5 text-[12px] text-white/45">
