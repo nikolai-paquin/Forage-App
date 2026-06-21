@@ -7,11 +7,15 @@ import { getAiEndpoint, setAiEndpoint } from '../lib/ai';
 import { getUnfurlEndpoint, setUnfurlEndpoint } from '../lib/unfurl';
 import {
   SOUNDS,
+  TRASH_SOUNDS,
   getSoundEnabled,
   setSoundEnabled,
   getSoundId,
   setSoundId,
+  getTrashId,
+  setTrashId,
   playSound,
+  playTrashSound,
   playVarietyPreview,
 } from '../lib/sound';
 import {
@@ -183,6 +187,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   const [confirmReset, setConfirmReset] = useState(false);
   const [soundOn, setSoundOn] = useState(getSoundEnabled());
   const [soundChoice, setSoundChoice] = useState(getSoundId());
+  const [trashChoice, setTrashChoice] = useState(getTrashId());
   const [defColl, setDefColl] = useState(getDefaultCollection());
   const [autoTag, setAutoTag] = useState(getAutoTagOnSave());
   const [newLib, setNewLib] = useState('');
@@ -864,6 +869,33 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                     ))}
                   </div>
                   <p className="mt-3 text-[12px] text-faint">Click any sound to preview it.</p>
+
+                  <p className="mb-2.5 mt-7 text-[12px] font-medium uppercase tracking-[0.16em] text-faint">
+                    Delete sound
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {TRASH_SOUNDS.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => {
+                          setTrashChoice(s.id);
+                          setTrashId(s.id);
+                          playTrashSound(s.id);
+                        }}
+                        className={`flex items-center justify-between rounded-lg border px-3 py-2.5 text-[13px] transition ${
+                          trashChoice === s.id
+                            ? 'border-ink bg-surface-2 text-ink'
+                            : 'border-border bg-surface text-muted hover:text-ink'
+                        }`}
+                      >
+                        {s.name}
+                        {trashChoice === s.id && <Check size={14} />}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-[12px] text-faint">
+                    Plays when you delete something. Click any to preview it.
+                  </p>
                 </>
               ) : active === 'about' ? (
                 <>
