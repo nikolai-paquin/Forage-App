@@ -11,6 +11,7 @@ import {
   Copy,
   FontIcon,
   Image as ImageIcon,
+  ImageDown,
   Palette,
   Pipette,
   Plus,
@@ -117,12 +118,37 @@ export function KitView() {
     }
   };
 
+  // Extract from a freshly uploaded file — a local data URL, so it always works
+  // (no cross-origin/CORS limits like library images hosted elsewhere).
+  const extractFromFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const p = await extractPalette(String(reader.result));
+      if (p.length) {
+        updateKit(kit.id, { colors: [...new Set([...kit.colors, ...p])] });
+        toast(`Added ${p.length} colors`);
+      } else {
+        toast("Couldn't read colors from that image.");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const extractFromImage = async (item: Item) => {
     const src = thumb(item);
-    if (!src) return;
+    if (!src) {
+      toast('That save has no image to read colors from.');
+      return;
+    }
     const p = await extractPalette(src);
-    if (p.length) updateKit(kit.id, { colors: [...new Set([...kit.colors, ...p])] });
-    else toast("Couldn't read colors from that image.");
+    if (p.length) {
+      updateKit(kit.id, { colors: [...new Set([...kit.colors, ...p])] });
+      toast(`Added ${p.length} colors`);
+    } else {
+      toast(
+        "Couldn't read that image — it's hosted on another site. Set an image proxy in Settings → Link previews, or use the eyedropper.",
+      );
+    }
   };
 
   const exportCss = () => {
@@ -220,6 +246,19 @@ export function KitView() {
           <button onClick={eyedrop} className={pillBtn}>
             <Pipette size={13} /> Eyedropper
           </button>
+          <label className={`${pillBtn} cursor-pointer`}>
+            <ImageDown size={13} /> From a file
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) extractFromFile(f);
+                e.target.value = '';
+              }}
+            />
+          </label>
           {imageChoices.length + images.length > 0 && (
             <ImageExtract images={[...images, ...imageChoices]} onExtract={extractFromImage} />
           )}

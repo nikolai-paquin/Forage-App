@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { useForage } from '../lib/store';
 import type { Item } from '../types';
 import { MasonryGrid } from './MasonryGrid';
-import { ArrowLeft, Sparkle } from './icons';
+import { ArrowLeft, ImageDown, Share2, Sparkle } from './icons';
 import { sourceLabel } from '../lib/util';
 import { COLOR_SWATCHES } from '../lib/color';
+import { exportCollectionImage } from '../lib/snapshot';
+import { ShareDialog } from './ShareDialog';
 
 const TYPE_LABEL: Record<string, string> = {
   image: 'Images',
@@ -24,6 +27,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
  *  from the "Smart collections" cards or a color search. */
 export function SmartCollectionView({ onOpen }: { onOpen: (i: Item) => void }) {
   const { view, visibleItems, setView } = useForage();
+  const [sharing, setSharing] = useState(false);
   if (view.kind !== 'smart') return null;
   const swatch = view.field === 'color' ? COLOR_SWATCHES.find((c) => c.word === view.value) : null;
   const label =
@@ -53,11 +57,35 @@ export function SmartCollectionView({ onOpen }: { onOpen: (i: Item) => void }) {
           <Sparkle size={11} /> smart
         </span>
         <span className="text-[14px] text-faint">· {visibleItems.length} saves</span>
+
+        <button
+          onClick={() => exportCollectionImage({ title: label, subtitle: `${visibleItems.length} saves`, items: visibleItems })}
+          title="Export as image"
+          className="ml-auto flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[13px] text-ink transition hover:bg-surface-2"
+        >
+          <ImageDown size={14} /> Image
+        </button>
+        <button
+          onClick={() => setSharing(true)}
+          title="Share a read-only link"
+          className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[13px] text-ink transition hover:bg-surface-2"
+        >
+          <Share2 size={14} /> Share
+        </button>
       </div>
       <p className="-mt-4 mb-7 max-w-2xl text-[13.5px] text-muted">
         Everything in your library that matches automatically — this collection updates itself.
       </p>
       <MasonryGrid items={visibleItems} onOpen={onOpen} />
+
+      {sharing && (
+        <ShareDialog
+          title={label}
+          brief="A smart collection shared from Forage."
+          items={visibleItems}
+          onClose={() => setSharing(false)}
+        />
+      )}
     </div>
   );
 }

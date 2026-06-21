@@ -226,12 +226,16 @@ export async function exportMoodboardImage(space: Space, resolveItem: (id: strin
     const eh = (e.h ?? e.w * 0.75) * scale;
     if (e.kind === 'item') {
       const img = loaded[imgEls.indexOf(e)];
+      const it = e.itemId ? resolveItem(e.itemId) : undefined;
       ctx.save();
       roundRect(ctx, x, y, ew, eh, 10 * scale);
       ctx.clip();
+      // A readable image draws as-is; one we can't read (cross-origin without
+      // CORS) falls back to a labelled card so the export is never blank.
       if (img) drawCover(ctx, img, x, y, ew, eh);
+      else if (it) drawCard(ctx, it, x, y, ew, eh);
       else {
-        ctx.fillStyle = '#ddd';
+        ctx.fillStyle = '#e0ddd6';
         ctx.fillRect(x, y, ew, eh);
       }
       ctx.restore();
