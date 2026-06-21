@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { onToast } from '../lib/toast';
 import { playAction, playTrash } from '../lib/sound';
-import { CheckCircle2, RotateCcw } from './icons';
+import { CheckCircle2, Close, RotateCcw } from './icons';
 
 interface Toast {
   id: number;
@@ -20,8 +20,9 @@ export function Toaster() {
       if (opts?.sound === 'trash') playTrash();
       else if (opts?.sound !== 'none') playAction();
       setToasts((prev) => [...prev, { id, message, undo: opts?.undo }]);
-      // Undo toasts linger so there's time to click; plain ones are brief.
-      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), opts?.undo ? 6000 : 2600);
+      // Undo toasts linger 30s so there's plenty of time to change your mind
+      // (they also carry a close button); plain ones stay brief.
+      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), opts?.undo ? 30000 : 2600);
     });
   }, []);
 
@@ -43,15 +44,24 @@ export function Toaster() {
             <CheckCircle2 size={15} className="text-[#86b56a]" />
             <span className="pr-1">{t.message}</span>
             {t.undo && (
-              <button
-                onClick={() => {
-                  t.undo?.();
-                  dismiss(t.id);
-                }}
-                className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[12px] font-semibold text-white transition hover:bg-white/20"
-              >
-                <RotateCcw size={12} /> Undo
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    t.undo?.();
+                    dismiss(t.id);
+                  }}
+                  className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[12px] font-semibold text-white transition hover:bg-white/20"
+                >
+                  <RotateCcw size={12} /> Undo
+                </button>
+                <button
+                  onClick={() => dismiss(t.id)}
+                  title="Dismiss"
+                  className="grid h-6 w-6 place-items-center rounded-full text-white/50 transition hover:bg-white/10 hover:text-white"
+                >
+                  <Close size={13} />
+                </button>
+              </>
             )}
           </motion.div>
         ))}
