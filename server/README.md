@@ -7,6 +7,8 @@ a minute. Neither is required — Forage works fully offline without them.
 - **`worker.js`** — AI: **Auto-tag**, **Generate prompt** (Claude), and **embeddings**
   for semantic search (Cloudflare Workers AI). → Settings → AI Usage.
 - **`sync-worker.js`** — **Cross-device sync** via Workers KV. → Settings → Sync.
+- **`share-worker.js`** — **Read-only collection sharing** via Workers KV: publish a
+  public snapshot of a collection and get a link. → a collection's Share button.
 - **`unfurl-worker.js`** — **Link previews + image proxy**: real page titles,
   descriptions, and preview images for bookmarks; reliable YouTube titles/creators;
   and cross-origin palette extraction. → Settings → AI Usage → Link previews.
@@ -74,6 +76,33 @@ PUT  /:key  → 204               (body is the snapshot JSON)
 
 ---
 
+## Share Worker (`share-worker.js`)
+
+Publishes a public, **read-only** snapshot of a collection under a random id, so
+you can send anyone a link. Unlike sync keys, share ids are public — whoever has
+the link can read the snapshot (shares expire after 180 days).
+
+```bash
+cd server
+wrangler kv namespace create FORAGE_SHARES
+# paste the printed id into wrangler.share.toml, then:
+wrangler deploy --config wrangler.share.toml
+```
+
+Paste the deployed URL into a collection's **Share** dialog. The app POSTs the
+snapshot, gets back an id, and builds a self-contained link (the worker's read
+URL is embedded in the link's hash, so recipients need no setup).
+
+```
+POST /       body = snapshot JSON  → 200 { id }
+GET  /:id                          → 200 snapshot JSON | 404
+```
+
+POST is unauthenticated, so deploy it for your own use and don't advertise the
+URL (or add your own auth/Access in front of it).
+
+---
+
 ## Unfurl Worker (`unfurl-worker.js`)
 
 Gives the static app two things it can't do from the browser (CORS): reading other
@@ -101,6 +130,6 @@ proxy — deploy it for your own use, don't advertise the URL.
 
 ## Other hosts
 
-Both handlers are standard `fetch(request, env)` Workers and port easily to Vercel
+All handlers are standard `fetch(request, env)` Workers and port easily to Vercel
 Edge, Deno Deploy, or Netlify Functions — read the body, do the work, return the
 same JSON shapes.

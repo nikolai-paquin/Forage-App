@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useForage } from '../lib/store';
 import type { Item } from '../types';
 import { MasonryGrid } from './MasonryGrid';
-import { ArrowLeft, Plus, Trash2 } from './icons';
+import { ArrowLeft, ImageDown, Plus, Share2, Trash2 } from './icons';
 import { toast } from '../lib/toast';
+import { exportCollectionImage } from '../lib/snapshot';
+import { ShareDialog } from './ShareDialog';
 
 export function CollectionView({
   onOpen,
@@ -14,6 +16,7 @@ export function CollectionView({
 }) {
   const { view, projectById, visibleItems, setView, deleteProject } = useForage();
   const [confirm, setConfirm] = useState(false);
+  const [sharing, setSharing] = useState(false);
   if (view.kind !== 'collection') return null;
   const p = projectById(view.id);
 
@@ -35,6 +38,26 @@ export function CollectionView({
           className="ml-auto flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[13px] text-ink transition hover:bg-surface-2"
         >
           <Plus size={14} /> Add
+        </button>
+        <button
+          onClick={() =>
+            exportCollectionImage({
+              title: p?.name ?? 'Collection',
+              subtitle: `${visibleItems.length} saves`,
+              items: visibleItems,
+            })
+          }
+          title="Export as image"
+          className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[13px] text-ink transition hover:bg-surface-2"
+        >
+          <ImageDown size={14} /> Image
+        </button>
+        <button
+          onClick={() => setSharing(true)}
+          title="Share a read-only link"
+          className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[13px] text-ink transition hover:bg-surface-2"
+        >
+          <Share2 size={14} /> Share
         </button>
         <div>
           {confirm ? (
@@ -91,6 +114,15 @@ export function CollectionView({
         </div>
       ) : (
         <MasonryGrid items={visibleItems} onOpen={onOpen} />
+      )}
+
+      {sharing && p && (
+        <ShareDialog
+          title={p.name}
+          brief={p.brief}
+          items={visibleItems}
+          onClose={() => setSharing(false)}
+        />
       )}
     </div>
   );

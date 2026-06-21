@@ -71,4 +71,6 @@ export {
   Share2,
   Type as FontIcon,
   Copy,
+  ImageDown,
+  Loader2,
 } from 'lucide-react';

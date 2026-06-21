@@ -3,9 +3,11 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item, SpaceDrawing, SpaceElement } from '../types';
 import { uid } from '../lib/util';
+import { exportMoodboardImage } from '../lib/snapshot';
 import {
   ArrowLeft,
   Close,
+  ImageDown,
   Image as ImageIcon,
   Maximize2,
   MousePointer2,
@@ -411,6 +413,13 @@ export function SpaceCanvas() {
               <ZoomIn size={15} />
             </button>
           </div>
+          <button
+            onClick={() => exportMoodboardImage(space, itemById)}
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-muted transition hover:text-ink"
+            title="Export as image"
+          >
+            <ImageDown size={14} /> Image
+          </button>
           <button
             onClick={() => setPresenting(true)}
             className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-muted transition hover:text-ink"

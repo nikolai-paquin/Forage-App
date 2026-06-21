@@ -22,6 +22,8 @@ import { ResurfacePanel } from './components/ResurfacePanel';
 import { SettingsModal } from './components/SettingsModal';
 import { ShortcutsModal } from './components/ShortcutsModal';
 import { Onboarding } from './components/Onboarding';
+import { ShareViewer } from './components/ShareViewer';
+import { shareUrlFromHash } from './lib/share';
 import { Fab } from './components/Fab';
 import { BulkBar } from './components/BulkBar';
 import { detectFromInput, fetchYouTubeMeta } from './lib/util';
@@ -507,6 +509,11 @@ function Workspace() {
 }
 
 export function App() {
+  // A read-only share link (`#share=…`) renders a standalone viewer — no store,
+  // no private library — so anyone can open it without setup.
+  const shareUrl = shareUrlFromHash();
+  if (shareUrl) return <ShareViewer url={shareUrl} />;
+
   return (
     <ForageProvider>
       <Workspace />
