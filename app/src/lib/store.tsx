@@ -17,6 +17,7 @@ import type {
   SpaceDrawing,
   Storyboard,
   StoryFrame,
+  Kit,
   TypeFilter,
   View,
 } from '../types';
@@ -64,6 +65,7 @@ const IDB_ITEMS = 'items';
 const IDB_SPACES = 'spaces';
 const IDB_PROJECTS = 'projects';
 const IDB_STORYBOARDS = 'storyboards';
+const IDB_KITS = 'kits';
 
 const DEFAULT_TYPES: FilterEntry[] = [
   { value: 'image', label: 'Images', enabled: true },
@@ -224,6 +226,12 @@ interface ForageStore {
   updateFrame: (boardId: string, frameId: string, patch: Partial<StoryFrame>) => void;
   removeFrame: (boardId: string, frameId: string) => void;
   moveFrame: (boardId: string, frameId: string, dir: -1 | 1) => void;
+  // style kits
+  kits: Kit[];
+  kitById: (id: string) => Kit | undefined;
+  createKit: (name?: string) => string;
+  updateKit: (id: string, patch: Partial<Kit>) => void;
+  deleteKit: (id: string) => void;
   // sync
   syncCfg: SyncCfg;
   syncBusy: boolean;
@@ -267,6 +275,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   const [focusedId, setFocusedId] = useState<string | undefined>(undefined);
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [storyboards, setStoryboards] = useState<Storyboard[]>([]);
+  const [kits, setKits] = useState<Kit[]>([]);
   const [libraries, setLibraries] = useState<Library[]>(() => {
     const stored = loadJSON<Library[]>(LIBRARIES_KEY, [DEFAULT_LIBRARY]);
     return stored.length ? stored : [DEFAULT_LIBRARY];
@@ -304,6 +313,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       let loadedProjects = await idbGet<Project[]>(libKey(IDB_PROJECTS, lib));
       if (loadedProjects === undefined) loadedProjects = isDefault ? sampleProjects : [];
       const loadedStoryboards = (await idbGet<Storyboard[]>(libKey(IDB_STORYBOARDS, lib))) ?? [];
+      const loadedKits = (await idbGet<Kit[]>(libKey(IDB_KITS, lib))) ?? [];
       if (cancelled) return;
       // Trash was removed — purge any legacy soft-deleted saves so they don't
       // linger invisibly in storage (delete is permanent now).
@@ -311,6 +321,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       setSpaces(loadedSpaces);
       setProjects(loadedProjects);
       setStoryboards(loadedStoryboards);
+      setKits(loadedKits);
       setSelectedIds([]);
       setFocusedId(undefined);
       setHydrated(true);
@@ -338,6 +349,10 @@ export function ForageProvider({ children }: { children: ReactNode }) {
     if (!hydrated) return;
     idbSet(libKey(IDB_STORYBOARDS, activeLibrary), storyboards).catch(() => {});
   }, [storyboards, hydrated, activeLibrary]);
+  useEffect(() => {
+    if (!hydrated) return;
+    idbSet(libKey(IDB_KITS, activeLibrary), kits).catch(() => {});
+  }, [kits, hydrated, activeLibrary]);
   useEffect(() => {
     try {
       localStorage.setItem(LIBRARIES_KEY, JSON.stringify(libraries));
@@ -495,6 +510,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         setItems([]);
         setSpaces([]);
         setStoryboards([]);
+        setKits([]);
         setSelectedIds([]);
         setFocusedId(undefined);
       },
@@ -790,6 +806,30 @@ export function ForageProvider({ children }: { children: ReactNode }) {
           [frames[i], frames[j]] = [frames[j], frames[i]];
           return { ...b, frames };
         }),
+
+      kits,
+      kitById: (id) => kits.find((k) => k.id === id),
+      createKit: (name) => {
+        const k: Kit = {
+          id: uid(),
+          name: name?.trim() || 'Untitled kit',
+          colors: [],
+          fontItemIds: [],
+          imageItemIds: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        setKits((prev) => [k, ...prev]);
+        return k.id;
+      },
+      updateKit: (id, patch) =>
+        setKits((prev) =>
+          prev.map((k) => (k.id === id ? { ...k, ...patch, updatedAt: Date.now() } : k)),
+        ),
+      deleteKit: (id) => {
+        setKits((prev) => prev.filter((k) => k.id !== id));
+        setView({ kind: 'kits' });
+      },
       syncCfg,
       syncBusy,
       lastSyncedAt,
@@ -827,7 +867,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, projects, view, query, typeFilter, sourceFilter, tagFilter, sortBy, fileTypes, sources, selectedIds, focusedId, hydrated, spaces, storyboards, libraries, activeLibrary, syncCfg, syncBusy, lastSyncedAt]);
+  }, [items, projects, view, query, typeFilter, sourceFilter, tagFilter, sortBy, fileTypes, sources, selectedIds, focusedId, hydrated, spaces, storyboards, kits, libraries, activeLibrary, syncCfg, syncBusy, lastSyncedAt]);
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }

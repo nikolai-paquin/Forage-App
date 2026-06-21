@@ -12,13 +12,20 @@ const IDB_ITEMS = () => libKey('items');
 const IDB_SPACES = () => libKey('spaces');
 const IDB_PROJECTS = () => libKey('projects');
 const IDB_STORYBOARDS = () => libKey('storyboards');
+const IDB_KITS = () => libKey('kits');
 
 export interface Backup {
   app: 'forage';
   version: 2;
   exportedAt: number;
-  /** The library — items + spaces + collections + storyboards, from IndexedDB. */
-  idb: { items: unknown[]; spaces: unknown[]; projects?: unknown[]; storyboards?: unknown[] };
+  /** The library — items + spaces + collections + storyboards + kits, from IndexedDB. */
+  idb: {
+    items: unknown[];
+    spaces: unknown[];
+    projects?: unknown[];
+    storyboards?: unknown[];
+    kits?: unknown[];
+  };
   /** Config — every forage.* localStorage key. */
   local: Record<string, unknown>;
 }
@@ -40,11 +47,12 @@ function snapshotLocal(): Record<string, unknown> {
 }
 
 export async function buildBackup(): Promise<Backup> {
-  const [items, spaces, projects, storyboards] = await Promise.all([
+  const [items, spaces, projects, storyboards, kits] = await Promise.all([
     idbGet<unknown[]>(IDB_ITEMS()),
     idbGet<unknown[]>(IDB_SPACES()),
     idbGet<unknown[]>(IDB_PROJECTS()),
     idbGet<unknown[]>(IDB_STORYBOARDS()),
+    idbGet<unknown[]>(IDB_KITS()),
   ]);
   return {
     app: 'forage',
@@ -55,6 +63,7 @@ export async function buildBackup(): Promise<Backup> {
       spaces: spaces ?? [],
       projects: projects ?? [],
       storyboards: storyboards ?? [],
+      kits: kits ?? [],
     },
     local: snapshotLocal(),
   };
@@ -102,12 +111,14 @@ export async function importBackup(file: File): Promise<ImportResult> {
   let spaces: unknown[] = [];
   let projects: unknown[] | undefined;
   let storyboards: unknown[] | undefined;
+  let kits: unknown[] | undefined;
 
   if (parsed.version === 2 && parsed.idb && parsed.local) {
     items = parsed.idb.items ?? [];
     spaces = parsed.idb.spaces ?? [];
     projects = parsed.idb.projects;
     storyboards = parsed.idb.storyboards;
+    kits = parsed.idb.kits;
     for (const [key, value] of Object.entries(parsed.local)) {
       if (key.startsWith(PREFIX)) {
         localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
@@ -131,6 +142,7 @@ export async function importBackup(file: File): Promise<ImportResult> {
   const writes = [idbSet(IDB_ITEMS(), items), idbSet(IDB_SPACES(), spaces)];
   if (projects !== undefined) writes.push(idbSet(IDB_PROJECTS(), projects));
   if (storyboards !== undefined) writes.push(idbSet(IDB_STORYBOARDS(), storyboards));
+  if (kits !== undefined) writes.push(idbSet(IDB_KITS(), kits));
   await Promise.all(writes);
   return { items: Array.isArray(items) ? items.length : 0 };
 }

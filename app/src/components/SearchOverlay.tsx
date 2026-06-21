@@ -17,6 +17,7 @@ import {
   Layers,
   LibraryIcon,
   Moon,
+  Palette,
   Search,
   Settings,
   Sun,
@@ -57,7 +58,7 @@ export function SearchOverlay({
   actions: PaletteActions;
   dark: boolean;
 }) {
-  const { items, projects, setView } = useForage();
+  const { items, projects, setView, createKit } = useForage();
   const [q, setQ] = useState('');
   const [color, setColor] = useState<string | null>(null);
   const [sel, setSel] = useState(0);
@@ -93,6 +94,8 @@ export function SearchOverlay({
       { id: 'spaces', label: 'Go to Moodboards', icon: <Layers size={15} />, keywords: 'canvas board space', run: go({ kind: 'spaces' }) },
       { id: 'newspace', label: 'New moodboard', icon: <Layers size={15} />, keywords: 'canvas board space create', run: act(actions.newSpace) },
       { id: 'storyboards', label: 'Go to Storyboards', icon: <Film size={15} />, keywords: 'frames sequence', run: go({ kind: 'storyboards' }) },
+      { id: 'kits', label: 'Go to Kits', icon: <Palette size={15} />, keywords: 'style brand palette font', run: go({ kind: 'kits' }) },
+      { id: 'newkit', label: 'New style kit', icon: <Palette size={15} />, keywords: 'brand create palette font', run: act(() => setView({ kind: 'kit', id: createKit() })) },
       { id: 'resurface', label: 'Resurface saves', icon: <Clock size={15} />, keywords: 'rediscover old', run: act(actions.resurface) },
       { id: 'theme', label: dark ? 'Switch to light theme' : 'Switch to dark theme', icon: dark ? <Sun size={15} /> : <Moon size={15} />, keywords: 'dark light appearance', run: act(actions.toggleTheme) },
       { id: 'export', label: 'Export backup', icon: <Database size={15} />, keywords: 'download json save data', run: act(actions.exportBackup) },

@@ -92,7 +92,9 @@ export type View =
   | { kind: 'spaces' }
   | { kind: 'space'; id: string }
   | { kind: 'storyboards' }
-  | { kind: 'storyboard'; id: string };
+  | { kind: 'storyboard'; id: string }
+  | { kind: 'kits' }
+  | { kind: 'kit'; id: string };
 
 // ---- Spaces: freeform infinite canvas ----
 export interface SpaceElement {
@@ -140,6 +142,21 @@ export interface Storyboard {
   id: string;
   name: string;
   frames: StoryFrame[];
+  createdAt: number;
+  updatedAt?: number;
+}
+
+// ---- Style kits: a palette + fonts + reference images bundled per project ----
+export interface Kit {
+  id: string;
+  name: string;
+  notes?: string;
+  /** Hex colors for the kit's palette. */
+  colors: string[];
+  /** Item ids of saved fonts in this kit. */
+  fontItemIds: string[];
+  /** Item ids of reference/key images in this kit. */
+  imageItemIds: string[];
   createdAt: number;
   updatedAt?: number;
 }

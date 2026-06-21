@@ -10,6 +10,8 @@ import { SpacesView } from './components/SpacesView';
 import { SpaceCanvas } from './components/SpaceCanvas';
 import { StoryboardsView } from './components/StoryboardsView';
 import { StoryboardView } from './components/StoryboardView';
+import { KitsView } from './components/KitsView';
+import { KitView } from './components/KitView';
 import { ItemDetail } from './components/ItemDetail';
 import { CaptureDialog } from './components/CaptureDialog';
 import { CollectionDialog } from './components/CollectionDialog';
@@ -378,7 +380,10 @@ function Workspace() {
 
   const viewKey =
     view.kind +
-    (view.kind === 'collection' || view.kind === 'space' || view.kind === 'storyboard'
+    (view.kind === 'collection' ||
+    view.kind === 'space' ||
+    view.kind === 'storyboard' ||
+    view.kind === 'kit'
       ? view.id
       : view.kind === 'library'
         ? view.tab
@@ -453,6 +458,8 @@ function Workspace() {
           {view.kind === 'space' && <SpaceCanvas />}
           {view.kind === 'storyboards' && <StoryboardsView />}
           {view.kind === 'storyboard' && <StoryboardView />}
+          {view.kind === 'kits' && <KitsView />}
+          {view.kind === 'kit' && <KitView />}
         </motion.div>
       </main>
 
