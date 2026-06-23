@@ -57,13 +57,22 @@ export async function unfurl(url: string, signal?: AbortSignal): Promise<UnfurlM
  * (palette extraction). Data/blob/relative/same-origin URLs pass through as-is,
  * as does everything when no endpoint is configured.
  */
+// A zero-config default image proxy for canvas reads (palette extraction +
+// image export). weserv.nl is a free, long-standing image CDN that re-serves
+// any public image with permissive CORS — no account, works everywhere — so
+// these features work out of the box. A user's own unfurl endpoint, when set,
+// takes priority. Only ever used for <canvas> pixel reads, never for display.
+const DEFAULT_IMAGE_PROXY = 'https://images.weserv.nl/?url=';
+
 export function proxiedImage(src: string): string {
-  const ep = getUnfurlEndpoint();
-  if (!ep || !src || !/^https?:\/\//i.test(src)) return src;
+  if (!src || !/^https?:\/\//i.test(src)) return src;
   try {
     if (new URL(src).origin === location.origin) return src;
   } catch {
     return src;
   }
-  return `${ep}?img=${encodeURIComponent(src)}`;
+  const ep = getUnfurlEndpoint();
+  if (ep) return `${ep}?img=${encodeURIComponent(src)}`;
+  // weserv takes the URL without its protocol (it serves over https itself).
+  return `${DEFAULT_IMAGE_PROXY}${encodeURIComponent(src.replace(/^https?:\/\//i, ''))}`;
 }

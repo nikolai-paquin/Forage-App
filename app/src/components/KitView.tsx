@@ -145,9 +145,7 @@ export function KitView() {
       updateKit(kit.id, { colors: [...new Set([...kit.colors, ...p])] });
       toast(`Added ${p.length} colors`);
     } else {
-      toast(
-        "Couldn't read that image — it's hosted on another site. Set an image proxy in Settings → Link previews, or use the eyedropper.",
-      );
+      toast("Couldn't read that image — try 'From a file' or the eyedropper.");
     }
   };
 

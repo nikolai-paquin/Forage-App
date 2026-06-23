@@ -68,7 +68,7 @@ function download(canvas: HTMLCanvasElement, name: string) {
       URL.revokeObjectURL(url);
     }, 'image/png');
   } catch {
-    toast('Some saves are hosted elsewhere — set an image proxy in Settings to include them.');
+    toast("Couldn't render the image — some saves may be unavailable right now.");
   }
 }
 
