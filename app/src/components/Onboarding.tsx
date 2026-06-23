@@ -51,18 +51,19 @@ export function Onboarding({ onCapture }: { onCapture: () => void }) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[70] flex items-center justify-center p-6"
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
         >
-          <div className="absolute inset-0 bg-black/35 backdrop-blur-sm" onClick={dismiss} />
+          <div className="absolute inset-0 bg-black/40" onClick={dismiss} />
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 14 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ type: 'spring', stiffness: 360, damping: 30 }}
-            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-border bg-elevated p-7"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="relative max-h-[90vh] w-full max-w-md overflow-y-auto overflow-x-hidden overscroll-contain rounded-2xl border border-border bg-elevated p-5 sm:p-7"
             style={{ boxShadow: 'var(--shadow-pop)' }}
           >
             <div className="mb-1 flex items-center gap-2 text-faint">

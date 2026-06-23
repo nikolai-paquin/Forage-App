@@ -143,12 +143,33 @@ export function SpaceCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const drag = useRef<DragState | null>(null);
   const drawRef = useRef<SpaceDrawing | null>(null);
+  // Active touch points (by pointerId) + pinch-gesture anchor, for two-finger
+  // pinch-to-zoom and pan on touch screens.
+  const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchRef = useRef<{ dist: number; zoom: number; ix: number; iy: number } | null>(null);
   // Fresh values for the window pointer handlers without re-subscribing.
   const liveRef = useRef({ pan, zoom, spaceId, addDrawing });
   liveRef.current = { pan, zoom, spaceId, addDrawing };
 
   useEffect(() => {
     const move = (e: PointerEvent) => {
+      // Two-finger pinch: zoom around the gesture midpoint (and pan with it).
+      if (pointers.current.has(e.pointerId))
+        pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pinchRef.current && pointers.current.size >= 2) {
+        const pts = [...pointers.current.values()];
+        const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+        const cx = (pts[0].x + pts[1].x) / 2;
+        const cy = (pts[0].y + pts[1].y) / 2;
+        const r = containerRef.current?.getBoundingClientRect();
+        const p = pinchRef.current;
+        const nz = Math.min(3, Math.max(0.25, p.zoom * (dist / p.dist)));
+        if (r) {
+          setZoom(nz);
+          setPan({ x: cx - r.left - p.ix * nz, y: cy - r.top - p.iy * nz });
+        }
+        return;
+      }
       // Active pen/arrow stroke — append points in canvas coords.
       if (drawRef.current) {
         const r = containerRef.current?.getBoundingClientRect();
@@ -178,7 +199,9 @@ export function SpaceCanvas() {
         });
       }
     };
-    const up = () => {
+    const up = (e: PointerEvent) => {
+      pointers.current.delete(e.pointerId);
+      if (pointers.current.size < 2) pinchRef.current = null;
       if (drawRef.current) {
         const cur = drawRef.current;
         const a = cur.points[0];
@@ -248,6 +271,25 @@ export function SpaceCanvas() {
   const onCanvasDown = (e: React.PointerEvent) => {
     const r = containerRef.current?.getBoundingClientRect();
     if (!r) return;
+    // Track the touch point; a second finger starts a pinch (cancelling any
+    // pan/draw the first finger began).
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.current.size === 2) {
+      drawRef.current = null;
+      setDraft(null);
+      drag.current = null;
+      const pts = [...pointers.current.values()];
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+      const cx = (pts[0].x + pts[1].x) / 2;
+      const cy = (pts[0].y + pts[1].y) / 2;
+      pinchRef.current = {
+        dist,
+        zoom,
+        ix: (cx - r.left - pan.x) / zoom,
+        iy: (cy - r.top - pan.y) / zoom,
+      };
+      return;
+    }
     const p = { x: (e.clientX - r.left - pan.x) / zoom, y: (e.clientY - r.top - pan.y) / zoom };
     if (tool === 'select') {
       const hit = [...(space?.drawings ?? [])].reverse().find((d) => nearDrawing(p, d));

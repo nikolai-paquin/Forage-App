@@ -156,8 +156,8 @@ export function LibraryView({
               min={170}
               max={340}
               step={5}
-              value={510 - density}
-              onChange={(e) => setDensity(510 - Number(e.target.value))}
+              value={density}
+              onChange={(e) => setDensity(Number(e.target.value))}
               className="h-1 w-20 cursor-pointer accent-[var(--ink)]"
             />
             <span className="h-3.5 w-3.5 rounded-[3px] border border-border-strong" />
