@@ -338,15 +338,17 @@ export function SpaceCanvas() {
         <div className="flex flex-wrap items-center gap-1.5 md:ml-auto md:flex-nowrap [&>*]:shrink-0">
           <button
             onClick={() => setPicker(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-muted transition hover:text-ink"
+            title="Add save"
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[13px] text-muted transition hover:text-ink sm:px-3"
           >
-            <ImageIcon size={14} /> Add save
+            <ImageIcon size={14} /> <span className="hidden sm:inline">Add save</span>
           </button>
           <button
             onClick={addNote}
-            className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-muted transition hover:text-ink"
+            title="Note"
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[13px] text-muted transition hover:text-ink sm:px-3"
           >
-            <StickyNote size={14} /> Note
+            <StickyNote size={14} /> <span className="hidden sm:inline">Note</span>
           </button>
 
           {/* draw tools */}
@@ -417,17 +419,17 @@ export function SpaceCanvas() {
           </div>
           <button
             onClick={() => exportMoodboardImage(space, itemById)}
-            className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-muted transition hover:text-ink"
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[13px] text-muted transition hover:text-ink sm:px-3"
             title="Export as image"
           >
-            <ImageDown size={14} /> Image
+            <ImageDown size={14} /> <span className="hidden sm:inline">Image</span>
           </button>
           <button
             onClick={() => setPresenting(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-muted transition hover:text-ink"
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[13px] text-muted transition hover:text-ink sm:px-3"
             title="Present full-screen"
           >
-            <Maximize2 size={14} /> Present
+            <Maximize2 size={14} /> <span className="hidden sm:inline">Present</span>
           </button>
           <button
             onClick={() => deleteSpace(space.id)}

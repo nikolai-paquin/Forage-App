@@ -38,15 +38,18 @@ export function FilterMenu({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[13px] transition ${
+        title={current.label}
+        className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[13px] transition sm:px-3 ${
           value !== 'all' && !neutral
             ? 'border-border-strong bg-surface-2 text-ink'
             : 'border-border bg-surface text-muted hover:text-ink'
         }`}
       >
         {icon}
-        {current.label}
-        <ChevronDown size={14} className="text-faint" />
+        {/* phones: icon only (the active style flags a non-default filter);
+            labels + chevron appear from sm up */}
+        <span className="hidden sm:inline">{current.label}</span>
+        <ChevronDown size={14} className="hidden text-faint sm:block" />
       </button>
 
       <AnimatePresence>
