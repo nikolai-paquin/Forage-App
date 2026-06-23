@@ -446,7 +446,7 @@ export function SpaceCanvas() {
         ref={containerRef}
         onPointerDown={onCanvasDown}
         onWheel={onWheel}
-        className="relative flex-1 overflow-hidden border-t border-border bg-surface-2/40"
+        className="relative flex-1 touch-none overflow-hidden border-t border-border bg-surface-2/40"
         style={{
           backgroundImage: 'radial-gradient(var(--border-strong) 1px, transparent 1px)',
           backgroundSize: `${24 * zoom}px ${24 * zoom}px`,

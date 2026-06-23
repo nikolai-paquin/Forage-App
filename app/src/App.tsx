@@ -77,6 +77,28 @@ function Workspace() {
   const [shortcuts, setShortcuts] = useState(false);
   const [dragging, setDragging] = useState(false);
 
+  // Lock the page behind full-screen overlays so touch gestures don't scroll the
+  // library underneath them (an iOS quirk that made the search/capture sheets
+  // unusable on phones).
+  const overlayOpen =
+    capture || search || settings || resurface || shortcuts || newCollection || newPalette ||
+    newFont || selected !== null;
+  useEffect(() => {
+    if (!overlayOpen) return;
+    // Touch devices only — desktop modals don't have the scroll-through issue
+    // and locking there would shift the layout when the scrollbar hides.
+    if (!window.matchMedia?.('(pointer: coarse)').matches) return;
+    const main = document.querySelector('main');
+    const prevMain = main?.style.overflow ?? '';
+    const prevBody = document.body.style.overflow;
+    if (main) main.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      if (main) main.style.overflow = prevMain;
+      document.body.style.overflow = prevBody;
+    };
+  }, [overlayOpen]);
+
   const targetCollection = view.kind === 'collection' ? [view.id] : [];
 
   const addFiles = (files: FileList | File[]) => {

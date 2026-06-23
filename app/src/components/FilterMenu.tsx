@@ -39,7 +39,7 @@ export function FilterMenu({
       <button
         onClick={() => setOpen((v) => !v)}
         title={current.label}
-        className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[13px] transition sm:px-3 ${
+        className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[13px] transition sm:px-3 ${
           value !== 'all' && !neutral
             ? 'border-border-strong bg-surface-2 text-ink'
             : 'border-border bg-surface text-muted hover:text-ink'
@@ -59,7 +59,7 @@ export function FilterMenu({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.14 }}
-            className="absolute right-0 top-full z-40 mt-1.5 max-h-72 w-52 overflow-auto rounded-xl border border-border bg-elevated p-1.5"
+            className="absolute left-0 top-full z-40 mt-1.5 max-h-72 w-52 max-w-[calc(100vw-2.5rem)] overflow-auto rounded-xl border border-border bg-elevated p-1.5 sm:left-auto sm:right-0"
             style={{ boxShadow: 'var(--shadow-pop)' }}
           >
             {options.map((o) => (
