@@ -52,10 +52,10 @@ export function StoryboardView() {
   return (
     <div className="flex h-[calc(100vh-64px)] flex-col">
       {/* header */}
-      <div className="flex items-center gap-3 px-5 pb-3">
+      <div className="flex flex-wrap items-center gap-3 px-5 pb-3">
         <button
           onClick={() => setView({ kind: 'storyboards' })}
-          className="flex items-center gap-1.5 text-[13px] text-muted transition hover:text-ink"
+          className="flex shrink-0 items-center gap-1.5 text-[13px] text-muted transition hover:text-ink"
         >
           <ArrowLeft size={15} /> Storyboards
         </button>

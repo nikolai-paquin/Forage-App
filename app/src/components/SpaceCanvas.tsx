@@ -321,10 +321,11 @@ export function SpaceCanvas() {
   return (
     <div className="flex h-[calc(100vh-64px)] flex-col">
       {/* toolbar */}
-      <div className="flex flex-wrap items-center gap-3 px-5 pb-3">
+      <div className="flex flex-col gap-2 px-5 pb-3 md:flex-row md:items-center md:gap-3">
+        <div className="flex items-center gap-3">
         <button
           onClick={() => setView({ kind: 'spaces' })}
-          className="flex items-center gap-1.5 text-[13px] text-muted transition hover:text-ink"
+          className="flex shrink-0 items-center gap-1.5 text-[13px] text-muted transition hover:text-ink"
         >
           <ArrowLeft size={15} /> Moodboards
         </button>
@@ -333,7 +334,8 @@ export function SpaceCanvas() {
           onChange={(e) => renameSpace(space.id, e.target.value)}
           className="min-w-0 flex-1 bg-transparent text-[17px] font-semibold tracking-tight text-ink outline-none"
         />
-        <div className="flex items-center gap-1.5">
+        </div>
+        <div className="-mx-5 flex items-center gap-1.5 overflow-x-auto px-5 pb-1 md:mx-0 md:ml-auto md:px-0 md:pb-0 [&>*]:shrink-0">
           <button
             onClick={() => setPicker(true)}
             className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-muted transition hover:text-ink"

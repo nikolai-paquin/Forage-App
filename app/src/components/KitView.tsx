@@ -163,8 +163,8 @@ export function KitView() {
         <ArrowLeft size={15} /> Kits
       </button>
 
-      <div className="mb-8 flex items-start gap-3">
-        <span className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface-2 text-muted">
+      <div className="mb-8 flex flex-wrap items-center gap-3">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface-2 text-muted">
           <Palette size={18} />
         </span>
         <input

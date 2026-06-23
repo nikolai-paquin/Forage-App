@@ -418,7 +418,7 @@ function Workspace() {
         onResurface={() => setResurface(true)}
       />
       <main
-        className="relative min-h-0 flex-1 overflow-y-auto"
+        className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
         onDragOver={(e) => {
           e.preventDefault();
           if (!dragging) setDragging(true);

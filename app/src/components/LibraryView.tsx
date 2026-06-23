@@ -120,7 +120,7 @@ export function LibraryView({
   return (
     <div className="px-5 pb-32">
       {/* sub-tabs + controls */}
-      <div className="mb-6 flex items-center justify-between border-b border-border">
+      <div className="mb-6 flex flex-col gap-2 border-b border-border md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-1">
           {TABS.map((t) => {
             const isActive = tab === t.id;
@@ -148,8 +148,8 @@ export function LibraryView({
           })}
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="mr-1 flex items-center gap-2 text-faint">
+        <div className="-mx-5 flex items-center gap-3 overflow-x-auto px-5 pb-2 md:mx-0 md:px-0 md:pb-0 [&>*]:shrink-0">
+          <div className="mr-1 hidden items-center gap-2 text-faint sm:flex">
             <Grid size={15} />
             <input
               type="range"

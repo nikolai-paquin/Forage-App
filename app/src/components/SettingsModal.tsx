@@ -291,7 +291,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
             </div>
 
             {/* content */}
-            <div className="relative overflow-auto p-5 md:p-7">
+            <div className="relative min-w-0 overflow-auto p-5 md:p-7">
               <button
                 onClick={onClose}
                 className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink"
@@ -385,9 +385,9 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                   </div>
                   <div className="mt-6 flex items-start gap-2 text-[13.5px] text-muted">
                     <Info size={16} className="mt-0.5 shrink-0" />
-                    <p>
+                    <p className="min-w-0">
                       You're signed out. Sign back in to sync your AI usage and manage your
-                      subscription. Your library stays on this Mac either way.
+                      subscription. Your library stays on this device either way.
                     </p>
                   </div>
                   <button
