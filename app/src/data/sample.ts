@@ -1,4 +1,4 @@
-import type { Item, Project } from '../types';
+import type { Item, Project, Space, Kit } from '../types';
 
 const now = Date.now();
 const days = (n: number) => now - n * 86_400_000;
@@ -275,6 +275,100 @@ export const sampleItems: Item[] = [
     projectIds: ['p_film', 'p_studio'],
     createdAt: days(13),
     lastSeenAt: days(7),
+  },
+  // ---- Color palettes ----
+  {
+    id: 'i_pal_warm',
+    type: 'palette',
+    title: 'Warm Editorial',
+    palette: ['#c2603f', '#e6d2b5', '#3a342c', '#8c6f4f', '#e8e1d4'],
+    ratio: 1.2,
+    tags: ['palette', 'warm', 'brand'],
+    projectIds: ['p_studio'],
+    createdAt: days(9),
+    lastSeenAt: days(3),
+  },
+  {
+    id: 'i_pal_film',
+    type: 'palette',
+    title: 'Analog Film',
+    palette: ['#2b2b33', '#7c6f63', '#d9c3a5', '#b3a392'],
+    ratio: 1.2,
+    tags: ['palette', 'film', 'muted'],
+    projectIds: ['p_film'],
+    createdAt: days(11),
+    lastSeenAt: days(4),
+  },
+  // ---- Fonts ----
+  {
+    id: 'i_font_playfair',
+    type: 'font',
+    title: 'Playfair Display',
+    source: 'Google Fonts',
+    fontFamily: 'Playfair Display',
+    fontUrl: '',
+    sample: 'Confident, warm, editorial',
+    palette: ['#3a342c', '#c2603f', '#e8e1d4'],
+    ratio: 1.1,
+    tags: ['type', 'serif', 'display'],
+    projectIds: ['p_type', 'p_studio'],
+    createdAt: days(8),
+    lastSeenAt: days(2),
+  },
+  {
+    id: 'i_font_inter',
+    type: 'font',
+    title: 'Inter',
+    source: 'Google Fonts',
+    fontFamily: 'Inter',
+    fontUrl: '',
+    sample: 'A clean UI workhorse',
+    palette: ['#3a342c', '#4f6d8c', '#e8e1d4'],
+    ratio: 1.1,
+    tags: ['type', 'sans', 'ui'],
+    projectIds: ['p_type'],
+    createdAt: days(7),
+    lastSeenAt: days(1),
+  },
+];
+
+// A moodboard wiring several saves together with a note.
+export const sampleSpaces: Space[] = [
+  {
+    id: 's_studio',
+    name: 'Studio Rebrand — Moodboard',
+    elements: [
+      { id: 'se1', kind: 'item', itemId: 'i_grid', x: 80, y: 60, w: 250, z: 1 },
+      { id: 'se2', kind: 'item', itemId: 'i_letter', x: 380, y: 110, w: 220, z: 2 },
+      { id: 'se3', kind: 'item', itemId: 'i_texture', x: 130, y: 350, w: 260, z: 3 },
+      { id: 'se4', kind: 'item', itemId: 'i_swatch', x: 470, y: 380, w: 200, z: 4 },
+      {
+        id: 'se5',
+        kind: 'note',
+        text: 'Confident, warm, editorial. Big serif headlines on a tight grid, print-feel color.',
+        color: '#ffffff',
+        x: 690,
+        y: 150,
+        w: 220,
+        h: 140,
+        z: 5,
+      },
+    ],
+    createdAt: days(6),
+  },
+];
+
+// A style kit bundling the palette, fonts, and key reference images.
+export const sampleKits: Kit[] = [
+  {
+    id: 'k_studio',
+    name: 'Studio Rebrand Kit',
+    notes: 'Brand direction — warm, editorial, print-feel. Serif display + clean UI sans.',
+    colors: ['#c2603f', '#3a342c', '#e8e1d4', '#8c6f4f', '#e6d2b5'],
+    fontItemIds: ['i_font_playfair', 'i_font_inter'],
+    imageItemIds: ['i_grid', 'i_texture', 'i_letter'],
+    createdAt: days(5),
+    updatedAt: days(2),
   },
 ];
 

@@ -40,7 +40,7 @@ import { Toaster } from './components/Toaster';
 import { Search } from './components/icons';
 import type { Item } from './types';
 
-function Workspace() {
+function Workspace({ demo = false }: { demo?: boolean }) {
   const {
     view,
     items,
@@ -525,7 +525,7 @@ function Workspace() {
       <ResurfacePanel open={resurface} onClose={() => setResurface(false)} onOpenItem={open} />
       <SettingsModal open={settings} onClose={() => setSettings(false)} />
       <ShortcutsModal open={shortcuts} onClose={() => setShortcuts(false)} />
-      <Onboarding onCapture={openCapture} />
+      {!demo && <Onboarding onCapture={openCapture} />}
     </div>
   );
 }
@@ -536,9 +536,12 @@ export function App() {
   const shareUrl = shareUrlFromHash();
   if (shareUrl) return <ShareViewer url={shareUrl} />;
 
+  // `?demo` (portfolio mode): a throwaway, always-fresh sample library.
+  const demo = /[?&]demo(=|&|$)/.test(location.search) || location.hash === '#demo';
+
   return (
-    <ForageProvider>
-      <Workspace />
+    <ForageProvider demo={demo}>
+      <Workspace demo={demo} />
     </ForageProvider>
   );
 }

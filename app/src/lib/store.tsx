@@ -21,7 +21,7 @@ import type {
   TypeFilter,
   View,
 } from '../types';
-import { sampleItems, sampleProjects } from '../data/sample';
+import { sampleItems, sampleProjects, sampleSpaces, sampleKits } from '../data/sample';
 import { fetchYouTubeMeta, itemInProject, sourceLabel, uid } from './util';
 import { unfurl, unfurlEnabled } from './unfurl';
 import { extractPalette, matchColor } from './color';
@@ -255,7 +255,7 @@ function migrateLegacy<T>(key: string): T | undefined {
   }
 }
 
-export function ForageProvider({ children }: { children: ReactNode }) {
+export function ForageProvider({ children, demo = false }: { children: ReactNode; demo?: boolean }) {
   const [items, setItems] = useState<Item[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -281,6 +281,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
     return stored.length ? stored : [DEFAULT_LIBRARY];
   });
   const [activeLibrary, setActiveLibrary] = useState<string>(() => {
+    if (demo) return 'demo';
     try {
       return localStorage.getItem(ACTIVE_LIB_KEY) || 'default';
     } catch {
@@ -301,6 +302,19 @@ export function ForageProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     const lib = activeLibrary;
     const isDefault = lib === 'default';
+    // Portfolio demo: always load the curated sample set fresh (ignoring any
+    // persisted demo edits), so the demo never looks empty or broken.
+    if (demo) {
+      setItems(sampleItems);
+      setSpaces(sampleSpaces);
+      setProjects(sampleProjects);
+      setStoryboards([]);
+      setKits(sampleKits);
+      setSelectedIds([]);
+      setFocusedId(undefined);
+      setHydrated(true);
+      return;
+    }
     (async () => {
       let loadedItems = await idbGet<Item[]>(libKey(IDB_ITEMS, lib));
       if (loadedItems === undefined) {
@@ -308,12 +322,13 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       }
       let loadedSpaces = await idbGet<Space[]>(libKey(IDB_SPACES, lib));
       if (loadedSpaces === undefined) {
-        loadedSpaces = isDefault ? (migrateLegacy<Space[]>(SPACES_KEY) ?? []) : [];
+        loadedSpaces = isDefault ? (migrateLegacy<Space[]>(SPACES_KEY) ?? sampleSpaces) : [];
       }
       let loadedProjects = await idbGet<Project[]>(libKey(IDB_PROJECTS, lib));
       if (loadedProjects === undefined) loadedProjects = isDefault ? sampleProjects : [];
       const loadedStoryboards = (await idbGet<Storyboard[]>(libKey(IDB_STORYBOARDS, lib))) ?? [];
-      const loadedKits = (await idbGet<Kit[]>(libKey(IDB_KITS, lib))) ?? [];
+      let loadedKits = await idbGet<Kit[]>(libKey(IDB_KITS, lib));
+      if (loadedKits === undefined) loadedKits = isDefault ? sampleKits : [];
       if (cancelled) return;
       // Trash was removed — purge any legacy soft-deleted saves so they don't
       // linger invisibly in storage (delete is permanent now).
@@ -329,7 +344,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [activeLibrary]);
+  }, [activeLibrary, demo]);
 
   // Persist the library to IndexedDB (only after hydration, so we never clobber
   // stored data with the empty initial state).
@@ -361,12 +376,13 @@ export function ForageProvider({ children }: { children: ReactNode }) {
     }
   }, [libraries]);
   useEffect(() => {
+    if (demo) return; // never pin the real app to the throwaway demo library
     try {
       localStorage.setItem(ACTIVE_LIB_KEY, activeLibrary);
     } catch {
       /* non-fatal */
     }
-  }, [activeLibrary]);
+  }, [activeLibrary, demo]);
 
   useEffect(() => {
     try {
