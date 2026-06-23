@@ -26,6 +26,26 @@ npm run dev      # http://localhost:5173
 
 See [`app/README.md`](app/README.md) for a tour of what the prototype demonstrates.
 
+## Try it / install
+
+- **Web app:** open the deployed build in any browser — nothing to install.
+- **Portfolio demo:** append `?demo` to the URL for an always-fresh sample library
+  (collections, a moodboard, palettes, fonts, and a kit) that resets on each load.
+- **Mac app:** download the `.dmg` from the latest [Release](../../releases) (or the
+  "Build macOS app" workflow artifact under **Actions**).
+
+### Opening the Mac app (first launch)
+
+The Mac build is **not code-signed** (no paid Apple Developer certificate), so on the
+first open macOS shows *"Forage can't be opened because it is from an unidentified
+developer."* This is expected — the app is safe. To open it:
+
+1. Open the `.dmg` and drag **Forage** into **Applications**.
+2. In Applications, **right-click (Control-click) Forage → Open**, then click **Open**
+   in the dialog. You only need to do this once; afterwards it opens normally.
+   - If macOS still blocks it: **System Settings → Privacy & Security → Open Anyway**.
+   - Or from Terminal: `xattr -cr /Applications/Forage.app`, then open normally.
+
 ## Status
 
 Early. The prototype proves the canvas, capture, item detail, projects + resurfacing strip, and the

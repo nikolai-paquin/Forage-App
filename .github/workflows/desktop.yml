@@ -50,6 +50,15 @@ jobs:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
           releaseName: ${{ github.ref_type == 'tag' && format('Forage {0}', github.ref_name) || '' }}
           releaseDraft: false
+          releaseBody: |
+            ### Install (macOS)
+            This build is **unsigned** (no paid Apple Developer certificate), so on first
+            open macOS warns it's from an "unidentified developer." The app is safe — to open it:
+
+            1. Open the `.dmg` and drag **Forage** into **Applications**.
+            2. **Right-click (Control-click) Forage → Open**, then click **Open**. One-time only.
+               - Still blocked? **System Settings → Privacy & Security → Open Anyway**.
+               - Or in Terminal: `xattr -cr /Applications/Forage.app`, then open normally.
 
       - name: Upload app as a workflow artifact
         uses: actions/upload-artifact@v4
