@@ -148,7 +148,7 @@ export function LibraryView({
           })}
         </div>
 
-        <div className="-mx-5 flex items-center gap-3 overflow-x-auto px-5 pb-2 md:mx-0 md:px-0 md:pb-0 [&>*]:shrink-0">
+        <div className="flex flex-wrap items-center gap-2 pb-2 md:gap-3 md:pb-0 [&>*]:shrink-0">
           <div className="mr-1 hidden items-center gap-2 text-faint sm:flex">
             <Grid size={15} />
             <input

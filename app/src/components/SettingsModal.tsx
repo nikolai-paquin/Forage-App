@@ -30,8 +30,10 @@ import { toast } from '../lib/toast';
 import { timeAgo } from '../lib/util';
 import type { FilterEntry } from '../types';
 import {
+  ArrowLeft,
   Camera,
   Check,
+  ChevronRight,
   Close,
   Database,
   Download,
@@ -176,6 +178,9 @@ function Row({ label, value }: { label: string; value: string }) {
 
 export function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [active, setActive] = useState('account');
+  // On phones, Settings is a master-detail list: show the section list first,
+  // tap in to a section. `mobileList` true = showing the list.
+  const [mobileList, setMobileList] = useState(true);
   const { dark, toggle } = useTheme();
   const { canInstall, installed, promptInstall } = usePwaInstall();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -195,6 +200,13 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   useEffect(() => {
     if (open && active === 'data') storageStats().then(setStats);
   }, [open, active]);
+
+  // Reopen Settings to the section list on phones.
+  useEffect(() => {
+    if (open) setMobileList(true);
+  }, [open]);
+
+  const activeLabel = NAV.find((n) => n.id === active)?.label ?? 'Settings';
 
   const handleImport = async (file?: File) => {
     if (!file) return;
@@ -266,20 +278,20 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 360, damping: 30 }}
-            className="relative grid h-full w-full max-w-none grid-rows-[auto_1fr] overflow-hidden rounded-none border border-border bg-elevated md:h-[560px] md:max-w-3xl md:grid-cols-[220px_1fr] md:grid-rows-1 md:rounded-2xl"
+            className="relative flex h-full w-full max-w-none flex-col overflow-hidden rounded-none border border-border bg-elevated md:grid md:h-[560px] md:max-w-3xl md:grid-cols-[220px_1fr] md:rounded-2xl"
             style={{ boxShadow: 'var(--shadow-pop)' }}
           >
-            {/* left nav — a horizontal scroller on phones, sidebar on desktop */}
-            <div className="border-b border-border bg-surface p-3 md:border-b-0 md:border-r">
-              <p className="hidden px-2.5 pb-2 pt-1 text-[12px] font-semibold uppercase tracking-wider text-faint md:block">
+            {/* Desktop sidebar */}
+            <div className="hidden border-r border-border bg-surface p-3 md:block">
+              <p className="px-2.5 pb-2 pt-1 text-[12px] font-semibold uppercase tracking-wider text-faint">
                 Settings
               </p>
-              <div className="flex flex-row gap-0.5 overflow-x-auto md:flex-col">
+              <div className="flex flex-col gap-0.5">
                 {NAV.map((n) => (
                   <button
                     key={n.id}
                     onClick={() => setActive(n.id)}
-                    className={`flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[13.5px] transition ${
+                    className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13.5px] transition ${
                       active === n.id ? 'bg-surface-2 text-ink' : 'text-muted hover:text-ink'
                     }`}
                   >
@@ -290,15 +302,58 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
               </div>
             </div>
 
-            {/* content */}
-            <div className="relative min-w-0 overflow-auto p-5 md:p-7">
+            {/* Mobile top bar — back (in a section) / title / close */}
+            <div className="flex items-center gap-2 border-b border-border bg-surface px-3 py-3 md:hidden">
+              {!mobileList && (
+                <button
+                  onClick={() => setMobileList(true)}
+                  className="grid h-8 w-8 place-items-center rounded-full text-muted hover:text-ink"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+              )}
+              <span className="text-[15px] font-semibold text-ink">
+                {mobileList ? 'Settings' : activeLabel}
+              </span>
               <button
                 onClick={onClose}
-                className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink"
+                className="ml-auto grid h-8 w-8 place-items-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink"
+              >
+                <Close size={18} />
+              </button>
+            </div>
+
+            {/* content */}
+            <div className="relative min-w-0 flex-1 overflow-auto p-5 md:p-7">
+              <button
+                onClick={onClose}
+                className="absolute right-4 top-4 hidden h-8 w-8 place-items-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink md:grid"
               >
                 <Close size={16} />
               </button>
 
+              {/* Mobile section list */}
+              {mobileList && (
+                <div className="-m-1 flex flex-col md:hidden">
+                  {NAV.map((n) => (
+                    <button
+                      key={n.id}
+                      onClick={() => {
+                        setActive(n.id);
+                        setMobileList(false);
+                      }}
+                      className="flex items-center gap-3 border-b border-border px-1 py-3.5 text-left text-[15px] text-ink"
+                    >
+                      <span className="text-muted">{n.icon}</span>
+                      <span className="flex-1">{n.label}</span>
+                      <ChevronRight size={16} className="text-faint" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Section content — hidden on phones while the list is showing */}
+              <div className={mobileList ? 'hidden md:block' : 'block'}>
               {active === 'tags' ? (
                 <>
                   <h2 className="text-[24px] font-semibold tracking-tight">Tags</h2>
@@ -942,6 +997,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                   <p className="mt-3 text-[14px] text-muted">Coming soon.</p>
                 </>
               )}
+              </div>
             </div>
           </motion.div>
         </motion.div>

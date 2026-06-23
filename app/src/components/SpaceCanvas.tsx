@@ -335,7 +335,7 @@ export function SpaceCanvas() {
           className="min-w-0 flex-1 bg-transparent text-[17px] font-semibold tracking-tight text-ink outline-none"
         />
         </div>
-        <div className="-mx-5 flex items-center gap-1.5 overflow-x-auto px-5 pb-1 md:mx-0 md:ml-auto md:px-0 md:pb-0 [&>*]:shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 md:ml-auto md:flex-nowrap [&>*]:shrink-0">
           <button
             onClick={() => setPicker(true)}
             className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-muted transition hover:text-ink"
