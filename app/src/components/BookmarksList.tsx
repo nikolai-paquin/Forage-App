@@ -89,7 +89,7 @@ export function BookmarksList({ items, onOpen }: { items: Item[]; onOpen: (i: It
           </div>
         </a>
 
-        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
+        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100 [@media(hover:none)]:opacity-100">
           <button
             onClick={() => onOpen(item)}
             title="Details"

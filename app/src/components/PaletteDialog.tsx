@@ -109,7 +109,7 @@ export function PaletteDialog({ open, onClose }: { open: boolean; onClose: () =>
                       <button
                         onClick={() => removeColor(i)}
                         title="Remove"
-                        className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/40 text-white opacity-0 transition group-hover:opacity-100"
+                        className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/40 text-white opacity-0 transition group-hover:opacity-100 [@media(hover:none)]:opacity-100"
                       >
                         <Close size={11} />
                       </button>

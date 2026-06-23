@@ -389,7 +389,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hydrated || !syncCfg.auto || !syncConfigured()) return;
     const t = setTimeout(() => {
-      pushSnapshot({ v: 1, updatedAt: Date.now(), items, spaces })
+      pushSnapshot({ v: 1, updatedAt: Date.now(), items, spaces, projects, storyboards, kits })
         .then(() => {
           const n = Date.now();
           setLastSyncedAt(n);
@@ -398,7 +398,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         .catch(() => {});
     }, 2500);
     return () => clearTimeout(t);
-  }, [items, spaces, syncCfg, hydrated]);
+  }, [items, spaces, projects, storyboards, kits, syncCfg, hydrated, activeLibrary]);
 
   // Auto-sync: pull + merge on mount/config change, then periodically.
   useEffect(() => {
@@ -410,6 +410,14 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         if (cancelled || !remote) return;
         setItems((prev) => mergeById(prev, remote.items));
         setSpaces((prev) => mergeById(prev, remote.spaces));
+        if (remote.projects)
+          setProjects((prev) => {
+            const m = new Map(prev.map((p) => [p.id, p]));
+            for (const p of remote.projects!) m.set(p.id, p);
+            return [...m.values()];
+          });
+        if (remote.storyboards) setStoryboards((prev) => mergeById(prev, remote.storyboards!));
+        if (remote.kits) setKits((prev) => mergeById(prev, remote.kits!));
       } catch {
         /* offline — try again next tick */
       }
@@ -420,7 +428,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       clearInterval(iv);
     };
-  }, [syncCfg, hydrated]);
+  }, [syncCfg, hydrated, activeLibrary]);
 
   const patchSpace = (spaceId: string, fn: (s: Space) => Space) =>
     setSpaces((prev) =>
@@ -690,7 +698,7 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         setLibraries((prev) => prev.map((l) => (l.id === id ? { ...l, name } : l))),
       deleteLibrary: (id) => {
         if (id === 'default') return; // the default library can't be removed
-        for (const base of [IDB_ITEMS, IDB_SPACES, IDB_PROJECTS, IDB_STORYBOARDS]) {
+        for (const base of [IDB_ITEMS, IDB_SPACES, IDB_PROJECTS, IDB_STORYBOARDS, IDB_KITS]) {
           idbDel(libKey(base, id)).catch(() => {});
         }
         setLibraries((prev) => prev.filter((l) => l.id !== id));
@@ -845,19 +853,16 @@ export function ForageProvider({ children }: { children: ReactNode }) {
         setSyncBusy(true);
         try {
           const remote = await pullSnapshot();
-          let mergedItems = items;
-          let mergedSpaces = spaces;
+          let merged = { v: 1 as const, updatedAt: Date.now(), items, spaces, projects, storyboards, kits };
           if (remote) {
-            const merged = mergeSnapshots(
-              { v: 1, updatedAt: Date.now(), items, spaces },
-              remote,
-            );
-            mergedItems = merged.items;
-            mergedSpaces = merged.spaces;
-            setItems(mergedItems);
-            setSpaces(mergedSpaces);
+            merged = mergeSnapshots(merged, remote) as typeof merged;
+            setItems(merged.items);
+            setSpaces(merged.spaces);
+            setProjects(merged.projects ?? projects);
+            setStoryboards(merged.storyboards ?? storyboards);
+            setKits(merged.kits ?? kits);
           }
-          await pushSnapshot({ v: 1, updatedAt: Date.now(), items: mergedItems, spaces: mergedSpaces });
+          await pushSnapshot(merged);
           const t = Date.now();
           setLastSyncedAt(t);
           setLastSyncedState(t);

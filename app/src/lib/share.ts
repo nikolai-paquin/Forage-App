@@ -112,6 +112,6 @@ export function shareUrl(id: string): string {
 
 /** If the current URL is a share link, the GET url to fetch; else null. */
 export function shareUrlFromHash(): string | null {
-  const m = /[#&]share=([^&]+)/.exec(location.hash);
+  const m = /^#share=([^&]+)/.exec(location.hash);
   return m ? decodeURIComponent(m[1]) : null;
 }

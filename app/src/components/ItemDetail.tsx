@@ -338,7 +338,10 @@ export function ItemDetail({
     const m = live.type === 'video' ? live.poster : live.media;
     if (!m) return;
     const p = await extractPalette(m);
-    if (p.length) updateItem(live.id, { palette: p });
+    if (p.length)
+      updateItem(live.id, {
+        palette: [...p, ...live.palette.filter((c) => !p.includes(c))].slice(0, 5),
+      });
     else toast("Couldn't read colors — this image is hosted elsewhere (try Chrome's eyedropper).");
   };
 
@@ -370,8 +373,6 @@ export function ItemDetail({
               )}
             </div>
             <div className="flex items-center gap-1">
-              <span className="mr-2 hidden text-[13px] tabular-nums text-white/50 sm:inline">100%</span>
-              <input type="range" min={50} max={150} defaultValue={100} className="mr-3 hidden h-1 w-28 accent-white sm:block" />
               <button onClick={pickColor} className={iconBtn} title="Pick a color (eyedropper)">
                 <Pipette size={17} />
               </button>
@@ -409,7 +410,7 @@ export function ItemDetail({
           {/* body */}
           <div className="flex min-h-0 flex-1 flex-col md:flex-row">
             <div className="relative grid min-w-0 flex-1 place-items-center p-4 md:p-8">
-              <Media item={item} />
+              <Media item={live} />
               {prev && (
                 <button
                   onClick={() => onOpen(prev)}

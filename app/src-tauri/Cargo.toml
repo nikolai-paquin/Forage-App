@@ -1,6 +1,6 @@
 [package]
 name = "forage"
-version = "0.1.0"
+version = "1.0.0"
 description = "A calm, beautiful home for everything you forage and create."
 authors = ["Nikolai Paquin"]
 edition = "2021"

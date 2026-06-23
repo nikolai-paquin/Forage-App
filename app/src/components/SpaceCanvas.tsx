@@ -361,7 +361,7 @@ export function SpaceCanvas() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)] flex-col">
+    <div className="flex h-[calc(100dvh-64px-56px)] flex-col md:h-[calc(100vh-64px)]">
       {/* toolbar */}
       <div className="flex flex-col gap-2 px-5 pb-3 md:flex-row md:items-center md:gap-3">
         <div className="flex items-center gap-3">
@@ -528,13 +528,13 @@ export function SpaceCanvas() {
                   <button
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={() => removeSpaceElement(space.id, el.id)}
-                    className="absolute -right-2 -top-2 hidden h-6 w-6 place-items-center rounded-full bg-[#1b1c1f] text-white shadow-lg group-hover:grid"
+                    className="absolute -right-2 -top-2 hidden h-6 w-6 place-items-center rounded-full bg-[#1b1c1f] text-white shadow-lg group-hover:grid [@media(hover:none)]:grid"
                   >
                     <Close size={13} />
                   </button>
                   <span
                     onPointerDown={(e) => startResize(e, el)}
-                    className="absolute -bottom-1.5 -right-1.5 hidden h-4 w-4 cursor-nwse-resize rounded-sm border-2 border-[#1b1c1f] bg-white group-hover:block"
+                    className="absolute -bottom-1.5 -right-1.5 hidden h-4 w-4 cursor-nwse-resize rounded-sm border-2 border-[#1b1c1f] bg-white group-hover:block [@media(hover:none)]:block"
                   />
                 </div>
               );
@@ -569,13 +569,13 @@ export function SpaceCanvas() {
                 <button
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => removeSpaceElement(space.id, el.id)}
-                  className="absolute -right-2 -top-2 hidden h-6 w-6 place-items-center rounded-full bg-[#1b1c1f] text-white shadow-lg group-hover:grid"
+                  className="absolute -right-2 -top-2 hidden h-6 w-6 place-items-center rounded-full bg-[#1b1c1f] text-white shadow-lg group-hover:grid [@media(hover:none)]:grid"
                 >
                   <Close size={13} />
                 </button>
                 <span
                   onPointerDown={(e) => startResize(e, el)}
-                  className="absolute -bottom-1.5 -right-1.5 hidden h-4 w-4 cursor-nwse-resize rounded-sm border-2 border-[#1b1c1f] bg-white group-hover:block"
+                  className="absolute -bottom-1.5 -right-1.5 hidden h-4 w-4 cursor-nwse-resize rounded-sm border-2 border-[#1b1c1f] bg-white group-hover:block [@media(hover:none)]:block"
                 />
               </div>
             );

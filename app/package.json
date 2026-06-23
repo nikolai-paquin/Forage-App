@@ -1,7 +1,7 @@
 {
   "name": "forage",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "A calm, beautiful home for everything you forage and create.",
   "scripts": {

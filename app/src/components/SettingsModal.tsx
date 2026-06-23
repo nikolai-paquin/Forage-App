@@ -63,13 +63,13 @@ const NAV = [
   { id: 'tags', label: 'Tags', icon: <Hash size={16} /> },
   { id: 'capture', label: 'Capture', icon: <Camera size={16} /> },
   { id: 'sound', label: 'Sound', icon: <Volume2 size={16} /> },
-  { id: 'updates', label: 'Updates', icon: <Download size={16} /> },
+  { id: 'updates', label: 'Install', icon: <Download size={16} /> },
   { id: 'sync', label: 'Sync', icon: <Share2 size={16} /> },
   { id: 'data', label: 'Data', icon: <Database size={16} /> },
   { id: 'about', label: 'About', icon: <Info size={16} /> },
 ];
 
-const VERSION = '0.1.0';
+const VERSION = '1.0.0';
 const REPO = 'https://github.com/nikolai-paquin/Forage-App';
 const ABOUT_LINKS = [
   { label: 'GitHub repository', href: REPO },
@@ -699,10 +699,10 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 </>
               ) : active === 'updates' ? (
                 <>
-                  <h2 className="text-[24px] font-semibold tracking-tight">Updates</h2>
+                  <h2 className="text-[24px] font-semibold tracking-tight">Install</h2>
                   <p className="mt-2 mb-6 max-w-md text-[13.5px] text-muted">
-                    Install Forage as an app for a dedicated window, dock icon, and the mobile share
-                    sheet.
+                    Install Forage as an app for its own window, a home-screen or taskbar icon, and
+                    the system share sheet.
                   </p>
                   {installed ? (
                     <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-[13.5px] text-ink">

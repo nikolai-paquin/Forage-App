@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { MOD_KEY } from '../lib/util';
 import { FontIcon, Palette, Plus, Upload } from './icons';
 
 interface FabProps {
@@ -53,7 +54,7 @@ export function Fab(props: FabProps) {
         onClick={() => setOpen((v) => !v)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        title="Add to Forage (⌘N)"
+        title={`Add to Forage (${MOD_KEY}N)`}
         className="grid h-14 w-14 place-items-center rounded-full text-accent-ink"
         style={{ background: 'var(--ink)', boxShadow: 'var(--shadow-pop)' }}
       >

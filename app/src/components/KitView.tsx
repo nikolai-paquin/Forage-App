@@ -225,7 +225,7 @@ export function KitView() {
               />
               <button
                 onClick={() => removeColor(i)}
-                className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-ink text-accent-ink opacity-0 transition group-hover/sw:opacity-100"
+                className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-ink text-accent-ink opacity-0 transition group-hover/sw:opacity-100 [@media(hover:none)]:opacity-100"
               >
                 <Close size={11} />
               </button>
@@ -282,7 +282,7 @@ export function KitView() {
                 onClick={() =>
                   updateKit(kit.id, { fontItemIds: kit.fontItemIds.filter((id) => id !== f.id) })
                 }
-                className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-surface-2 text-muted opacity-0 transition group-hover/f:opacity-100 hover:text-red-500"
+                className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-surface-2 text-muted opacity-0 transition group-hover/f:opacity-100 hover:text-red-500 [@media(hover:none)]:opacity-100"
               >
                 <Close size={12} />
               </button>
@@ -326,7 +326,7 @@ export function KitView() {
                 onClick={() =>
                   updateKit(kit.id, { imageItemIds: kit.imageItemIds.filter((id) => id !== im.id) })
                 }
-                className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-black/50 text-white opacity-0 transition group-hover/i:opacity-100 hover:bg-red-500"
+                className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-black/50 text-white opacity-0 transition group-hover/i:opacity-100 hover:bg-red-500 [@media(hover:none)]:opacity-100"
               >
                 <Close size={12} />
               </button>

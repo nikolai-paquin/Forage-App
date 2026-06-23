@@ -88,8 +88,12 @@ export function CaptureDialog({
     // Multiple links → one save each.
     if (multi) {
       let n = 0;
+      const seen = new Set<string>();
       for (const u of urls) {
         const d = linkify(detectFromInput(u));
+        const key = d.url || d.media || u;
+        if (seen.has(key)) continue; // skip dupes within this same paste
+        seen.add(key);
         if (findDuplicate({ url: d.url, media: d.media })) continue;
         addItem({
           type: d.type,

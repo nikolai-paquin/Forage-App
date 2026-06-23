@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import { toast } from '../lib/toast';
-import { Close, Folder, Plus, Trash2 } from './icons';
+import { Close, Folder, Trash2 } from './icons';
 import type { Item } from '../types';
 
 export function BulkBar() {
@@ -38,7 +38,7 @@ export function BulkBar() {
           animate={{ opacity: 1, y: 0, x: '-50%' }}
           exit={{ opacity: 0, y: 20, x: '-50%' }}
           transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-          className="fixed bottom-6 left-1/2 z-40 flex items-center gap-1 rounded-full border border-white/10 px-2 py-1.5 text-white"
+          className="fixed bottom-20 left-1/2 z-40 flex items-center gap-1 rounded-full border border-white/10 px-2 py-1.5 text-white md:bottom-6"
           style={{ background: '#1b1c1f', boxShadow: 'var(--shadow-pop)' }}
         >
           <span className="px-2.5 text-[13px] font-semibold tabular-nums">{n} selected</span>
@@ -74,9 +74,6 @@ export function BulkBar() {
                           {p.name}
                         </button>
                       ))}
-                      <button className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[13px] text-white/55 transition hover:bg-white/10">
-                        <Plus size={14} /> New collection
-                      </button>
                     </motion.div>
                   )}
                 </AnimatePresence>

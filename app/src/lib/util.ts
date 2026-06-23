@@ -5,6 +5,12 @@ import type { Item, Project } from '../types';
 export const uid = () =>
   's_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
 
+/** Platform-aware modifier label for keyboard hints (⌘ on Apple, Ctrl elsewhere). */
+export const IS_MAC =
+  typeof navigator !== 'undefined' &&
+  /Mac|iPhone|iPad|iPod/.test((navigator as Navigator).platform || navigator.userAgent);
+export const MOD_KEY = IS_MAC ? '⌘' : 'Ctrl';
+
 /** Copy text to the clipboard (with a legacy fallback). */
 export async function copyText(text: string) {
   try {

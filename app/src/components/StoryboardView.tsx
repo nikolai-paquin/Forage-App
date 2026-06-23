@@ -50,7 +50,7 @@ export function StoryboardView() {
   const addEmpty = () => addFrame(board.id, { id: uid(), caption: '' });
 
   return (
-    <div className="flex h-[calc(100vh-64px)] flex-col">
+    <div className="flex h-[calc(100dvh-64px-56px)] flex-col md:h-[calc(100vh-64px)]">
       {/* header */}
       <div className="flex flex-wrap items-center gap-3 px-5 pb-3">
         <button
@@ -145,7 +145,7 @@ export function StoryboardView() {
                       <button
                         onClick={() => setPicker(f.id)}
                         title="Change image"
-                        className="absolute right-2 top-2 hidden h-7 w-7 place-items-center rounded-full bg-black/55 text-white backdrop-blur-md transition hover:bg-black/75 group-hover:grid"
+                        className="absolute right-2 top-2 hidden h-7 w-7 place-items-center rounded-full bg-black/55 text-white backdrop-blur-md transition hover:bg-black/75 group-hover:grid [@media(hover:none)]:grid"
                       >
                         <Pencil size={13} />
                       </button>

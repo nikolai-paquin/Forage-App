@@ -3,7 +3,8 @@
 // Worker (see /server/sync-worker.js). Merging is per-item last-write-wins on
 // `updatedAt`, with soft-deletes (deletedAt) acting as tombstones — so an edit
 // on one device and a delete on another both survive a round-trip.
-import type { Item, Space } from './../types';
+import type { Item, Space, Project, Storyboard, Kit } from './../types';
+import { getActiveLibrary } from './libs';
 
 const ENDPOINT_KEY = 'forage.sync.endpoint';
 const KEY_KEY = 'forage.sync.key';
@@ -15,6 +16,10 @@ export interface SyncSnapshot {
   updatedAt: number;
   items: Item[];
   spaces: Space[];
+  /** Optional — older snapshots may omit these; merges treat absent as empty. */
+  projects?: Project[];
+  storyboards?: Storyboard[];
+  kits?: Kit[];
 }
 
 const ls = {
@@ -69,6 +74,14 @@ export function mergeById<T extends { id: string; updatedAt?: number; createdAt:
   return [...map.values()];
 }
 
+/** Union two id'd lists with no timestamps (remote wins on conflict). */
+function unionById<T extends { id: string }>(local: T[], remote: T[]): T[] {
+  const map = new Map<string, T>();
+  for (const x of local) map.set(x.id, x);
+  for (const x of remote) map.set(x.id, x);
+  return [...map.values()];
+}
+
 export function mergeSnapshots(
   local: SyncSnapshot,
   remote: SyncSnapshot,
@@ -78,12 +91,19 @@ export function mergeSnapshots(
     updatedAt: Math.max(local.updatedAt, remote.updatedAt),
     items: mergeById(local.items, remote.items),
     spaces: mergeById(local.spaces, remote.spaces),
+    projects: unionById(local.projects ?? [], remote.projects ?? []),
+    storyboards: mergeById(local.storyboards ?? [], remote.storyboards ?? []),
+    kits: mergeById(local.kits ?? [], remote.kits ?? []),
   };
 }
 
 function endpointUrl(): string {
   const base = getSyncEndpoint().replace(/\/+$/, '');
-  return `${base}/${encodeURIComponent(getSyncKey())}`;
+  // Namespace the remote blob per library so switching libraries never merges
+  // or overwrites another library's data. 'default' keeps the bare key.
+  const lib = getActiveLibrary();
+  const key = getSyncKey() + (lib === 'default' ? '' : `__${lib}`);
+  return `${base}/${encodeURIComponent(key)}`;
 }
 
 /** Fetch the remote snapshot, or null if none stored yet. Throws on transport error. */

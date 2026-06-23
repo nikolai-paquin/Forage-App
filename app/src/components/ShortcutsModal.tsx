@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import { MOD_KEY } from '../lib/util';
 import { Close, Keyboard } from './icons';
 
 interface Shortcut {
@@ -14,8 +15,8 @@ const GROUPS: Group[] = [
   {
     title: 'General',
     items: [
-      { keys: ['⌘', 'K'], label: 'Search & commands' },
-      { keys: ['⌘', 'N'], label: 'Add a save' },
+      { keys: [MOD_KEY, 'K'], label: 'Search & commands' },
+      { keys: [MOD_KEY, 'N'], label: 'Add a save' },
       { keys: ['?'], label: 'This shortcuts list' },
       { keys: ['Esc'], label: 'Close dialog or overlay' },
     ],
@@ -39,7 +40,7 @@ const GROUPS: Group[] = [
   {
     title: 'Dialogs & moodboards',
     items: [
-      { keys: ['⌘', 'Enter'], label: 'Save / submit a dialog' },
+      { keys: [MOD_KEY, 'Enter'], label: 'Save / submit a dialog' },
       { keys: ['Delete', 'Backspace'], label: 'Remove a selected drawing' },
     ],
   },

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
+import { MOD_KEY } from '../lib/util';
 import type { Item } from '../types';
 import { COLOR_SWATCHES, matchColor } from '../lib/color';
 import { aiEnabled } from '../lib/ai';
@@ -87,7 +88,7 @@ export function SearchOverlay({
 
   const commands = useMemo<Command[]>(
     () => [
-      { id: 'capture', label: 'New capture', hint: '⌘N', icon: <Camera size={15} />, keywords: 'add save create forage new', run: act(actions.capture) },
+      { id: 'capture', label: 'New capture', hint: `${MOD_KEY}N`, icon: <Camera size={15} />, keywords: 'add save create forage new', run: act(actions.capture) },
       { id: 'lib', label: 'Go to Library', icon: <LibraryIcon size={15} />, keywords: 'all home', run: go({ kind: 'library', tab: 'all' }) },
       { id: 'bookmarks', label: 'Go to Bookmarks', icon: <Bookmark size={15} />, run: go({ kind: 'library', tab: 'bookmarks' }) },
       { id: 'collections', label: 'Go to Collections', icon: <Folder size={15} />, keywords: 'projects', run: go({ kind: 'collections' }) },

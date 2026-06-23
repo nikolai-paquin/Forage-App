@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import { useTheme } from '../lib/theme';
 import type { View } from '../types';
+import { MOD_KEY } from '../lib/util';
 import {
   Compass,
   Film,
@@ -117,7 +118,7 @@ export function TopBar({
           <Search size={14} />
           Search
           <span className="rounded-md bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-faint">
-            ⌘K
+            {MOD_KEY}K
           </span>
         </button>
         <button onClick={onSearch} className={`${iconBtn} sm:hidden`} title="Search">
