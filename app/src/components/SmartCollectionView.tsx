@@ -45,7 +45,7 @@ export function SmartCollectionView({ onOpen }: { onOpen: (i: Item) => void }) {
       >
         <ArrowLeft size={15} /> Collections
       </button>
-      <div className="mb-7 flex items-center gap-2.5">
+      <div className="mb-7 flex flex-wrap items-center gap-2.5">
         {swatch && (
           <span
             className="h-4 w-4 rounded-full ring-1 ring-border"

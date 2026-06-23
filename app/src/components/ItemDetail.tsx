@@ -370,8 +370,8 @@ export function ItemDetail({
               )}
             </div>
             <div className="flex items-center gap-1">
-              <span className="mr-2 text-[13px] tabular-nums text-white/50">100%</span>
-              <input type="range" min={50} max={150} defaultValue={100} className="mr-3 h-1 w-28 accent-white" />
+              <span className="mr-2 hidden text-[13px] tabular-nums text-white/50 sm:inline">100%</span>
+              <input type="range" min={50} max={150} defaultValue={100} className="mr-3 hidden h-1 w-28 accent-white sm:block" />
               <button onClick={pickColor} className={iconBtn} title="Pick a color (eyedropper)">
                 <Pipette size={17} />
               </button>
@@ -407,8 +407,8 @@ export function ItemDetail({
           </div>
 
           {/* body */}
-          <div className="flex min-h-0 flex-1">
-            <div className="relative grid min-w-0 flex-1 place-items-center p-8">
+          <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+            <div className="relative grid min-w-0 flex-1 place-items-center p-4 md:p-8">
               <Media item={item} />
               {prev && (
                 <button
@@ -429,7 +429,7 @@ export function ItemDetail({
             </div>
 
             {/* details panel */}
-            <aside className="w-[360px] shrink-0 overflow-auto border-l border-white/10 bg-[#141416] p-5">
+            <aside className="max-h-[48vh] w-full shrink-0 overflow-auto border-t border-white/10 bg-[#141416] p-5 md:max-h-none md:w-[360px] md:border-l md:border-t-0">
               <div className="relative mb-4 flex items-center justify-between">
                 <h2 className="text-[15px] font-semibold">Details</h2>
                 <button

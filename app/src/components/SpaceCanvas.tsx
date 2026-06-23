@@ -321,7 +321,7 @@ export function SpaceCanvas() {
   return (
     <div className="flex h-[calc(100vh-64px)] flex-col">
       {/* toolbar */}
-      <div className="flex items-center gap-3 px-5 pb-3">
+      <div className="flex flex-wrap items-center gap-3 px-5 pb-3">
         <button
           onClick={() => setView({ kind: 'spaces' })}
           className="flex items-center gap-1.5 text-[13px] text-muted transition hover:text-ink"

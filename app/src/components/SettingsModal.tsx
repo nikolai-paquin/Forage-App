@@ -255,7 +255,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[55] flex items-center justify-center p-6"
+          className="fixed inset-0 z-[55] flex items-center justify-center p-0 md:p-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -266,20 +266,20 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 360, damping: 30 }}
-            className="relative grid h-[560px] w-full max-w-3xl grid-cols-[220px_1fr] overflow-hidden rounded-2xl border border-border bg-elevated"
+            className="relative grid h-full w-full max-w-none grid-rows-[auto_1fr] overflow-hidden rounded-none border border-border bg-elevated md:h-[560px] md:max-w-3xl md:grid-cols-[220px_1fr] md:grid-rows-1 md:rounded-2xl"
             style={{ boxShadow: 'var(--shadow-pop)' }}
           >
-            {/* left nav */}
-            <div className="border-r border-border bg-surface p-3">
-              <p className="px-2.5 pb-2 pt-1 text-[12px] font-semibold uppercase tracking-wider text-faint">
+            {/* left nav — a horizontal scroller on phones, sidebar on desktop */}
+            <div className="border-b border-border bg-surface p-3 md:border-b-0 md:border-r">
+              <p className="hidden px-2.5 pb-2 pt-1 text-[12px] font-semibold uppercase tracking-wider text-faint md:block">
                 Settings
               </p>
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-row gap-0.5 overflow-x-auto md:flex-col">
                 {NAV.map((n) => (
                   <button
                     key={n.id}
                     onClick={() => setActive(n.id)}
-                    className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13.5px] transition ${
+                    className={`flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[13.5px] transition ${
                       active === n.id ? 'bg-surface-2 text-ink' : 'text-muted hover:text-ink'
                     }`}
                   >
@@ -291,7 +291,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
             </div>
 
             {/* content */}
-            <div className="relative overflow-auto p-7">
+            <div className="relative overflow-auto p-5 md:p-7">
               <button
                 onClick={onClose}
                 className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink"

@@ -28,7 +28,7 @@ export function CollectionView({
       >
         <ArrowLeft size={15} /> Collections
       </button>
-      <div className="mb-7 flex items-center gap-2.5">
+      <div className="mb-7 flex flex-wrap items-center gap-2.5">
         <span className="h-3 w-3 rounded-full" style={{ background: p?.color }} />
         <h1 className="text-[26px] font-semibold tracking-tight">{p?.name}</h1>
         <span className="text-[14px] text-faint">· {visibleItems.length} saves</span>

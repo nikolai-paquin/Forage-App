@@ -18,7 +18,7 @@ export function Fab(props: FabProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-6 right-6 z-30 flex flex-col items-end gap-2.5">
+    <div className="fixed bottom-20 right-5 z-30 flex flex-col items-end gap-2.5 md:bottom-6 md:right-6">
       <AnimatePresence>
         {open && (
           <>

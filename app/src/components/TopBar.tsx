@@ -59,12 +59,13 @@ export function TopBar({
     'grid h-9 w-9 place-items-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink';
 
   return (
+    <>
     <header
       data-tauri-drag-region
       className="topbar flex items-center justify-between px-5 py-3.5"
     >
       {/* Left: workspace */}
-      <div className="topbar-left flex w-[220px] items-center gap-2.5">
+      <div className="topbar-left flex items-center gap-2.5 md:w-[220px]">
         <span
           className="grid h-8 w-8 place-items-center rounded-[9px] text-accent-ink"
           style={{ background: 'var(--ink)' }}
@@ -76,9 +77,9 @@ export function TopBar({
         <span className="text-[16px] font-bold tracking-tight text-ink">Forage</span>
       </div>
 
-      {/* Center: segmented pill */}
+      {/* Center: segmented pill — desktop/tablet only (phones use the bottom bar) */}
       <nav
-        className="flex items-center gap-0.5 rounded-full border border-border bg-surface p-1"
+        className="hidden items-center gap-0.5 rounded-full border border-border bg-surface p-1 md:flex"
         style={{ boxShadow: 'var(--shadow-bar)' }}
       >
         {MODES.map((m) => {
@@ -107,16 +108,20 @@ export function TopBar({
       </nav>
 
       {/* Right: search + actions */}
-      <div className="flex w-[220px] items-center justify-end gap-1">
+      <div className="flex items-center justify-end gap-1 md:w-[220px]">
+        {/* full search pill on wider screens, icon-only on phones */}
         <button
           onClick={onSearch}
-          className="mr-1 flex items-center gap-2 rounded-full border border-border bg-surface py-1.5 pl-3 pr-2 text-[13px] text-muted transition hover:text-ink"
+          className="mr-1 hidden items-center gap-2 rounded-full border border-border bg-surface py-1.5 pl-3 pr-2 text-[13px] text-muted transition hover:text-ink sm:flex"
         >
           <Search size={14} />
           Search
           <span className="rounded-md bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-faint">
             ⌘K
           </span>
+        </button>
+        <button onClick={onSearch} className={`${iconBtn} sm:hidden`} title="Search">
+          <Search size={18} />
         </button>
         <button onClick={onResurface} className={iconBtn} title="Resurface">
           <Compass size={18} />
@@ -137,5 +142,28 @@ export function TopBar({
         </button>
       </div>
     </header>
+
+    {/* Bottom tab bar — phones only */}
+    <nav
+      className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-border bg-elevated/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      style={{ boxShadow: 'var(--shadow-bar)' }}
+    >
+      {MODES.map((m) => {
+        const isActive = active === m.id;
+        return (
+          <button
+            key={m.id}
+            onClick={() => goto(m.id)}
+            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors ${
+              isActive ? 'text-ink' : 'text-faint'
+            }`}
+          >
+            {m.icon}
+            <span>{m.label}</span>
+          </button>
+        );
+      })}
+    </nav>
+    </>
   );
 }

@@ -322,7 +322,7 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
         className={`absolute left-2.5 top-2.5 z-[3] grid h-6 w-6 cursor-pointer place-items-center rounded-full backdrop-blur-md transition ${
           selected
             ? 'bg-white text-[#16171b] opacity-100'
-            : `bg-black/35 text-white ${anySelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`
+            : `bg-black/35 text-white ${anySelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100'}`
         }`}
       >
         {selected ? <CheckCircle2 size={15} /> : <Circle size={14} />}
@@ -330,7 +330,7 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
 
       {/* bottom-right controls */}
       {
-        <div className="absolute bottom-2.5 right-2.5 z-[3] flex gap-1.5 opacity-0 transition group-hover:opacity-100">
+        <div className="absolute bottom-2.5 right-2.5 z-[3] flex gap-1.5 opacity-0 transition group-hover:opacity-100 [@media(hover:none)]:opacity-100">
           <span
             onClick={(e) => {
               stop(e);
