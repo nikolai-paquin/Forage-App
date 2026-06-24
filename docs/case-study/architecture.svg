@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" width="1200" height="620" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+  <defs>
+    <marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6">
+      <circle cx="5" cy="5" r="4" fill="#9a9387"/>
+    </marker>
+  </defs>
+
+  <!-- title -->
+  <text x="40" y="50" font-size="30" font-weight="700" fill="#16171b">Local-first architecture</text>
+  <text x="40" y="82" font-size="15" fill="#6f685d">Your library lives on your device. Online features are optional — and opt-in.</text>
+
+  <!-- LEFT: your device -->
+  <rect x="40" y="120" width="560" height="450" rx="22" fill="#faf9f6" stroke="#16171b" stroke-width="2"/>
+  <text x="72" y="160" font-size="18" font-weight="700" fill="#16171b">Your device</text>
+  <text x="72" y="182" font-size="13" fill="#6f685d">Browser · installed PWA · native macOS (Tauri)</text>
+
+  <!-- UI card -->
+  <rect x="72" y="205" width="496" height="92" rx="14" fill="#ffffff" stroke="#e6e1d8" stroke-width="1.5"/>
+  <text x="96" y="240" font-size="16" font-weight="700" fill="#16171b">Forage UI</text>
+  <text x="96" y="266" font-size="13.5" fill="#6f685d">React · TypeScript · Tailwind · Framer Motion</text>
+
+  <!-- IndexedDB card -->
+  <rect x="72" y="313" width="496" height="92" rx="14" fill="#ffffff" stroke="#e6e1d8" stroke-width="1.5"/>
+  <text x="96" y="348" font-size="16" font-weight="700" fill="#16171b">IndexedDB</text>
+  <text x="96" y="374" font-size="13.5" fill="#6f685d">Your whole library — images, boards, kits — on device</text>
+
+  <!-- offline badge -->
+  <rect x="72" y="430" width="220" height="44" rx="22" fill="#eaf0ea" stroke="#6b8f71" stroke-width="1.5"/>
+  <circle cx="98" cy="452" r="6" fill="#6b8f71"/>
+  <text x="114" y="457" font-size="14" font-weight="600" fill="#3f5a45">Works fully offline</text>
+
+  <rect x="306" y="430" width="262" height="44" rx="22" fill="#ffffff" stroke="#e6e1d8" stroke-width="1.5"/>
+  <text x="328" y="457" font-size="14" font-weight="600" fill="#6f685d">No account required</text>
+
+  <!-- connector -->
+  <line x1="600" y1="345" x2="700" y2="345" stroke="#9a9387" stroke-width="2" stroke-dasharray="6 5" marker-start="url(#dot)" marker-end="url(#dot)"/>
+  <text x="650" y="333" font-size="12" fill="#9a9387" text-anchor="middle" font-weight="600">opt-in</text>
+
+  <!-- RIGHT: optional online -->
+  <text x="700" y="150" font-size="15" font-weight="700" fill="#16171b">Optional online — Cloudflare Workers</text>
+
+  <!-- AI -->
+  <rect x="700" y="168" width="460" height="86" rx="14" fill="#ffffff" stroke="#e6e1d8" stroke-width="1.5"/>
+  <circle cx="726" cy="198" r="6" fill="#c2603f"/>
+  <text x="744" y="203" font-size="16" font-weight="700" fill="#16171b">AI · Claude</text>
+  <text x="724" y="232" font-size="13.5" fill="#6f685d">Auto-tag · image prompts · &#8220;find by vibe&#8221; semantic search</text>
+
+  <!-- Unfurl -->
+  <rect x="700" y="266" width="460" height="86" rx="14" fill="#ffffff" stroke="#e6e1d8" stroke-width="1.5"/>
+  <circle cx="726" cy="296" r="6" fill="#4f6d8c"/>
+  <text x="744" y="301" font-size="16" font-weight="700" fill="#16171b">Unfurl &amp; image proxy</text>
+  <text x="724" y="330" font-size="13.5" fill="#6f685d">Rich link previews · cross-origin palettes &amp; exports</text>
+
+  <!-- Sync -->
+  <rect x="700" y="364" width="460" height="86" rx="14" fill="#ffffff" stroke="#e6e1d8" stroke-width="1.5"/>
+  <circle cx="726" cy="394" r="6" fill="#6b8f71"/>
+  <text x="744" y="399" font-size="16" font-weight="700" fill="#16171b">Sync</text>
+  <text x="724" y="428" font-size="13.5" fill="#6f685d">Cross-device, per-library, via Workers KV</text>
+
+  <!-- Share -->
+  <rect x="700" y="462" width="460" height="86" rx="14" fill="#ffffff" stroke="#e6e1d8" stroke-width="1.5"/>
+  <circle cx="726" cy="492" r="6" fill="#8c6f4f"/>
+  <text x="744" y="497" font-size="16" font-weight="700" fill="#16171b">Share</text>
+  <text x="724" y="526" font-size="13.5" fill="#6f685d">Read-only collection links — no setup for viewers</text>
+
+  <!-- footer -->
+  <text x="40" y="600" font-size="13" fill="#9a9387">One codebase → web, installable PWA, and a native Mac app.</text>
+</svg>
