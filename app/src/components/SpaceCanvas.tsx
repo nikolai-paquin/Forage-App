@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item, SpaceDrawing, SpaceElement } from '../types';
-import { uid } from '../lib/util';
+import { uid, itemInProject } from '../lib/util';
 import { exportMoodboardImage } from '../lib/snapshot';
 import {
   ArrowLeft,
@@ -117,6 +117,7 @@ export function SpaceCanvas() {
     spaceById,
     items,
     itemById,
+    projects,
     addSpaceElement,
     updateSpaceElement,
     removeSpaceElement,
@@ -135,6 +136,7 @@ export function SpaceCanvas() {
   const [pan, setPan] = useState({ x: 120, y: 120 });
   const [zoom, setZoom] = useState(1);
   const [picker, setPicker] = useState(false);
+  const [pickerSrc, setPickerSrc] = useState<string>('recent');
   const [presenting, setPresenting] = useState(false);
   const [tool, setTool] = useState<Tool>('select');
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
@@ -339,7 +341,10 @@ export function SpaceCanvas() {
   };
   const addItemEl = (itemId: string) => {
     const c = centerCoord();
-    addSpaceElement(spaceId, { id: uid(), kind: 'item', itemId, x: c.x - 110, y: c.y - 80, w: 220, z: nextZ() });
+    // Cascade each add so multiple saves don't stack on the same spot.
+    const n = space?.elements.length ?? 0;
+    const off = (n % 8) * 28;
+    addSpaceElement(spaceId, { id: uid(), kind: 'item', itemId, x: c.x - 110 + off, y: c.y - 80 + off, w: 220, z: nextZ() });
   };
   const addNote = () => {
     const c = centerCoord();
@@ -661,32 +666,79 @@ export function SpaceCanvas() {
               style={{ boxShadow: 'var(--shadow-pop)' }}
             >
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <p className="text-[14px] font-semibold">Add a save to the canvas</p>
+                <p className="text-[14px] font-semibold">Add to the canvas</p>
                 <button onClick={() => setPicker(false)} className="text-muted hover:text-ink">
                   <Close size={16} />
                 </button>
               </div>
-              <div className="grid max-h-[60vh] grid-cols-3 gap-2.5 overflow-auto p-4 sm:grid-cols-4">
-                {items
-                  .filter((i) => !i.deletedAt)
-                  .map((i) => (
-                    <button
-                      key={i.id}
-                      onClick={() => {
-                        addItemEl(i.id);
-                        setPicker(false);
-                      }}
-                      title={i.title}
-                      className="aspect-square overflow-hidden rounded-lg border border-border bg-surface-2 transition hover:-translate-y-0.5"
-                    >
-                      {thumb(i) ? (
-                        <img src={thumb(i)} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <span className="grid h-full place-items-center text-[10px] text-faint">{i.title}</span>
-                      )}
-                    </button>
-                  ))}
+              {/* source selector */}
+              <div className="flex flex-wrap items-center gap-1.5 border-b border-border px-4 py-2.5">
+                {[
+                  { id: 'recent', label: 'Recently added' },
+                  { id: 'unfiltered', label: 'Unfiltered' },
+                ].map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => setPickerSrc(s.id)}
+                    className={`rounded-full px-3 py-1 text-[12.5px] transition ${
+                      pickerSrc === s.id ? 'bg-ink text-accent-ink' : 'text-muted hover:text-ink'
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+                {projects.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setPickerSrc(p.id)}
+                    className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[12.5px] transition ${
+                      pickerSrc === p.id ? 'bg-ink text-accent-ink' : 'text-muted hover:text-ink'
+                    }`}
+                  >
+                    <span className="h-2 w-2 rounded-full" style={{ background: p.color }} /> {p.name}
+                  </button>
+                ))}
               </div>
+              {(() => {
+                const live = items.filter((i) => !i.deletedAt);
+                let pool =
+                  pickerSrc === 'recent'
+                    ? [...live].sort((a, b) => b.createdAt - a.createdAt)
+                    : pickerSrc === 'unfiltered'
+                      ? live.filter((i) => !projects.some((p) => itemInProject(i, p)))
+                      : live.filter((i) => {
+                          const p = projects.find((pr) => pr.id === pickerSrc);
+                          return p ? itemInProject(i, p) : false;
+                        });
+                if (pickerSrc === 'recent') pool = pool.slice(0, 60);
+                if (pool.length === 0)
+                  return (
+                    <p className="px-4 py-12 text-center text-[13px] text-faint">Nothing here yet.</p>
+                  );
+                return (
+                  <div className="grid max-h-[58vh] grid-cols-3 gap-2.5 overflow-auto p-4 sm:grid-cols-4">
+                    {pool.map((i) => (
+                      <button
+                        key={i.id}
+                        onClick={() => {
+                          addItemEl(i.id);
+                          setPicker(false);
+                        }}
+                        title={i.title}
+                        className="aspect-square overflow-hidden rounded-lg border border-border bg-surface-2 transition hover:-translate-y-0.5"
+                      >
+                        {thumb(i) ? (
+                          <img src={thumb(i)} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="grid h-full place-items-center px-1 text-center text-[10px] text-faint">
+                            {i.title}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
             </motion.div>
           </motion.div>
         )}

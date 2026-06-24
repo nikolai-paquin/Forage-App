@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForage } from '../lib/store';
 import type { Item } from '../types';
 import { MasonryGrid } from './MasonryGrid';
-import { ArrowLeft, ImageDown, Plus, Share2, Trash2 } from './icons';
+import { ArrowLeft, Frame, ImageDown, Plus, Share2, Trash2 } from './icons';
 import { toast } from '../lib/toast';
 import { exportCollectionImage } from '../lib/snapshot';
 import { ShareDialog } from './ShareDialog';
@@ -14,7 +14,8 @@ export function CollectionView({
   onOpen: (i: Item) => void;
   onAdd: () => void;
 }) {
-  const { view, projectById, visibleItems, setView, deleteProject } = useForage();
+  const { view, projectById, visibleItems, setView, deleteProject, createSpaceFromItems } =
+    useForage();
   const [confirm, setConfirm] = useState(false);
   const [sharing, setSharing] = useState(false);
   if (view.kind !== 'collection') return null;
@@ -38,6 +39,17 @@ export function CollectionView({
           className="ml-auto flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[13px] text-ink transition hover:bg-surface-2"
         >
           <Plus size={14} /> Add
+        </button>
+        <button
+          onClick={() => {
+            if (!visibleItems.length) return toast('Add some saves first.');
+            createSpaceFromItems(`${p?.name ?? 'Collection'} moodboard`, visibleItems.map((i) => i.id));
+            toast('Moodboard created');
+          }}
+          title="Lay every save out on a new moodboard"
+          className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[13px] text-ink transition hover:bg-surface-2"
+        >
+          <Frame size={14} /> Moodboard
         </button>
         <button
           onClick={() =>

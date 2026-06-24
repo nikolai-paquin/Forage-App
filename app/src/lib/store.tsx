@@ -207,6 +207,8 @@ interface ForageStore {
   spaces: Space[];
   spaceById: (id: string) => Space | undefined;
   createSpace: () => void;
+  /** Create a moodboard pre-filled with the given saves, laid out in a grid. */
+  createSpaceFromItems: (name: string, itemIds: string[]) => void;
   renameSpace: (id: string, name: string) => void;
   deleteSpace: (id: string) => void;
   addSpaceElement: (spaceId: string, el: SpaceElement) => void;
@@ -773,6 +775,31 @@ export function ForageProvider({ children, demo = false }: { children: ReactNode
           id: uid(),
           name: 'Untitled moodboard',
           elements: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        setSpaces((prev) => [s, ...prev]);
+        setView({ kind: 'space', id: s.id });
+      },
+      createSpaceFromItems: (name, itemIds) => {
+        // Lay items out on a tidy grid so nothing overlaps.
+        const COLS = Math.min(5, Math.max(1, Math.ceil(Math.sqrt(itemIds.length))));
+        const W = 220;
+        const GAP = 32;
+        const CELL = W + GAP;
+        const elements: SpaceElement[] = itemIds.map((itemId, idx) => ({
+          id: uid(),
+          kind: 'item',
+          itemId,
+          x: 80 + (idx % COLS) * CELL,
+          y: 80 + Math.floor(idx / COLS) * CELL,
+          w: W,
+          z: idx + 1,
+        }));
+        const s: Space = {
+          id: uid(),
+          name: name || 'Untitled moodboard',
+          elements,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };
