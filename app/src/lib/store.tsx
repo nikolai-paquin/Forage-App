@@ -475,7 +475,13 @@ export function ForageProvider({ children, demo = false }: { children: ReactNode
     let inView: Item[] = [];
     if (view.kind === 'library') {
       const live = items.filter((i) => !i.deletedAt);
-      inView = view.tab === 'bookmarks' ? live.filter((i) => i.type === 'link') : live;
+      inView =
+        view.tab === 'bookmarks'
+          ? live.filter((i) => i.type === 'link')
+          : view.tab === 'unfiltered'
+            ? // Not yet filed into any collection — the staging area.
+              live.filter((i) => !projects.some((p) => itemInProject(i, p)))
+            : live;
     } else if (view.kind === 'collection') {
       const p = projectById(view.id);
       inView = p ? items.filter((i) => !i.deletedAt && itemInProject(i, p)) : [];

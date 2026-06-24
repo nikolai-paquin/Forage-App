@@ -1,66 +1,12 @@
-import { motion } from 'framer-motion';
 import { useForage } from '../lib/store';
-import type { Item, ItemType } from '../types';
+import type { Item } from '../types';
 import { CollectionCover } from './CollectionCover';
-import { sourceLabel } from '../lib/util';
 import { COLOR_SWATCHES, matchColor } from '../lib/color';
 import { Plus } from './icons';
 
-const thumb = (i: Item) => (i.type === 'video' ? i.poster : i.media);
-
-const TYPE_LABEL: Record<string, string> = {
-  image: 'Images',
-  video: 'Video',
-  link: 'Links',
-  gif: 'GIFs',
-  ai_asset: 'AI assets',
-  vector: 'Vectors',
-  code: 'Code',
-  audio: 'Audio',
-};
-
-function SmartCard({ label, items, onOpen }: { label: string; items: Item[]; onOpen: () => void }) {
-  const thumbs = items.map(thumb).filter(Boolean).slice(0, 4) as string[];
-  return (
-    <motion.button whileHover={{ y: -4 }} whileTap={{ scale: 0.99 }} onClick={onOpen} className="group text-left">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-dashed border-border-strong bg-surface-2/40">
-        {thumbs.length > 0 ? (
-          <div className="grid h-full w-full grid-cols-2 grid-rows-2 gap-[2px] opacity-90">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="overflow-hidden bg-surface-2">
-                {thumbs[i % thumbs.length] && (
-                  <img src={thumbs[i % thumbs.length]} alt="" className="h-full w-full object-cover" />
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <span className="block h-full w-full" />
-        )}
-      </div>
-      <p className="mt-2.5 truncate text-[14px] font-medium text-ink">{label}</p>
-      <p className="tnum text-[12.5px] text-faint">{items.length} saves · smart</p>
-    </motion.button>
-  );
-}
-
 export function CollectionsView({ onNewCollection }: { onNewCollection: () => void }) {
   const { projects, items, setView, deleteProject } = useForage();
-  const live = items.filter((i) => !i.deletedAt);
-
-  const byType = Array.from(new Set(live.map((i) => i.type)))
-    .map((t) => ({ type: t, items: live.filter((i) => i.type === t) }))
-    .filter((g) => g.items.length >= 2)
-    .sort((a, b) => b.items.length - a.items.length);
-
-  const bySource = Array.from(new Set(live.map((i) => i.source).filter(Boolean) as string[]))
-    .map((s) => ({ source: s, items: live.filter((i) => i.source === s) }))
-    .filter((g) => g.items.length >= 2)
-    .sort((a, b) => b.items.length - a.items.length)
-    .slice(0, 6);
-
-  const openType = (t: ItemType) => setView({ kind: 'smart', field: 'type', value: t });
-  const openSource = (s: string) => setView({ kind: 'smart', field: 'source', value: s });
+  const live = items.filter((i: Item) => !i.deletedAt);
 
   // Colors that actually appear in the library, with a count, for the color row.
   const colorRow = COLOR_SWATCHES.map((c) => ({
@@ -110,32 +56,6 @@ export function CollectionsView({ onNewCollection }: { onNewCollection: () => vo
                 <span className="capitalize">{c.word}</span>
                 <span className="tnum text-faint">{c.count}</span>
               </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      {(byType.length > 0 || bySource.length > 0) && (
-        <>
-          <h3 className="mb-4 mt-12 text-[11px] font-medium uppercase tracking-[0.18em] text-faint">
-            Smart collections
-          </h3>
-          <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {byType.map((g) => (
-              <SmartCard
-                key={`t-${g.type}`}
-                label={TYPE_LABEL[g.type] ?? g.type}
-                items={g.items}
-                onOpen={() => openType(g.type)}
-              />
-            ))}
-            {bySource.map((g) => (
-              <SmartCard
-                key={`s-${g.source}`}
-                label={sourceLabel(g.source)}
-                items={g.items}
-                onOpen={() => openSource(g.source)}
-              />
             ))}
           </div>
         </>

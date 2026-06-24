@@ -15,6 +15,7 @@ import {
   Grid,
   Hash,
   Image as ImageIcon,
+  Inbox,
   Layers,
   Link,
   Music,
@@ -43,6 +44,7 @@ const TYPE_ICON: Record<string, React.ReactNode> = {
 
 const TABS: { id: LibraryTab; label: string; icon: React.ReactNode }[] = [
   { id: 'all', label: 'All', icon: <ImageIcon size={15} /> },
+  { id: 'unfiltered', label: 'Unfiltered', icon: <Inbox size={15} /> },
   { id: 'bookmarks', label: 'Bookmarks', icon: <Bookmark size={15} /> },
 ];
 
@@ -243,19 +245,27 @@ export function LibraryView({
             </div>
           )}
           {visibleItems.length === 0 ? (
-            <Empty
-              icon={<ImageIcon size={34} strokeWidth={1.5} />}
-              title="Nothing here yet"
-              sub="Drag images in or save URLs to start your library."
-            >
-              <button
-                onClick={onCapture}
-                className="mt-5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink"
-                style={{ background: 'var(--ink)' }}
+            tab === 'unfiltered' ? (
+              <Empty
+                icon={<Inbox size={34} strokeWidth={1.5} />}
+                title="Nothing unfiltered"
+                sub="Every save is filed into a collection. New saves that aren't in a collection show up here, ready to sort."
+              />
+            ) : (
+              <Empty
+                icon={<ImageIcon size={34} strokeWidth={1.5} />}
+                title="Nothing here yet"
+                sub="Drag images in or save URLs to start your library."
               >
-                Add to library
-              </button>
-            </Empty>
+                <button
+                  onClick={onCapture}
+                  className="mt-5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink"
+                  style={{ background: 'var(--ink)' }}
+                >
+                  Add to library
+                </button>
+              </Empty>
+            )
           ) : (
             <MasonryGrid items={visibleItems} onOpen={onOpen} targetWidth={density} />
           )}

@@ -4,12 +4,13 @@ import type { Item } from '../types';
 import { useForage } from '../lib/store';
 import { toast } from '../lib/toast';
 import { ensureFont, fontStack } from '../lib/fonts';
-import { copyHex } from '../lib/util';
+import { copyHex, itemInProject } from '../lib/util';
 import {
   CheckCircle2,
   Circle,
   Code as CodeIcon,
   FontIcon,
+  Inbox,
   Link as LinkIcon,
   Maximize2,
   Music,
@@ -215,10 +216,12 @@ function LinkArt({ item }: { item: Item }) {
 }
 
 export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) => void }) {
-  const { selectedIds, focusedId, toggleSelect, deleteForever, reinsertItem } = useForage();
+  const { selectedIds, focusedId, projects, toggleSelect, deleteForever, reinsertItem } = useForage();
   const [hover, setHover] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Not yet filed into any collection — surfaced with a small corner badge.
+  const unfiled = !projects.some((p) => itemInProject(item, p));
   const selected = selectedIds.includes(item.id);
   const focused = focusedId === item.id;
   const anySelected = selectedIds.length > 0;
@@ -327,6 +330,16 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
       >
         {selected ? <CheckCircle2 size={15} /> : <Circle size={14} />}
       </span>
+
+      {/* "not in a collection yet" badge */}
+      {unfiled && (
+        <span
+          title="Not in a collection yet"
+          className="absolute right-2.5 top-2.5 z-[3] grid h-6 w-6 place-items-center rounded-full bg-black/40 text-white/90 backdrop-blur-md"
+        >
+          <Inbox size={13} />
+        </span>
+      )}
 
       {/* bottom-right controls */}
       {
