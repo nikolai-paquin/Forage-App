@@ -364,7 +364,7 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
       }
 
       {item.type === 'code' && (
-        <span className="absolute right-2.5 top-2.5 flex items-center gap-1 rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-white/80 opacity-0 transition group-hover:opacity-100">
+        <span className="absolute left-2.5 top-2.5 flex items-center gap-1 rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-white/80 opacity-0 transition group-hover:opacity-100">
           <CodeIcon size={11} /> {item.language}
         </span>
       )}

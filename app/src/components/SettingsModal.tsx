@@ -55,7 +55,7 @@ import {
 } from './icons';
 
 const NAV = [
-  { id: 'account', label: 'Stats', icon: <BarChart size={16} /> },
+  { id: 'stats', label: 'Stats', icon: <BarChart size={16} /> },
   { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
   { id: 'filters', label: 'Filters', icon: <Filter size={16} /> },
   { id: 'libraries', label: 'Libraries', icon: <LibraryIcon size={16} /> },
@@ -168,7 +168,7 @@ function ManagedList({
 }
 
 export function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [active, setActive] = useState('account');
+  const [active, setActive] = useState('stats');
   // On phones, Settings is a master-detail list: show the section list first,
   // tap in to a section. `mobileList` true = showing the list.
   const [mobileList, setMobileList] = useState(true);
@@ -209,10 +209,12 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   };
 
   const [zipping, setZipping] = useState(false);
+  const [zipPct, setZipPct] = useState(0);
   const exportFolders = async () => {
     setZipping(true);
+    setZipPct(0);
     try {
-      await exportLibraryZip();
+      await exportLibraryZip((pct) => setZipPct(Math.round(pct)));
       toast('Library exported');
     } catch {
       toast('Export failed');
@@ -462,7 +464,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                     Tints the background and accent — works in both light and dark.
                   </p>
                 </>
-              ) : active === 'account' ? (
+              ) : active === 'stats' ? (
                 (() => {
                   const live = items.filter((i) => !i.deletedAt);
                   const byType = Array.from(
@@ -614,7 +616,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                       className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink disabled:opacity-50"
                       style={{ background: 'var(--ink)' }}
                     >
-                      <Download size={15} /> {zipping ? 'Exporting…' : 'Export library (.zip)'}
+                      <Download size={15} /> {zipping ? `Exporting… ${zipPct}%` : 'Export library (.zip)'}
                     </button>
                     <button
                       onClick={() => fileRef.current?.click()}

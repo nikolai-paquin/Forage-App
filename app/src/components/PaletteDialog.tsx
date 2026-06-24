@@ -160,7 +160,7 @@ export function PaletteDialog({ open, onClose }: { open: boolean; onClose: () =>
                 whileTap={{ scale: 0.96 }}
                 onClick={save}
                 className="flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[13px] font-medium text-accent-ink"
-                style={{ background: 'var(--accent)' }}
+                style={{ background: 'var(--ink)' }}
               >
                 Save palette
                 <span className="rounded bg-black/15 px-1 text-[10px] opacity-80">⌘↵</span>

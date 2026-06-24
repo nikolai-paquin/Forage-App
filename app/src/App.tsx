@@ -32,8 +32,6 @@ import { extractPalette, imageRatio } from './lib/color';
 import { ensureFonts } from './lib/fonts';
 import { consumeShareUrl } from './lib/ingest';
 import { exportBackup } from './lib/backup';
-import { aiEnabled } from './lib/ai';
-import { indexItems } from './lib/semantic';
 import { useTheme } from './lib/theme';
 import { applyColorTheme, getColorTheme } from './lib/colorTheme';
 import { toast } from './lib/toast';
@@ -320,23 +318,6 @@ function Workspace({ demo = false }: { demo?: boolean }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Keep the semantic-search embedding index warm in the background (only when an
-  // AI endpoint is configured). Embeds a few stale items at a time to avoid jank.
-  useEffect(() => {
-    if (!aiEnabled()) return;
-    let stop = false;
-    const run = async () => {
-      if (stop) return;
-      const n = await indexItems(items, 6);
-      if (!stop && n > 0) setTimeout(run, 400);
-    };
-    const t = setTimeout(run, 1200);
-    return () => {
-      stop = true;
-      clearTimeout(t);
-    };
-  }, [items]);
 
   const open = (item: Item) => {
     setSelected(item);

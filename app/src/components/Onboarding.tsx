@@ -20,7 +20,7 @@ const TIPS = [
   {
     icon: <Sparkle size={16} />,
     title: 'Make it make sense',
-    body: 'Auto-tag saves, group them into collections, arrange them on moodboards, and sequence them into storyboards.',
+    body: 'Tag saves, group them into collections, arrange them on moodboards, build palettes and kits, and sequence storyboards.',
   },
 ];
 

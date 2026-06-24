@@ -774,20 +774,25 @@ export function ForageProvider({ children, demo = false }: { children: ReactNode
         setView({ kind: 'space', id: s.id });
       },
       createSpaceFromItems: (name, itemIds) => {
-        // Lay items out on a tidy grid so nothing overlaps.
+        // Masonry-pack into columns by each save's aspect ratio so tall images
+        // never overlap the row below.
         const COLS = Math.min(5, Math.max(1, Math.ceil(Math.sqrt(itemIds.length))));
         const W = 220;
-        const GAP = 32;
-        const CELL = W + GAP;
-        const elements: SpaceElement[] = itemIds.map((itemId, idx) => ({
-          id: uid(),
-          kind: 'item',
-          itemId,
-          x: 80 + (idx % COLS) * CELL,
-          y: 80 + Math.floor(idx / COLS) * CELL,
-          w: W,
-          z: idx + 1,
-        }));
+        const GAP = 28;
+        const X0 = 80;
+        const colY = new Array(COLS).fill(80);
+        const byId = new Map(items.map((i) => [i.id, i]));
+        const elements: SpaceElement[] = itemIds.map((itemId, idx) => {
+          let col = 0;
+          for (let c = 1; c < COLS; c++) if (colY[c] < colY[col]) col = c;
+          const it = byId.get(itemId);
+          const ratio = it?.ratio && it.ratio > 0 ? it.ratio : 1;
+          const h = Math.round(Math.min(440, Math.max(140, W / ratio)));
+          const x = X0 + col * (W + GAP);
+          const y = colY[col];
+          colY[col] = y + h + GAP;
+          return { id: uid(), kind: 'item', itemId, x, y, w: W, z: idx + 1 };
+        });
         const s: Space = {
           id: uid(),
           name: name || 'Untitled moodboard',

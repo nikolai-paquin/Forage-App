@@ -24,11 +24,14 @@ export interface ColorTheme {
   dark: Vars;
 }
 
+// Note: we deliberately don't override --accent-ink. Primary CTAs use var(--ink)
+// (monochrome, theme-independent), so --accent-ink keeps its base value and stays
+// readable on ink in both light and dark modes. Color themes only tint backgrounds
+// and the soft accent surfaces.
 const accent = (c: string, soft: string): Vars => ({
   '--accent': c,
   '--accent-2': c,
   '--accent-bright': c,
-  '--accent-ink': '#ffffff',
   '--accent-soft': soft,
 });
 

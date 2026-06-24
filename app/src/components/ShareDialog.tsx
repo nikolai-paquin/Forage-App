@@ -157,7 +157,7 @@ export function ShareDialog({
               onClick={publish}
               disabled={busy || tooBig || !endpoint.trim()}
               className="flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[13px] font-medium text-accent-ink disabled:opacity-40"
-              style={{ background: 'var(--accent)' }}
+              style={{ background: 'var(--ink)' }}
             >
               {busy ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
               {busy ? 'Publishing…' : url ? 'Re-publish' : 'Publish & copy link'}

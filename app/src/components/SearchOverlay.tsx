@@ -4,8 +4,6 @@ import { useForage } from '../lib/store';
 import { MOD_KEY } from '../lib/util';
 import type { Item } from '../types';
 import { COLOR_SWATCHES, matchColor } from '../lib/color';
-import { aiEnabled } from '../lib/ai';
-import { semanticSearch, type SemanticHit } from '../lib/semantic';
 import {
   Bookmark,
   Camera,
@@ -128,26 +126,6 @@ export function SearchOverlay({
     [projects, query, color],
   );
 
-  // Semantic ("find by vibe") results, when an AI endpoint is configured. Debounced;
-  // keyword results show instantly and semantic refines/extends them.
-  const [semantic, setSemantic] = useState<SemanticHit[]>([]);
-  const semanticOn = aiEnabled();
-  useEffect(() => {
-    if (!open || !semanticOn || !query.trim()) {
-      setSemantic([]);
-      return;
-    }
-    let cancelled = false;
-    const t = setTimeout(async () => {
-      const hits = await semanticSearch(query, items, { limit: 12 });
-      if (!cancelled) setSemantic(hits);
-    }, 220);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [query, open, semanticOn, items]);
-
   const itemHits = useMemo(() => {
     if (!query && !color) return [];
     const live = items.filter((it) => !it.deletedAt);
@@ -159,23 +137,8 @@ export function SearchOverlay({
         .join(' ')
         .toLowerCase()
         .includes(query);
-
-    if (semantic.length) {
-      const byId = new Map(live.map((it) => [it.id, it]));
-      const seen = new Set<string>();
-      const out: Item[] = [];
-      for (const h of semantic) {
-        const it = byId.get(h.id);
-        if (it && colorOk(it)) {
-          out.push(it);
-          seen.add(it.id);
-        }
-      }
-      for (const it of live) if (!seen.has(it.id) && colorOk(it) && keywordOk(it)) out.push(it);
-      return out.slice(0, 12);
-    }
     return live.filter((it) => colorOk(it) && keywordOk(it)).slice(0, 12);
-  }, [items, query, color, semantic]);
+  }, [items, query, color]);
 
   // Flat list of runnable rows, in render order — drives keyboard navigation.
   const flat = useMemo(
@@ -300,7 +263,7 @@ export function SearchOverlay({
               )}
 
               {itemHits.length > 0 && (
-                <Section title={semantic.length ? 'Saves · by meaning' : 'Saves'}>
+                <Section title="Saves">
                   {itemHits.map((it, i) => (
                     <Row
                       key={it.id}
