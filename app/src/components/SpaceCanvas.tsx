@@ -6,6 +6,7 @@ import { uid, itemInProject } from '../lib/util';
 import { exportMoodboardImage } from '../lib/snapshot';
 import {
   ArrowLeft,
+  Check,
   Close,
   ImageDown,
   Image as ImageIcon,
@@ -137,6 +138,7 @@ export function SpaceCanvas() {
   const [zoom, setZoom] = useState(1);
   const [picker, setPicker] = useState(false);
   const [pickerSrc, setPickerSrc] = useState<string>('recent');
+  const [pickerSel, setPickerSel] = useState<Set<string>>(new Set());
   const [presenting, setPresenting] = useState(false);
   const [tool, setTool] = useState<Tool>('select');
   const [penColor, setPenColor] = useState(PEN_COLORS[0]);
@@ -339,12 +341,44 @@ export function SpaceCanvas() {
     const h = el?.clientHeight ?? 600;
     return { x: (w / 2 - pan.x) / zoom, y: (h / 2 - pan.y) / zoom };
   };
-  const addItemEl = (itemId: string) => {
+  // Add several saves at once, masonry-packed around the viewport center so
+  // they don't overlap (mirrors the auto-moodboard layout).
+  const addItemEls = (ids: string[]) => {
+    if (!ids.length) return;
     const c = centerCoord();
-    // Cascade each add so multiple saves don't stack on the same spot.
-    const n = space?.elements.length ?? 0;
-    const off = (n % 8) * 28;
-    addSpaceElement(spaceId, { id: uid(), kind: 'item', itemId, x: c.x - 110 + off, y: c.y - 80 + off, w: 220, z: nextZ() });
+    const byId = new Map(items.map((i) => [i.id, i]));
+    const COLS = Math.min(4, Math.max(1, Math.ceil(Math.sqrt(ids.length))));
+    const W = 200;
+    const GAP = 16;
+    const colY = new Array(COLS).fill(0);
+    const x0 = c.x - (COLS * (W + GAP) - GAP) / 2;
+    const baseZ = nextZ();
+    ids.forEach((itemId, k) => {
+      let col = 0;
+      for (let cc = 1; cc < COLS; cc++) if (colY[cc] < colY[col]) col = cc;
+      const it = byId.get(itemId);
+      const ratio = it?.ratio && it.ratio > 0 ? it.ratio : 1;
+      const h = Math.round(Math.min(360, Math.max(120, W / ratio)));
+      const x = x0 + col * (W + GAP);
+      const y = c.y - 140 + colY[col];
+      colY[col] = colY[col] + h + GAP;
+      addSpaceElement(spaceId, { id: uid(), kind: 'item', itemId, x, y, w: W, z: baseZ + k });
+    });
+  };
+  const togglePick = (id: string) =>
+    setPickerSel((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const closePicker = () => {
+    setPicker(false);
+    setPickerSel(new Set());
+  };
+  const confirmPicker = () => {
+    addItemEls([...pickerSel]);
+    closePicker();
   };
   const addNote = () => {
     const c = centerCoord();
@@ -657,17 +691,17 @@ export function SpaceCanvas() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setPicker(false)} />
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={closePicker} />
             <motion.div
               initial={{ opacity: 0, scale: 0.97, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.98 }}
-              className="relative max-h-[72vh] w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-elevated"
+              className="relative flex max-h-[82vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-elevated"
               style={{ boxShadow: 'var(--shadow-pop)' }}
             >
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <p className="text-[14px] font-semibold">Add to the canvas</p>
-                <button onClick={() => setPicker(false)} className="text-muted hover:text-ink">
+                <button onClick={closePicker} className="text-muted hover:text-ink">
                   <Close size={16} />
                 </button>
               </div>
@@ -716,29 +750,48 @@ export function SpaceCanvas() {
                     <p className="px-4 py-12 text-center text-[13px] text-faint">Nothing here yet.</p>
                   );
                 return (
-                  <div className="grid max-h-[58vh] grid-cols-3 gap-2.5 overflow-auto p-4 sm:grid-cols-4">
-                    {pool.map((i) => (
-                      <button
-                        key={i.id}
-                        onClick={() => {
-                          addItemEl(i.id);
-                          setPicker(false);
-                        }}
-                        title={i.title}
-                        className="aspect-square overflow-hidden rounded-lg border border-border bg-surface-2 transition hover:-translate-y-0.5"
-                      >
-                        {thumb(i) ? (
-                          <img src={thumb(i)} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                          <span className="grid h-full place-items-center px-1 text-center text-[10px] text-faint">
-                            {i.title}
-                          </span>
-                        )}
-                      </button>
-                    ))}
+                  <div className="grid min-h-0 flex-1 grid-cols-3 gap-2.5 overflow-auto p-4 sm:grid-cols-4">
+                    {pool.map((i) => {
+                      const on = pickerSel.has(i.id);
+                      return (
+                        <button
+                          key={i.id}
+                          onClick={() => togglePick(i.id)}
+                          title={i.title}
+                          className={`relative aspect-square overflow-hidden rounded-lg border bg-surface-2 transition ${
+                            on ? 'border-ink ring-2 ring-ink' : 'border-border hover:-translate-y-0.5'
+                          }`}
+                        >
+                          {thumb(i) ? (
+                            <img src={thumb(i)} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <span className="grid h-full place-items-center px-1 text-center text-[10px] text-faint">
+                              {i.title}
+                            </span>
+                          )}
+                          {on && (
+                            <span className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-ink text-accent-ink">
+                              <Check size={12} />
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 );
               })()}
+              <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3">
+                <span className="text-[12.5px] text-faint">
+                  {pickerSel.size ? `${pickerSel.size} selected` : 'Tap to select'}
+                </span>
+                <button
+                  onClick={confirmPicker}
+                  disabled={pickerSel.size === 0}
+                  className="flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-[13px] font-medium text-accent-ink transition hover:opacity-90 disabled:opacity-40"
+                >
+                  <Check size={15} /> Add{pickerSel.size ? ` ${pickerSel.size}` : ''}
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
