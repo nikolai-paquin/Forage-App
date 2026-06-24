@@ -1,10 +1,52 @@
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item, Project } from '../types';
 import { itemInProject } from '../lib/util';
+import { ensureFont, fontStack } from '../lib/fonts';
 import { Trash2 } from './icons';
 
-const thumb = (i: Item) => (i.type === 'video' ? i.poster : i.media);
+const imageThumb = (i: Item) => (i.type === 'video' ? i.poster : i.media);
+
+/** A single fanned card — renders whatever preview suits the item's type. */
+function CoverCard({ item }: { item: Item | undefined }) {
+  useEffect(() => {
+    if (item?.type === 'font') ensureFont(item);
+  }, [item]);
+
+  if (!item) return <span className="block h-full w-full bg-surface-2" />;
+
+  const img = imageThumb(item);
+  if (img) return <img src={img} alt="" className="h-full w-full object-cover" />;
+
+  if (item.type === 'font') {
+    return (
+      <span
+        className="grid h-full w-full place-items-center bg-surface text-[26px] leading-none text-ink"
+        style={{ fontFamily: fontStack(item.fontFamily) }}
+      >
+        Ag
+      </span>
+    );
+  }
+
+  if (item.type === 'palette' && item.palette?.length) {
+    return (
+      <span className="flex h-full w-full flex-col">
+        {item.palette.slice(0, 4).map((c, i) => (
+          <span key={i} className="flex-1" style={{ background: c }} />
+        ))}
+      </span>
+    );
+  }
+
+  // Links, code, notes, audio — no image. Show the title as a quiet placeholder.
+  return (
+    <span className="grid h-full w-full place-items-center bg-surface-2 px-1.5 text-center text-[9px] leading-tight text-faint">
+      {item.title}
+    </span>
+  );
+}
 
 /** Stacked-card cover — GatherOS's signature collection thumbnail. */
 export function CollectionCover({
@@ -19,10 +61,9 @@ export function CollectionCover({
   size?: 'md' | 'lg';
 }) {
   const { items, projectItemCount } = useForage();
-  const thumbs = items
-    .filter((i) => !i.deletedAt && itemInProject(i, project) && thumb(i))
-    .slice(0, 3)
-    .map(thumb) as string[];
+  const previews = items
+    .filter((i) => !i.deletedAt && itemInProject(i, project))
+    .slice(0, 3);
   const count = projectItemCount(project.id);
 
   const dims = size === 'lg' ? 'h-44' : 'h-36';
@@ -57,7 +98,6 @@ export function CollectionCover({
         )}
         {[0, 1, 2].map((i) => {
           const l = layout[i];
-          const src = thumbs[i];
           return (
             <motion.div
               key={i}
@@ -71,11 +111,7 @@ export function CollectionCover({
                 zIndex: l.z,
               }}
             >
-              {src ? (
-                <img src={src} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <span className="block h-full w-full bg-surface-2" />
-              )}
+              <CoverCard item={previews[i]} />
             </motion.div>
           );
         })}

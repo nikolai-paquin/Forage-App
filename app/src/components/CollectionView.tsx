@@ -6,6 +6,7 @@ import { ArrowLeft, Frame, ImageDown, Plus, Share2, Trash2 } from './icons';
 import { toast } from '../lib/toast';
 import { exportCollectionImage } from '../lib/snapshot';
 import { ShareDialog } from './ShareDialog';
+import { AddToCollectionDialog } from './AddToCollectionDialog';
 
 export function CollectionView({
   onOpen,
@@ -18,6 +19,7 @@ export function CollectionView({
     useForage();
   const [confirm, setConfirm] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [picking, setPicking] = useState(false);
   if (view.kind !== 'collection') return null;
   const p = projectById(view.id);
 
@@ -35,7 +37,7 @@ export function CollectionView({
         <span className="text-[14px] text-faint">· {visibleItems.length} saves</span>
 
         <button
-          onClick={onAdd}
+          onClick={() => setPicking(true)}
           className="ml-auto flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[13px] text-ink transition hover:bg-surface-2"
         >
           <Plus size={14} /> Add
@@ -118,7 +120,7 @@ export function CollectionView({
             collection.
           </p>
           <button
-            onClick={onAdd}
+            onClick={() => setPicking(true)}
             className="mt-5 flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-[13px] font-medium text-accent-ink transition hover:opacity-90"
           >
             <Plus size={15} /> Add to this collection
@@ -134,6 +136,17 @@ export function CollectionView({
           brief={p.brief}
           items={visibleItems}
           onClose={() => setSharing(false)}
+        />
+      )}
+
+      {picking && (
+        <AddToCollectionDialog
+          projectId={view.id}
+          onClose={() => setPicking(false)}
+          onCapture={() => {
+            setPicking(false);
+            onAdd();
+          }}
         />
       )}
     </div>
