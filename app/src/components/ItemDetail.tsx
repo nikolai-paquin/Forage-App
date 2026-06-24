@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForage } from '../lib/store';
 import type { Item } from '../types';
-import { suggestTagsAsync, generatePromptAsync, aiEnabled } from '../lib/ai';
 import { extractPalette } from '../lib/color';
 import { ensureFont, fontStack } from '../lib/fonts';
 import { copyHex, copyText } from '../lib/util';
@@ -61,7 +60,6 @@ import {
   Plus,
   Sparkle,
   Trash2,
-  Loader,
 } from './icons';
 
 function SourcePicker({
@@ -296,10 +294,8 @@ export function ItemDetail({
     outputsOf,
   } = useForage();
   const [linking, setLinking] = useState(false);
-  const [busy, setBusy] = useState<null | 'tags' | 'prompt'>(null);
   const [collectOpen, setCollectOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
-  const usingModel = aiEnabled();
 
   // Resolve the LIVE item from the store — the `item` prop is a snapshot taken
   // when the tile was clicked, so edits (tags, prompt, palette, collections)
@@ -594,60 +590,6 @@ export function ItemDetail({
                   <ExportPanel item={live} />
                 )}
 
-                {live.type !== 'palette' && live.type !== 'font' && (
-                <div>
-                  <p className="mb-2 flex items-center gap-1.5 text-[12px] text-white/45">
-                    <Sparkle size={13} /> Image Prompt
-                    {usingModel && <span className="text-white/30">· model</span>}
-                  </p>
-                  {live.ai?.prompt ? (
-                    <>
-                      <p className="rounded-lg border border-white/10 bg-white/5 p-2.5 text-[12.5px] leading-relaxed text-white/80">
-                        {live.ai.prompt}
-                      </p>
-                      <button
-                        disabled={busy === 'prompt'}
-                        onClick={async () => {
-                          setBusy('prompt');
-                          const prompt = await generatePromptAsync(live);
-                          updateItem(live.id, {
-                            ai: {
-                              prompt,
-                              model: usingModel ? 'forage-remote' : 'forage-local',
-                              sourceRefId: live.ai?.sourceRefId,
-                            },
-                          });
-                          setBusy(null);
-                        }}
-                        className="mt-1.5 text-[12px] text-white/45 transition hover:text-white disabled:opacity-50"
-                      >
-                        {busy === 'prompt' ? 'Regenerating…' : 'Regenerate'}
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      disabled={busy === 'prompt'}
-                      onClick={async () => {
-                        setBusy('prompt');
-                        const prompt = await generatePromptAsync(live);
-                        updateItem(live.id, {
-                          ai: { prompt, model: usingModel ? 'forage-remote' : 'forage-local' },
-                        });
-                        setBusy(null);
-                      }}
-                      className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[13px] text-white/70 transition hover:text-white disabled:opacity-50"
-                    >
-                      {busy === 'prompt' ? (
-                        <Loader size={13} className="animate-spin" />
-                      ) : (
-                        <Sparkle size={13} />
-                      )}
-                      {busy === 'prompt' ? 'Generating…' : 'Generate prompt'}
-                    </button>
-                  )}
-                </div>
-                )}
-
                 <div>
                   <p className="mb-2 flex items-center gap-1.5 text-[12px] text-white/45">
                     <Folder size={13} /> Collections
@@ -726,23 +668,6 @@ export function ItemDetail({
                       </span>
                     ))}
                     <TagAdder onAdd={(t) => addTag(live.id, t)} />
-                    <button
-                      disabled={busy === 'tags'}
-                      onClick={async () => {
-                        setBusy('tags');
-                        const tags = await suggestTagsAsync(live);
-                        tags.forEach((t) => addTag(live.id, t));
-                        setBusy(null);
-                      }}
-                      className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[12px] text-white/60 hover:text-white disabled:opacity-50"
-                    >
-                      {busy === 'tags' ? (
-                        <Loader size={11} className="animate-spin" />
-                      ) : (
-                        <Sparkle size={11} />
-                      )}
-                      {busy === 'tags' ? 'Tagging…' : 'Auto-tag'}
-                    </button>
                   </div>
                 </div>
 

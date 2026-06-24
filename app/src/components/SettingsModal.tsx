@@ -3,8 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useTheme } from '../lib/theme';
 import { useForage } from '../lib/store';
 import { exportBackup, importBackup, storageStats, formatBytes } from '../lib/backup';
-import { getAiEndpoint, setAiEndpoint } from '../lib/ai';
 import { getUnfurlEndpoint, setUnfurlEndpoint } from '../lib/unfurl';
+import { COLOR_THEMES, getColorTheme, setColorTheme, applyColorTheme } from '../lib/colorTheme';
 import {
   SOUNDS,
   TRASH_SOUNDS,
@@ -21,8 +21,6 @@ import {
 import {
   getDefaultCollection,
   setDefaultCollection,
-  getAutoTagOnSave,
-  setAutoTagOnSave,
 } from '../lib/capture';
 import { generateSyncKey } from '../lib/sync';
 import { usePwaInstall } from '../lib/pwa';
@@ -31,6 +29,7 @@ import { timeAgo } from '../lib/util';
 import type { FilterEntry } from '../types';
 import {
   ArrowLeft,
+  BarChart,
   Camera,
   Check,
   ChevronRight,
@@ -44,22 +43,22 @@ import {
   Hash,
   Info,
   LibraryIcon,
+  Link,
   Palette,
   Plus,
   Sparkle,
   Share2,
   Trash2,
-  User,
   Volume2,
   Wand,
 } from './icons';
 
 const NAV = [
-  { id: 'account', label: 'Account', icon: <User size={16} /> },
+  { id: 'account', label: 'Stats', icon: <BarChart size={16} /> },
   { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
   { id: 'filters', label: 'Filters', icon: <Filter size={16} /> },
   { id: 'libraries', label: 'Libraries', icon: <LibraryIcon size={16} /> },
-  { id: 'ai', label: 'AI Usage', icon: <Sparkle size={16} /> },
+  { id: 'ai', label: 'Links', icon: <Link size={16} /> },
   { id: 'tags', label: 'Tags', icon: <Hash size={16} /> },
   { id: 'capture', label: 'Capture', icon: <Camera size={16} /> },
   { id: 'sound', label: 'Sound', icon: <Volume2 size={16} /> },
@@ -167,15 +166,6 @@ function ManagedList({
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between border-b border-border py-3 text-[14px]">
-      <span className="text-muted">{label}</span>
-      <span className="font-medium text-ink">{value}</span>
-    </div>
-  );
-}
-
 export function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [active, setActive] = useState('account');
   // On phones, Settings is a master-detail list: show the section list first,
@@ -184,17 +174,15 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   const { dark, toggle } = useTheme();
   const { canInstall, installed, promptInstall } = usePwaInstall();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [endpoint, setEndpoint] = useState(getAiEndpoint());
-  const [savedEndpoint, setSavedEndpoint] = useState(false);
   const [unfurlEp, setUnfurlEp] = useState(getUnfurlEndpoint());
   const [savedUnfurl, setSavedUnfurl] = useState(false);
+  const [colorChoice, setColorChoice] = useState(getColorTheme());
   const [stats, setStats] = useState({ items: 0, bytes: 0 });
   const [confirmReset, setConfirmReset] = useState(false);
   const [soundOn, setSoundOn] = useState(getSoundEnabled());
   const [soundChoice, setSoundChoice] = useState(getSoundId());
   const [trashChoice, setTrashChoice] = useState(getTrashId());
   const [defColl, setDefColl] = useState(getDefaultCollection());
-  const [autoTag, setAutoTag] = useState(getAutoTagOnSave());
   const [newLib, setNewLib] = useState('');
 
   useEffect(() => {
@@ -219,11 +207,6 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
     }
   };
 
-  const saveEndpoint = () => {
-    setAiEndpoint(endpoint);
-    setSavedEndpoint(true);
-    setTimeout(() => setSavedEndpoint(false), 1600);
-  };
   const saveUnfurl = () => {
     setUnfurlEndpoint(unfurlEp);
     setSavedUnfurl(true);
@@ -232,6 +215,9 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   const {
     items,
     projects,
+    spaces,
+    storyboards,
+    kits,
     libraries,
     activeLibrary,
     createLibrary,
@@ -430,28 +416,99 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                       {dark ? 'Dark' : 'Light'}
                     </button>
                   </div>
+
+                  <p className="mb-3 mt-7 text-[12px] font-medium uppercase tracking-[0.16em] text-faint">
+                    Color theme
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {COLOR_THEMES.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => {
+                          setColorChoice(t.id);
+                          setColorTheme(t.id);
+                          applyColorTheme(t.id, dark);
+                        }}
+                        className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-[13px] transition ${
+                          colorChoice === t.id
+                            ? 'border-ink bg-surface-2 text-ink'
+                            : 'border-border bg-surface text-muted hover:text-ink'
+                        }`}
+                      >
+                        <span
+                          className="h-5 w-5 shrink-0 rounded-full ring-1 ring-border"
+                          style={{ background: t.swatch }}
+                        />
+                        <span className="flex-1 text-left">{t.name}</span>
+                        {colorChoice === t.id && <Check size={14} />}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-[12px] text-faint">
+                    Tints the background and accent — works in both light and dark.
+                  </p>
                 </>
               ) : active === 'account' ? (
-                <>
-                  <h2 className="text-[24px] font-semibold tracking-tight">Account</h2>
-                  <div className="mt-6">
-                    <Row label="Plan" value="Free trial" />
-                    <Row label="Trial" value="14 days left" />
-                  </div>
-                  <div className="mt-6 flex items-start gap-2 text-[13.5px] text-muted">
-                    <Info size={16} className="mt-0.5 shrink-0" />
-                    <p className="min-w-0">
-                      You're signed out. Sign back in to sync your AI usage and manage your
-                      subscription. Your library stays on this device either way.
-                    </p>
-                  </div>
-                  <button
-                    className="mt-5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink"
-                    style={{ background: 'var(--ink)' }}
-                  >
-                    Sign in
-                  </button>
-                </>
+                (() => {
+                  const live = items.filter((i) => !i.deletedAt);
+                  const byType = Array.from(
+                    live.reduce((m, i) => m.set(i.type, (m.get(i.type) ?? 0) + 1), new Map<string, number>()),
+                  ).sort((a, b) => b[1] - a[1]);
+                  const tagCount = new Set(live.flatMap((i) => i.tags)).size;
+                  const favs = live.filter((i) => i.favorite).length;
+                  const oldest = live.reduce((min, i) => Math.min(min, i.createdAt), Date.now());
+                  const TYPE_LABEL: Record<string, string> = {
+                    image: 'Images', video: 'Video', link: 'Links', gif: 'GIFs', ai_asset: 'AI assets',
+                    vector: 'Vectors', code: 'Code', audio: 'Audio', palette: 'Palettes', font: 'Fonts',
+                  };
+                  const stat = (n: number, label: string) => (
+                    <div className="rounded-xl border border-border bg-surface px-4 py-3.5">
+                      <p className="tnum text-[26px] font-semibold leading-none text-ink">{n}</p>
+                      <p className="mt-1.5 text-[12.5px] text-muted">{label}</p>
+                    </div>
+                  );
+                  return (
+                    <>
+                      <h2 className="text-[24px] font-semibold tracking-tight">Stats</h2>
+                      <p className="mt-2 mb-6 max-w-md text-[13.5px] text-muted">
+                        What you’ve gathered{live.length ? ` since ${new Date(oldest).toLocaleDateString()}` : ''}.
+                      </p>
+                      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                        {stat(live.length, 'Total saves')}
+                        {stat(projects.length, 'Collections')}
+                        {stat(spaces.length, 'Moodboards')}
+                        {stat(storyboards.length, 'Storyboards')}
+                        {stat(kits.length, 'Kits')}
+                        {stat(tagCount, 'Tags')}
+                        {stat(favs, 'Favorites')}
+                      </div>
+
+                      {byType.length > 0 && (
+                        <>
+                          <p className="mb-3 mt-8 text-[12px] font-medium uppercase tracking-[0.16em] text-faint">
+                            By type
+                          </p>
+                          <div className="flex flex-col gap-2">
+                            {byType.map(([t, n]) => (
+                              <div key={t} className="flex items-center gap-3">
+                                <span className="w-24 shrink-0 text-[13px] text-muted">
+                                  {TYPE_LABEL[t] ?? t}
+                                </span>
+                                <span className="h-2 flex-1 overflow-hidden rounded-full bg-surface-2">
+                                  <span
+                                    className="block h-full rounded-full"
+                                    style={{ width: `${(n / live.length) * 100}%`, background: 'var(--ink)' }}
+                                  />
+                                </span>
+                                <span className="tnum w-8 shrink-0 text-right text-[12.5px] text-muted">{n}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  );
+                })()
               ) : active === 'sync' ? (
                 <>
                   <h2 className="text-[24px] font-semibold tracking-tight">Sync</h2>
@@ -604,98 +661,57 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 </>
               ) : active === 'ai' ? (
                 <>
-                  <h2 className="text-[24px] font-semibold tracking-tight">AI Usage</h2>
+                  <h2 className="text-[24px] font-semibold tracking-tight">Links</h2>
                   <p className="mt-2 mb-6 max-w-md text-[13.5px] text-muted">
-                    Auto-tag and prompt generation run on-device by default — but those heuristics
-                    can't see your images, so they describe only the title/colors. Point Forage at
-                    your own backend endpoint to use a real <strong>vision</strong> model that looks
-                    at the actual image. Your API key stays on the server, never in this app.
+                    Turn saved links into rich bookmarks — real page titles, descriptions, and
+                    preview images, plus reliable YouTube titles.
                   </p>
 
-                  <label className="mb-1.5 block text-[13px] font-medium text-ink">Model endpoint URL</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-ink">
+                    Link previews endpoint URL
+                  </label>
+                  <p className="mb-2.5 max-w-md text-[12.5px] text-muted">
+                    Optional. Without it, links are saved as plain URLs.
+                  </p>
                   <div className="flex gap-2">
                     <input
-                      value={endpoint}
-                      onChange={(e) => setEndpoint(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && saveEndpoint()}
-                      placeholder="https://your-worker.workers.dev"
+                      value={unfurlEp}
+                      onChange={(e) => setUnfurlEp(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && saveUnfurl()}
+                      placeholder="https://forage-unfurl.you.workers.dev"
                       className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-ink outline-none placeholder:text-faint focus:border-border-strong"
                     />
                     <button
-                      onClick={saveEndpoint}
+                      onClick={saveUnfurl}
                       className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium text-accent-ink"
                       style={{ background: 'var(--ink)' }}
                     >
-                      {savedEndpoint ? <Check size={14} /> : <Wand size={14} />}
-                      {savedEndpoint ? 'Saved' : 'Save'}
+                      {savedUnfurl ? <Check size={14} /> : <Wand size={14} />}
+                      {savedUnfurl ? 'Saved' : 'Save'}
                     </button>
                   </div>
                   <div className="mt-3 flex items-center gap-2 text-[12.5px]">
                     <span
-                      className={`h-2 w-2 rounded-full ${endpoint.trim() ? 'bg-emerald-500' : 'bg-faint'}`}
+                      className={`h-2 w-2 rounded-full ${unfurlEp.trim() ? 'bg-emerald-500' : 'bg-faint'}`}
                     />
                     <span className="text-muted">
-                      {endpoint.trim() ? 'Using your model endpoint' : 'Using on-device heuristics'}
+                      {unfurlEp.trim() ? 'Rich link previews on' : 'Links saved as plain URLs'}
                     </span>
                   </div>
                   <p className="mt-4 flex items-start gap-2 text-[12.5px] text-faint">
                     <Info size={14} className="mt-0.5 shrink-0" />
                     <span>
-                      A ready-to-deploy Cloudflare Worker that calls Claude lives in{' '}
-                      <code className="rounded bg-surface-2 px-1 py-0.5 text-[11.5px]">/server</code> of
-                      the repo. Deploy it, set your API key as a secret, then paste its URL here.
+                      Deploy{' '}
+                      <code className="rounded bg-surface-2 px-1 py-0.5 text-[11.5px]">
+                        server/unfurl-worker.js
+                      </code>{' '}
+                      with{' '}
+                      <code className="rounded bg-surface-2 px-1 py-0.5 text-[11.5px]">
+                        wrangler deploy -c wrangler.unfurl.toml
+                      </code>{' '}
+                      (no API key needed), then paste its URL here.
                     </span>
                   </p>
-
-                  <div className="mt-8 border-t border-border pt-6">
-                    <label className="mb-1.5 block text-[13px] font-medium text-ink">
-                      Link previews endpoint URL
-                    </label>
-                    <p className="mb-2.5 max-w-md text-[12.5px] text-muted">
-                      Fetches real page titles, descriptions, and preview images for saved links
-                      (rich bookmarks), reliable YouTube titles, and lets color extraction read
-                      images hosted elsewhere.
-                    </p>
-                    <div className="flex gap-2">
-                      <input
-                        value={unfurlEp}
-                        onChange={(e) => setUnfurlEp(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && saveUnfurl()}
-                        placeholder="https://forage-unfurl.you.workers.dev"
-                        className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-[13px] text-ink outline-none placeholder:text-faint focus:border-border-strong"
-                      />
-                      <button
-                        onClick={saveUnfurl}
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium text-accent-ink"
-                        style={{ background: 'var(--ink)' }}
-                      >
-                        {savedUnfurl ? <Check size={14} /> : <Wand size={14} />}
-                        {savedUnfurl ? 'Saved' : 'Save'}
-                      </button>
-                    </div>
-                    <div className="mt-3 flex items-center gap-2 text-[12.5px]">
-                      <span
-                        className={`h-2 w-2 rounded-full ${unfurlEp.trim() ? 'bg-emerald-500' : 'bg-faint'}`}
-                      />
-                      <span className="text-muted">
-                        {unfurlEp.trim() ? 'Rich link previews on' : 'Links saved as plain URLs'}
-                      </span>
-                    </div>
-                    <p className="mt-4 flex items-start gap-2 text-[12.5px] text-faint">
-                      <Info size={14} className="mt-0.5 shrink-0" />
-                      <span>
-                        Deploy{' '}
-                        <code className="rounded bg-surface-2 px-1 py-0.5 text-[11.5px]">
-                          server/unfurl-worker.js
-                        </code>{' '}
-                        with{' '}
-                        <code className="rounded bg-surface-2 px-1 py-0.5 text-[11.5px]">
-                          wrangler deploy -c wrangler.unfurl.toml
-                        </code>{' '}
-                        (no API key needed), then paste its URL here.
-                      </span>
-                    </p>
-                  </div>
                 </>
               ) : active === 'updates' ? (
                 <>
@@ -836,24 +852,6 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                       </option>
                     ))}
                   </select>
-
-                  <div className="flex items-center justify-between border-t border-border py-3.5">
-                    <div>
-                      <p className="text-[13.5px] font-medium text-ink">Auto-tag new saves</p>
-                      <p className="text-[12.5px] text-muted">
-                        Suggest tags automatically when something is saved (uses your AI endpoint if
-                        set, otherwise on-device).
-                      </p>
-                    </div>
-                    <Toggle
-                      on={autoTag}
-                      onClick={() => {
-                        const next = !autoTag;
-                        setAutoTag(next);
-                        setAutoTagOnSave(next);
-                      }}
-                    />
-                  </div>
                 </>
               ) : active === 'sound' ? (
                 <>

@@ -25,8 +25,7 @@ import { sampleItems, sampleProjects, sampleSpaces, sampleKits } from '../data/s
 import { fetchYouTubeMeta, itemInProject, sourceLabel, uid } from './util';
 import { unfurl, unfurlEnabled } from './unfurl';
 import { extractPalette, matchColor } from './color';
-import { getDefaultCollection, getAutoTagOnSave } from './capture';
-import { suggestTagsAsync } from './ai';
+import { getDefaultCollection } from './capture';
 import { idbGet, idbSet, idbDel } from './idb';
 import {
   ACTIVE_LIB_KEY,
@@ -607,13 +606,6 @@ export function ForageProvider({ children, demo = false }: { children: ReactNode
         };
         setItems((prev) => [item, ...prev]);
         registerSource(item.source);
-        // Capture preference: auto-tag new saves (best-effort, async).
-        if (getAutoTagOnSave()) {
-          suggestTagsAsync(item).then((tags) => {
-            if (tags.length)
-              patch(item.id, (i) => ({ ...i, tags: [...new Set([...i.tags, ...tags])] }));
-          });
-        }
         // Enrich a YouTube save with its real video title + creator (async, best-effort).
         if (item.type === 'video' && item.source === 'youtube.com' && item.url) {
           fetchYouTubeMeta(item.url).then((meta) => {

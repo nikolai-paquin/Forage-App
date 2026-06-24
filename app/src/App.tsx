@@ -35,6 +35,7 @@ import { exportBackup } from './lib/backup';
 import { aiEnabled } from './lib/ai';
 import { indexItems } from './lib/semantic';
 import { useTheme } from './lib/theme';
+import { applyColorTheme, getColorTheme } from './lib/colorTheme';
 import { toast } from './lib/toast';
 import { Toaster } from './components/Toaster';
 import { Search } from './components/icons';
@@ -57,6 +58,10 @@ function Workspace({ demo = false }: { demo?: boolean }) {
     findDuplicate,
   } = useForage();
   const { dark, toggle } = useTheme();
+  // Re-apply the chosen color theme for the current light/dark mode.
+  useEffect(() => {
+    applyColorTheme(getColorTheme(), dark);
+  }, [dark]);
   const [selected, setSelected] = useState<Item | null>(null);
   const [capture, setCapture] = useState(false);
   const [captureLinksOnly, setCaptureLinksOnly] = useState(false);

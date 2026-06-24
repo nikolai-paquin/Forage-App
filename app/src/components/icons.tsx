@@ -72,5 +72,6 @@ export {
   Type as FontIcon,
   Copy,
   ImageDown,
+  BarChart3 as BarChart,
   Loader2,
 } from 'lucide-react';
