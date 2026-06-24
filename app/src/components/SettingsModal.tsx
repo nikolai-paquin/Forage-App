@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTheme } from '../lib/theme';
 import { useForage } from '../lib/store';
-import { exportBackup, importBackup, storageStats, formatBytes } from '../lib/backup';
+import { exportBackup, storageStats, formatBytes } from '../lib/backup';
+import { exportLibraryZip, importLibraryFile } from '../lib/exportLibrary';
 import { getUnfurlEndpoint, setUnfurlEndpoint } from '../lib/unfurl';
 import { COLOR_THEMES, getColorTheme, setColorTheme, applyColorTheme } from '../lib/colorTheme';
 import {
@@ -199,11 +200,24 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   const handleImport = async (file?: File) => {
     if (!file) return;
     try {
-      const { items: n } = await importBackup(file);
+      const { items: n } = await importLibraryFile(file);
       toast(`Restored ${n} saves — reloading…`);
       setTimeout(() => window.location.reload(), 700);
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Import failed');
+    }
+  };
+
+  const [zipping, setZipping] = useState(false);
+  const exportFolders = async () => {
+    setZipping(true);
+    try {
+      await exportLibraryZip();
+      toast('Library exported');
+    } catch {
+      toast('Export failed');
+    } finally {
+      setZipping(false);
     }
   };
 
@@ -595,22 +609,29 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
 
                   <div className="flex flex-wrap gap-2.5">
                     <button
-                      onClick={() => exportBackup().then(() => toast('Backup downloaded'))}
-                      className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink"
+                      onClick={exportFolders}
+                      disabled={zipping}
+                      className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink disabled:opacity-50"
                       style={{ background: 'var(--ink)' }}
                     >
-                      <FileDown size={15} /> Export backup
+                      <Download size={15} /> {zipping ? 'Exporting…' : 'Export library (.zip)'}
                     </button>
                     <button
                       onClick={() => fileRef.current?.click()}
                       className="flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2 text-[13px] font-medium text-ink transition hover:bg-surface-2"
                     >
-                      <FileUp size={15} /> Import backup
+                      <FileUp size={15} /> Import library
+                    </button>
+                    <button
+                      onClick={() => exportBackup().then(() => toast('Backup downloaded'))}
+                      className="flex items-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2 text-[13px] font-medium text-ink transition hover:bg-surface-2"
+                    >
+                      <FileDown size={15} /> Backup (.json)
                     </button>
                     <input
                       ref={fileRef}
                       type="file"
-                      accept="application/json,.json"
+                      accept=".zip,application/json,.json,application/zip"
                       className="hidden"
                       onChange={(e) => {
                         handleImport(e.target.files?.[0]);
@@ -620,7 +641,11 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                   </div>
                   <p className="mt-3 flex items-start gap-2 text-[12.5px] text-faint">
                     <Info size={14} className="mt-0.5 shrink-0" />
-                    <span>Importing replaces your current library. Export first if unsure.</span>
+                    <span>
+                      <strong className="text-muted">Export library</strong> downloads a folder
+                      (.zip) with one sub-folder per collection — your assets stay organized, and the
+                      same file re-imports losslessly. Importing replaces your current library.
+                    </span>
                   </p>
 
                   <div className="mt-8 border-t border-border pt-5">
