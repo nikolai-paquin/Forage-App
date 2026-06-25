@@ -66,15 +66,16 @@ export function TopBar({
       data-tauri-drag-region
       className="topbar flex items-center justify-between px-5 py-3.5"
     >
-      {/* Left: workspace */}
-      <div className="topbar-left flex items-center gap-2.5 md:w-[220px]">
+      {/* Left: workspace — also a drag handle for the frameless macOS window */}
+      <div data-tauri-drag-region className="topbar-left flex items-center gap-2.5 md:w-[220px]">
         <span
+          data-tauri-drag-region
           className="grid h-8 w-8 place-items-center rounded-[9px] text-accent-ink"
           style={{ background: 'var(--ink)' }}
         >
           <ForageMark size={18} />
         </span>
-        <span className="text-[16px] font-bold tracking-tight text-ink">Forage</span>
+        <span data-tauri-drag-region className="text-[16px] font-bold tracking-tight text-ink">Forage</span>
       </div>
 
       {/* Center: segmented pill — desktop/tablet only (phones use the bottom bar) */}
