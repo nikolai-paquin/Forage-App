@@ -3,6 +3,7 @@ import { useForage } from '../lib/store';
 import { useTheme } from '../lib/theme';
 import type { View } from '../types';
 import { MOD_KEY } from '../lib/util';
+import { ForageMark } from './ForageMark';
 import {
   Compass,
   Film,
@@ -71,9 +72,7 @@ export function TopBar({
           className="grid h-8 w-8 place-items-center rounded-[9px] text-accent-ink"
           style={{ background: 'var(--ink)' }}
         >
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor">
-            <path d="M12 3c0 5-2.4 7.6-6 9 3.6 1.4 6 4 6 9 0-5 2.4-7.6 6-9-3.6-1.4-6-4-6-9Z" />
-          </svg>
+          <ForageMark size={18} />
         </span>
         <span className="text-[16px] font-bold tracking-tight text-ink">Forage</span>
       </div>

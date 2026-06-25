@@ -26,6 +26,7 @@ import {
 import { generateSyncKey } from '../lib/sync';
 import { usePwaInstall } from '../lib/pwa';
 import { toast } from '../lib/toast';
+import { ForageMark } from './ForageMark';
 import { timeAgo } from '../lib/util';
 import type { FilterEntry } from '../types';
 import {
@@ -985,9 +986,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                       className="grid h-11 w-11 place-items-center rounded-xl text-accent-ink"
                       style={{ background: 'var(--ink)' }}
                     >
-                      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                        <path d="M12 3c0 5-2.4 7.6-6 9 3.6 1.4 6 4 6 9 0-5 2.4-7.6 6-9-3.6-1.4-6-4-6-9Z" />
-                      </svg>
+                      <ForageMark size={24} />
                     </span>
                     <div>
                       <p className="text-[16px] font-semibold text-ink">Forage</p>

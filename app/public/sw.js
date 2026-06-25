@@ -5,7 +5,7 @@
 //   - Same-origin GET assets (hashed JS/CSS/images): stale-while-revalidate.
 // Hashed Vite filenames mean cached assets are always safe to serve.
 
-const CACHE = 'forage-v1';
+const CACHE = 'forage-v2';
 const SHELL = './';
 
 self.addEventListener('install', (e) => {
