@@ -56,6 +56,14 @@ export function AddToCollectionDialog({
   const [src, setSrc] = useState('recent');
   const project = projectById(projectId);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   const pool = useMemo(() => {
     const live = items.filter((i) => !i.deletedAt && !(project && itemInProject(i, project)));
     if (src === 'unfiltered') return live.filter((i) => !projects.some((p) => itemInProject(i, p)));

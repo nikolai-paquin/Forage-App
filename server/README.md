@@ -4,50 +4,12 @@ Two small, independent [Cloudflare Workers](https://workers.cloudflare.com/) tha
 unlock Forage's optional online features. Both are free-tier friendly and deploy in
 a minute. Neither is required — Forage works fully offline without them.
 
-- **`worker.js`** — AI: **Auto-tag**, **Generate prompt** (Claude), and **embeddings**
-  for semantic search (Cloudflare Workers AI). → Settings → AI Usage.
 - **`sync-worker.js`** — **Cross-device sync** via Workers KV. → Settings → Sync.
 - **`share-worker.js`** — **Read-only collection sharing** via Workers KV: publish a
   public snapshot of a collection and get a link. → a collection's Share button.
 - **`unfurl-worker.js`** — **Link previews + image proxy**: real page titles,
   descriptions, and preview images for bookmarks; reliable YouTube titles/creators;
-  and cross-origin palette extraction. → Settings → AI Usage → Link previews.
-
----
-
-## AI Worker (`worker.js`)
-
-Real AI-powered **Auto-tag** / **Generate prompt** (backed by Claude) plus
-**semantic-search embeddings**. Your Anthropic API key lives here as a secret — it
-is never shipped to the browser. Defaults to the fast, cheap
-**`claude-haiku-4-5-20251001`** (override with the `MODEL` var in `wrangler.toml`);
-embeddings use `@cf/baai/bge-small-en-v1.5` via the `AI` binding.
-
-```bash
-npm i -g wrangler
-cd server
-
-wrangler login
-wrangler secret put ANTHROPIC_API_KEY   # paste your key when prompted
-wrangler deploy
-```
-
-Wrangler prints a URL like `https://forage-ai.<you>.workers.dev`. Paste it into
-**Forage → Settings → AI Usage → Model endpoint URL** and save.
-
-### How it's called
-
-```
-POST /  { "task": "tags" | "prompt", "item": { title, type, source, note, summary, tags, palette } }
-        → { "tags": ["editorial", "muted-palette", ...] }
-        → { "prompt": "A sun-bleached editorial spread ..." }
-
-POST /  { "task": "embed", "text": "..." }
-        → { "vector": [0.013, -0.21, ...] }   // used by semantic search
-```
-
-If the endpoint is unreachable or errors, Forage silently falls back to on-device
-heuristics (and keyword search), so the app keeps working either way.
+  and cross-origin palette extraction. → Settings → Links.
 
 ---
 
@@ -113,7 +75,7 @@ cd server
 wrangler deploy -c wrangler.unfurl.toml
 ```
 
-Paste the printed URL into **Forage → Settings → AI Usage → Link previews**. With it
+Paste the printed URL into **Forage → Settings → Links → Link previews**. With it
 set, saved links unfurl into rich bookmarks (title · description · preview), YouTube
 saves get dependable titles + creators, and the eyedropper/palette works on images
 hosted elsewhere.

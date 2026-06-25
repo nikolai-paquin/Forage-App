@@ -18,7 +18,7 @@
 | **Sync model** | **Local-first**, opt-in cloud sync later | Speed is a feature; offline-capable; fastest path to a great-feeling prototype. Data model designed sync-ready from day one (UUIDs, timestamps, soft-deletes) so cloud is additive, not a rewrite. |
 | **Platform order** | **macOS desktop first** → iOS → Android | Nail the premium feel on the surface used most for organizing; capture-on-mobile follows once the canvas is proven. |
 | **Accounts** | None at MVP (local profile); accounts arrive with sync | No auth friction to first value. |
-| **AI processing** | On-capture for cheap signals (palette, type, OG/oEmbed); on-demand for expensive ones (summaries, embeddings) until volume justifies background batching | Controls cost without hurting the core feel. |
+| **AI processing** | **Cut from the current build.** Capture uses local heuristics only (palette, type, OG/oEmbed); no auto-tagging, semantic search, or AI summaries. Retrieval is fast keyword / color / tag search. May revisit later. | Keeps Forage fully local — no API keys, cost, or latency, and a simpler surface. |
 
 ---
 
@@ -154,7 +154,7 @@ Every feature serves one stage of this loop. If a feature doesn't, it's a non-go
 ### V1 (the differentiators — what makes it Forage, not a bookmark app)
 | # | Feature | Why |
 |---|---|---|
-| F8 | **AI auto-tagging & semantic search** ("brutalist UI in blue", "that video about diffusion") | Makes the archive queryable by intent |
+| F8 | ~~**AI auto-tagging & semantic search**~~ — *descoped; ships fast keyword / color / tag search instead* | Retrieval without the AI cost/latency |
 | F9 | **Resurfacing engine** — a "Forage Digest" + contextual resurfacing when you open a project | Turns the graveyard into a living reference |
 | F10 | **AI asset hub** — store generated video/image/code with the *prompt*, model, and source ref | Closes the input→output loop; nobody else does this |
 | F11 | **Storyboard mode** | For AI video & sequenced design work |
@@ -251,7 +251,7 @@ Supporting metrics:
 - **M0 — Foundation:** Tauri 2 + React scaffold, design system, light/dark theming, data model, local SQLite.
 - **M1 — The Canvas:** masonry grid, item detail view, projects/collections, drag-drop & paste capture, core micro-interactions. *(Demo-able, genuinely usable single-player.)*
 - **M2 — Capture everywhere:** browser extension + mobile share sheet, rich link/video/gif previews, Inbox triage.
-- **M3 — Intelligence:** AI auto-tagging, semantic search, auto-summaries (Supabase + pgvector + Claude).
+- **M3 — Intelligence:** ~~AI auto-tagging, semantic search, auto-summaries~~ — *descoped; retrieval stays local-first (keyword / color / tag search), no AI layer.*
 - **M4 — The Differentiators:** resurfacing engine + Forage Digest, AI asset hub.
 - **M5 — Sequencing:** storyboard mode.
 - **M6 — Polish & ship:** cross-platform builds, onboarding, performance pass, signed/notarized macOS build + mobile store prep.

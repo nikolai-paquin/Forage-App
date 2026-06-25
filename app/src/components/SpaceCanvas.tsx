@@ -233,6 +233,19 @@ export function SpaceCanvas() {
     return () => window.removeEventListener('keydown', h);
   }, [presenting]);
 
+  // Escape closes the "add to canvas" picker (and clears its selection).
+  useEffect(() => {
+    if (!picker) return;
+    const h = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setPicker(false);
+        setPickerSel(new Set());
+      }
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [picker]);
+
   // Delete / Backspace removes the selected stroke or arrow.
   useEffect(() => {
     if (!selectedDrawing) return;
