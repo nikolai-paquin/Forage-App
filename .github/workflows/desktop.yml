@@ -43,15 +43,15 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Code signing + notarization. If these repo secrets are unset, Tauri
-          # builds UNSIGNED (the workflow still works) — set them to get a
-          # signed, notarized .dmg that opens with no Gatekeeper warning.
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Always build UNSIGNED. We deliberately don't pass the Apple signing
+          # secrets here: a malformed/partial APPLE_CERTIFICATE makes the bundle
+          # step fail at `security import` and kills the whole build. For personal
+          # use, install the unsigned .app and ad-hoc sign it locally:
+          #   xattr -cr /Applications/Forage.app
+          #   codesign --force --deep --sign - /Applications/Forage.app
+          # To ship a notarized build later, re-add the APPLE_* env vars below and
+          # set valid repo secrets (a base64 .p12, its password, signing identity,
+          # Apple ID, app-specific password, team id).
         with:
           projectPath: app
           args: --target aarch64-apple-darwin
