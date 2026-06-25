@@ -23,8 +23,8 @@ const TYPE_LABEL: Record<string, string> = {
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-/** A read-only, auto-gathered collection (by type, source, or color) — opened
- *  from the "Smart collections" cards or a color search. */
+/** A read-only, auto-gathered view of every save matching a color (opened from
+ *  the "Browse by color" row on Collections). */
 export function SmartCollectionView({ onOpen }: { onOpen: (i: Item) => void }) {
   const { view, visibleItems, setView } = useForage();
   const [sharing, setSharing] = useState(false);
@@ -81,7 +81,7 @@ export function SmartCollectionView({ onOpen }: { onOpen: (i: Item) => void }) {
       {sharing && (
         <ShareDialog
           title={label}
-          brief="A smart collection shared from Forage."
+          brief="A color collection shared from Forage."
           items={visibleItems}
           onClose={() => setSharing(false)}
         />

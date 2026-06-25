@@ -101,7 +101,9 @@ export async function exportLibraryZip(onProgress?: (pct: number) => void) {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  // Defer revoke a tick — revoking in the same task as click() can cancel the
+  // download in some browsers.
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 /** Import either a .json backup or a .zip library export (reads its backup json). */

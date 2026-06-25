@@ -358,7 +358,9 @@ export function SpaceCanvas() {
       for (let cc = 1; cc < COLS; cc++) if (colY[cc] < colY[col]) col = cc;
       const it = byId.get(itemId);
       const ratio = it?.ratio && it.ratio > 0 ? it.ratio : 1;
-      const h = Math.round(Math.min(360, Math.max(120, W / ratio)));
+      // Reserve the tile's true rendered height (tiles render at natural ratio,
+      // no max-height) so tall images don't overlap the next item in the column.
+      const h = Math.max(120, Math.round(W / ratio));
       const x = x0 + col * (W + GAP);
       const y = c.y - 140 + colY[col];
       colY[col] = colY[col] + h + GAP;

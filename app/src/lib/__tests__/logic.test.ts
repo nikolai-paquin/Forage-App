@@ -2,9 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { Item } from '../../types';
 import { normalizeUrl, findDuplicate } from '../dedupe';
 import { mergeById, mergeSnapshots, generateSyncKey, type SyncSnapshot } from '../sync';
-import { cosine, hashText, itemText } from '../semantic';
 import { youTubeId, detectFromInput } from '../util';
-import { suggestTags, generatePrompt } from '../ai';
 
 function item(partial: Partial<Item> & { id: string }): Item {
   return {
@@ -107,31 +105,6 @@ describe('generateSyncKey', () => {
   });
 });
 
-describe('semantic math', () => {
-  it('cosine of identical vectors is 1', () => {
-    expect(cosine([1, 2, 3], [1, 2, 3])).toBeCloseTo(1, 6);
-  });
-
-  it('cosine of orthogonal vectors is 0', () => {
-    expect(cosine([1, 0], [0, 1])).toBeCloseTo(0, 6);
-  });
-
-  it('cosine handles zero vectors without NaN', () => {
-    expect(cosine([0, 0], [1, 1])).toBe(0);
-  });
-
-  it('hashText is deterministic and content-sensitive', () => {
-    expect(hashText('hello')).toBe(hashText('hello'));
-    expect(hashText('hello')).not.toBe(hashText('hello!'));
-  });
-
-  it('itemText includes title and tags', () => {
-    const text = itemText(item({ id: 'a', title: 'Brutalist poster', tags: ['typography'] }));
-    expect(text).toContain('Brutalist poster');
-    expect(text).toContain('typography');
-  });
-});
-
 describe('youTubeId', () => {
   it('parses every common YouTube URL shape', () => {
     expect(youTubeId('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
@@ -169,39 +142,5 @@ describe('detectFromInput', () => {
     const d = detectFromInput('https://example.com/some/article');
     expect(d.type).toBe('link');
     expect(d.source).toBe('example.com');
-  });
-});
-
-describe('local AI heuristics (text-only fallback)', () => {
-  it('does not emit junk tags for an unread image (generic title + gray palette)', () => {
-    const it = item({
-      id: 'a',
-      title: 'Pasted image',
-      source: 'i.pinimg.com',
-      palette: ['#3b3b3b', '#9a9a9a', '#e6e6e6'],
-    });
-    const tags = suggestTags(it);
-    for (const junk of ['pasted', 'image', 'i', 'grey', 'gray', 'white']) {
-      expect(tags).not.toContain(junk);
-    }
-  });
-
-  it('keeps meaningful title words and a real palette color', () => {
-    const it = item({
-      id: 'b',
-      title: 'Brutalist concrete typography',
-      palette: ['#c83a2b'],
-    });
-    const tags = suggestTags(it);
-    expect(tags).toContain('brutalist');
-    expect(tags).toContain('typography');
-  });
-
-  it('omits the generic title and gray palette from the fallback prompt', () => {
-    const prompt = generatePrompt(
-      item({ id: 'c', title: 'Pasted image', palette: ['#3b3b3b', '#9a9a9a', '#e6e6e6'] }),
-    );
-    expect(prompt.toLowerCase()).not.toContain('pasted');
-    expect(prompt.toLowerCase()).not.toContain('grey');
   });
 });

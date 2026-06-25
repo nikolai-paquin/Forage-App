@@ -60,7 +60,7 @@ const NAV = [
   { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
   { id: 'filters', label: 'Filters', icon: <Filter size={16} /> },
   { id: 'libraries', label: 'Libraries', icon: <LibraryIcon size={16} /> },
-  { id: 'ai', label: 'Links', icon: <Link size={16} /> },
+  { id: 'links', label: 'Links', icon: <Link size={16} /> },
   { id: 'tags', label: 'Tags', icon: <Hash size={16} /> },
   { id: 'capture', label: 'Capture', icon: <Camera size={16} /> },
   { id: 'sound', label: 'Sound', icon: <Volume2 size={16} /> },
@@ -687,7 +687,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                     )}
                   </div>
                 </>
-              ) : active === 'ai' ? (
+              ) : active === 'links' ? (
                 <>
                   <h2 className="text-[24px] font-semibold tracking-tight">Links</h2>
                   <p className="mt-2 mb-6 max-w-md text-[13.5px] text-muted">
