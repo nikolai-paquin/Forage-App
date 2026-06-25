@@ -31,15 +31,17 @@ A one-pass checklist for recording every asset the case study needs.
 
 ## 4 · Item detail
 - [ ] 🎥 Open a tile → detail view → **eyedropper sampling a color** into the palette.
-- [ ] 📷 Detail panel: palette, tags, collections, AI prompt, "derived from".
+- [ ] 📷 Detail panel: palette, tags, collections, "derived from".
 
 ## 5 · Collections & color
 - [ ] 🎥 **Browse by color** → pick a hue → library filters to it.
-- [ ] 📷 Collections grid (incl. smart collections).
+- [ ] 📷 Collections grid + the **Unfiltered** inbox tab (saves not yet filed).
+- [ ] 📷 A collection cover showing mixed previews (images, font glyphs, palettes).
 - [ ] 📷 A single collection page (e.g. "Studio Rebrand").
 
 ## 6 · Moodboards (centerpiece)
 - [ ] 🎥 Arrange items on the canvas, add a sticky note, **draw an arrow**, **pinch-zoom**, hit **Present**.
+- [ ] 🎥 **Multi-select** saves in the picker to drop a batch on at once; or **auto-moodboard** a whole collection in one click.
 - [ ] 📷 A finished, beautiful moodboard.
 
 ## 7 · Storyboards
@@ -47,12 +49,13 @@ A one-pass checklist for recording every asset the case study needs.
 
 ## 8 · Palettes · Fonts · Kits (design-tool features)
 - [ ] 🎥 **Extract a palette from an image**, hover swatches, **click-to-copy a hex** (show the toast).
-- [ ] 📷 Font tiles rendering **real typefaces** (Playfair Display, Inter).
+- [ ] 📷 Font tiles rendering **real typefaces** (Playfair Display, Inter) — added from your **system fonts or Google Fonts**.
 - [ ] 🎥 A **Style Kit** (palette + fonts + references) → **Export CSS**.
 
-## 9 · AI
-- [ ] 🎥 **Auto-tag** + **Generate prompt** on an image.
-- [ ] 🎥 Semantic **"find by vibe"** search in the command palette.
+## 9 · Make it yours & take it with you
+- [ ] 🎥 **Color themes** — re-tint the whole app (Settings → Appearance), in light and dark.
+- [ ] 🎥 **Export library** → an organized **.zip** downloads (a folder per collection); show **Import** restoring it.
+- [ ] 📷 The **Stats** page (totals + breakdown by type).
 
 ## 10 · Speed & shortcuts
 - [ ] 🎥 **⌘K** command palette — search, jump to a view, run a command.
@@ -71,8 +74,10 @@ A one-pass checklist for recording every asset the case study needs.
 
 ## 14 · System & craft (designers love these)
 - [ ] 📷 **Light + dark** side by side.
+- [ ] 📷 The **brand mark** — the four-leaf Forage icon, light + dark (`forage-light.svg` / `forage-dark.svg` — included).
+- [ ] 📷 The **color themes** row (Classic, Warm Paper, Sage, Sky, Lilac, Rose).
 - [ ] 📷 A **design-system board**: type scale, color tokens, corner/elevation language, components.
-- [ ] 📷 The two **diagrams** (forage-loop.svg, architecture.svg — included).
+- [ ] 📷 The two **diagrams** (`forage-loop.svg`, `architecture.svg` — included).
 
 ## 15 · Process (optional, high-impact)
 - [ ] ✏️ Early **sketches / wireframes** (pull from `docs/SCREENS.md`).

@@ -53,7 +53,8 @@ Four rules shaped every decision:
 - **Calm.** Generous space, soft motion, no noise. The work is the hero.
 - **Fast.** Capture in two keystrokes; everything is one shortcut away.
 - **Local-first.** Your library is yours, on your device, offline by default.
-  Online features (AI, sync, sharing) are opt-in — never required.
+  Online features (sync, sharing, link previews) are opt-in — never required,
+  and you can export everything as a .zip at any time.
 - **Beautiful by default.** A real design system: type scale, color tokens, a
   consistent corner/elevation language, light and dark.
 
@@ -85,23 +86,26 @@ source, or tag — or by **color**: pick a hue and the whole library reorganizes
 around it.
 
 ### Detail that does real work
-Open any save and you get its palette (sampled with an eyedropper), an
-AI-generated prompt, tags, the collections it lives in, and the "derived from"
-graph linking inputs to outputs.
+Open any save and you get its palette (sampled with an eyedropper), tags, the
+collections it lives in, and the "derived from" graph linking inputs to outputs.
 
 ### Organize the way you think
-Manual **collections**, **smart collections** that gather themselves by type or
-source, **moodboards** on an infinite canvas (drag, annotate, present), and
+Manual **collections** — with an **"unfiltered" inbox** for anything not yet
+filed — a **color browser**, **moodboards** on an infinite canvas (drag,
+annotate, present, multi-select to add, or auto-lay-out a whole collection), and
 **storyboards** for sequencing a narrative.
 
 ### Tools for design, not just storage
 Save and extract **color palettes** (hover to read hex, click to copy),
-**fonts** previewed in their real typeface, and **brand kits** that bundle a
-palette, fonts, and references — exportable as CSS in one click.
+**fonts** previewed in their real typeface — pulled from your installed system
+fonts or Google Fonts — and **brand kits** that bundle a palette, fonts, and
+references, exportable as CSS in one click.
 
-### Intelligence where it helps
-Opt-in AI (Claude) auto-tags saves, writes image prompts, and powers
-"find by vibe" semantic search — all behind a single endpoint you control.
+### Make it yours — and take it with you
+Optional **color themes** re-tint the whole app, light or dark. And because the
+library is yours, you can **export everything as an organized .zip** (a folder
+per collection, assets as real files) or a portable JSON backup — and re-import
+either, losslessly.
 
 ---
 
@@ -111,7 +115,8 @@ Opt-in AI (Claude) auto-tags saves, writes image prompts, and powers
   bounces for the sake of it.
 - **Sound.** Optional, synthesized UI sounds with a "variety" mode and a distinct
   trash cue — designed, not stock.
-- **Theming.** A full light/dark system on design tokens.
+- **Theming.** A full light/dark system on design tokens, plus optional color
+  themes that re-tint the whole app.
 - **Responsive & mobile.** A dedicated mobile pass: bottom tab bar, full-screen
   detail sheets, touch-friendly controls, pinch-to-zoom on the canvas.
 - **Speed.** Command palette (⌘K), full keyboard navigation, instant local data.
@@ -123,8 +128,8 @@ Opt-in AI (Claude) auto-tags saves, writes image prompts, and powers
 I built the whole thing: **React + TypeScript + Vite + Tailwind CSS + Framer
 Motion** on the front end; **IndexedDB** for a local-first library that holds
 images without hitting storage limits; **Cloudflare Workers** for the optional
-online layer (Claude for AI, KV for sync, an unfurl/image proxy, and read-only
-sharing); and **Tauri 2** to ship it as a native Mac app from the same codebase.
+online layer (KV for sync, a link-unfurl/image proxy, and read-only sharing);
+and **Tauri 2** to ship it as a native Mac app from the same codebase.
 It's a PWA, so it installs on a phone and runs offline.
 
 *(diagram: architecture.svg)*

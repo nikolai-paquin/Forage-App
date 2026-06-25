@@ -22,7 +22,7 @@
   <!-- IndexedDB card -->
   <rect x="72" y="313" width="496" height="92" rx="14" fill="#ffffff" stroke="#e6e1d8" stroke-width="1.5"/>
   <text x="96" y="348" font-size="16" font-weight="700" fill="#16171b">IndexedDB</text>
-  <text x="96" y="374" font-size="13.5" fill="#6f685d">Your whole library — images, boards, kits — on device</text>
+  <text x="96" y="374" font-size="13.5" fill="#6f685d">Whole library on device — export it all as a .zip anytime</text>
 
   <!-- offline badge -->
   <rect x="72" y="430" width="220" height="44" rx="22" fill="#eaf0ea" stroke="#6b8f71" stroke-width="1.5"/>
@@ -39,29 +39,23 @@
   <!-- RIGHT: optional online -->
   <text x="700" y="150" font-size="15" font-weight="700" fill="#16171b">Optional online — Cloudflare Workers</text>
 
-  <!-- AI -->
-  <rect x="700" y="168" width="460" height="86" rx="14" fill="#ffffff" stroke="#e6e1d8" stroke-width="1.5"/>
-  <circle cx="726" cy="198" r="6" fill="#c2603f"/>
-  <text x="744" y="203" font-size="16" font-weight="700" fill="#16171b">AI · Claude</text>
-  <text x="724" y="232" font-size="13.5" fill="#6f685d">Auto-tag · image prompts · &#8220;find by vibe&#8221; semantic search</text>
-
   <!-- Unfurl -->
-  <rect x="700" y="266" width="460" height="86" rx="14" fill="#ffffff" stroke="#e6e1d8" stroke-width="1.5"/>
-  <circle cx="726" cy="296" r="6" fill="#4f6d8c"/>
-  <text x="744" y="301" font-size="16" font-weight="700" fill="#16171b">Unfurl &amp; image proxy</text>
-  <text x="724" y="330" font-size="13.5" fill="#6f685d">Rich link previews · cross-origin palettes &amp; exports</text>
+  <rect x="700" y="200" width="460" height="86" rx="14" fill="#ffffff" stroke="#e6e1d8" stroke-width="1.5"/>
+  <circle cx="726" cy="230" r="6" fill="#4f6d8c"/>
+  <text x="744" y="235" font-size="16" font-weight="700" fill="#16171b">Link previews &amp; image proxy</text>
+  <text x="724" y="264" font-size="13.5" fill="#6f685d">Rich bookmarks · cross-origin palettes &amp; exports</text>
 
   <!-- Sync -->
-  <rect x="700" y="364" width="460" height="86" rx="14" fill="#ffffff" stroke="#e6e1d8" stroke-width="1.5"/>
-  <circle cx="726" cy="394" r="6" fill="#6b8f71"/>
-  <text x="744" y="399" font-size="16" font-weight="700" fill="#16171b">Sync</text>
-  <text x="724" y="428" font-size="13.5" fill="#6f685d">Cross-device, per-library, via Workers KV</text>
+  <rect x="700" y="310" width="460" height="86" rx="14" fill="#ffffff" stroke="#e6e1d8" stroke-width="1.5"/>
+  <circle cx="726" cy="340" r="6" fill="#6b8f71"/>
+  <text x="744" y="345" font-size="16" font-weight="700" fill="#16171b">Sync</text>
+  <text x="724" y="374" font-size="13.5" fill="#6f685d">Cross-device, per-library, via Workers KV</text>
 
   <!-- Share -->
-  <rect x="700" y="462" width="460" height="86" rx="14" fill="#ffffff" stroke="#e6e1d8" stroke-width="1.5"/>
-  <circle cx="726" cy="492" r="6" fill="#8c6f4f"/>
-  <text x="744" y="497" font-size="16" font-weight="700" fill="#16171b">Share</text>
-  <text x="724" y="526" font-size="13.5" fill="#6f685d">Read-only collection links — no setup for viewers</text>
+  <rect x="700" y="420" width="460" height="86" rx="14" fill="#ffffff" stroke="#e6e1d8" stroke-width="1.5"/>
+  <circle cx="726" cy="450" r="6" fill="#8c6f4f"/>
+  <text x="744" y="455" font-size="16" font-weight="700" fill="#16171b">Share</text>
+  <text x="724" y="484" font-size="13.5" fill="#6f685d">Read-only collection links — no setup for viewers</text>
 
   <!-- footer -->
   <text x="40" y="600" font-size="13" fill="#9a9387">One codebase → web, installable PWA, and a native Mac app.</text>

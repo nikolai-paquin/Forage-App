@@ -34,8 +34,8 @@
     <circle cx="652" cy="186" r="17" fill="#16171b"/>
     <text x="652" y="192" font-size="16" font-weight="700" fill="#fff" text-anchor="middle">3</text>
     <text x="682" y="192" font-size="20" font-weight="700" fill="#16171b">Resurface</text>
-    <text x="644" y="232" font-size="13.5" fill="#6f685d">Search, color &amp;</text>
-    <text x="644" y="252" font-size="13.5" fill="#6f685d">&#8220;find by vibe.&#8221;</text>
+    <text x="644" y="232" font-size="13.5" fill="#6f685d">Search by text,</text>
+    <text x="644" y="252" font-size="13.5" fill="#6f685d">color &amp; tag.</text>
   </g>
   <!-- 4 Make -->
   <g>
