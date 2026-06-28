@@ -24,7 +24,7 @@
   `06-item-detail`, `07-command-palette`, `08-settings-stats`, `09-settings-themes`,
   `10-library-warm`, `11-library-sage`, `12-library-sky`, `13-library-rose`
 
-**Diagrams** (`/diagrams`, each as static PNG + animated MP4)
+**Diagrams** (`/diagrams`, high-res static PNG)
 - `forage-loop`, `user-flow`, `information-architecture`, `design-system`,
   `problem-principles`, `architecture`
 
@@ -66,7 +66,7 @@ Creative work generates two relentless streams that both leak — and no tool is
 
 **Tools for hoarding** — bookmark managers and cloud drives are built to *store*, not to *make*. Nothing resurfaces at the moment you’re actually building something.
 
-`[ASSET: diagrams/problem-principles — static PNG or animated MP4]`
+`[ASSET: diagrams/problem-principles]`
 
 ---
 
@@ -87,17 +87,17 @@ I rejected the folder hierarchy early — it’s where inspiration goes to die. 
 - An “Unfiltered” inbox so nothing has to be filed to be saved
 - A deep but shallow settings spine — power without clutter
 
-`[ASSET: diagrams/forage-loop — static PNG or animated MP4]`
+`[ASSET: diagrams/forage-loop]`
 
 ### The shortest path from a found thing to finished work.
 
 The core flow has one job: remove friction between saving something and using it. Capture auto‑detects type, palette, and source. The decision “file it now?” is never forced — you can triage later from the inbox. From a collection you’re one click from a moodboard or a brand kit.
 
-`[ASSET: diagrams/user-flow — static PNG or animated MP4]`
+`[ASSET: diagrams/user-flow]`
 
 ### Information architecture — five surfaces for one loop.
 
-`[ASSET: diagrams/information-architecture — static PNG or animated MP4]`
+`[ASSET: diagrams/information-architecture]`
 
 ---
 
@@ -163,7 +163,7 @@ A command palette (⌘K) searches every save and jumps to any view or command. F
 
 Calm is an engineering problem as much as a visual one. I built Forage on a small set of tokens — a type scale, color tokens, one corner & elevation language — so every new surface inherits the feel instead of re‑inventing it.
 
-`[ASSET: diagrams/design-system — static PNG or animated MP4]`
+`[ASSET: diagrams/design-system]`
 
 - **Motion** — Spring‑based and restrained. Tiles settle, sheets glide, the theme toggle cross‑fades. Nothing bounces for the sake of it.
 - **Sound** — Optional, synthesized UI sounds with a “variety” mode and a distinct trash cue — designed, not stock.
@@ -179,7 +179,7 @@ Designing and building it myself meant every interaction survived the trip from 
 
 `Stack:` React · TypeScript · Tailwind v4 · Framer Motion · IndexedDB · PWA · Tauri 2 · Cloudflare Workers
 
-`[ASSET: diagrams/architecture — static PNG or animated MP4]`
+`[ASSET: diagrams/architecture]`
 
 ---
 
