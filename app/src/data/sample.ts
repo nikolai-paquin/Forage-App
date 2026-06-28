@@ -2,8 +2,9 @@ import type { Item, Project, Space, Kit } from '../types';
 
 const now = Date.now();
 const days = (n: number) => now - n * 86_400_000;
-const img = (seed: string, w: number, h: number) =>
-  `https://picsum.photos/seed/${seed}/${w}/${h}`;
+// Demo media is bundled locally (public/demo) so the sample library always
+// renders — no dependency on external image hosts.
+const img = (seed: string, _w: number, _h: number) => `demo/${seed}.jpg`;
 
 export const sampleProjects: Project[] = [
   {

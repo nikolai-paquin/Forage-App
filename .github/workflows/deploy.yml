@@ -32,6 +32,8 @@ jobs:
       - name: Build
         working-directory: app
         run: npm run build
+      - name: Add case study (served at /case-study)
+        run: cp -r docs/case-study/site app/dist/case-study
       - uses: actions/upload-pages-artifact@v3
         with:
           path: app/dist
