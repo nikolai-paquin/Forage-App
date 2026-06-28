@@ -5,6 +5,7 @@ import type { Item } from '../types';
 import { extractPalette } from '../lib/color';
 import { ensureFont, fontStack } from '../lib/fonts';
 import { copyHex, copyText } from '../lib/util';
+import { startMediaDrag } from '../lib/dragout';
 import {
   paletteToCss,
   paletteToTailwind,
@@ -183,6 +184,8 @@ function Media({ item }: { item: Item }) {
         muted
         loop
         playsInline
+        draggable
+        onDragStart={(e) => startMediaDrag(e, item)}
         className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
       />
     );
@@ -207,6 +210,8 @@ function Media({ item }: { item: Item }) {
       <img
         src={thumb(item)}
         alt={item.title}
+        draggable
+        onDragStart={(e) => startMediaDrag(e, item)}
         className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
       />
     );

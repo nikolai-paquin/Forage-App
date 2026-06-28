@@ -5,6 +5,7 @@ import { useForage } from '../lib/store';
 import { toast } from '../lib/toast';
 import { ensureFont, fontStack } from '../lib/fonts';
 import { copyHex, itemInProject } from '../lib/util';
+import { startMediaDrag } from '../lib/dragout';
 import {
   CheckCircle2,
   Circle,
@@ -285,6 +286,8 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
             <img
               src={item.poster}
               alt=""
+              draggable
+              onDragStart={(e) => startMediaDrag(e, item)}
               className="absolute inset-0 h-full w-full object-cover"
               loading="lazy"
             />
@@ -296,6 +299,8 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
               loop
               playsInline
               preload="none"
+              draggable
+              onDragStart={(e) => startMediaDrag(e, item)}
               className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
                 hover ? 'opacity-100' : 'opacity-0'
               }`}
@@ -310,6 +315,8 @@ export function ItemTile({ item, onOpen }: { item: Item; onOpen: (item: Item) =>
           <img
             src={item.media}
             alt={item.title}
+            draggable
+            onDragStart={(e) => startMediaDrag(e, item)}
             className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
             loading="lazy"
           />
