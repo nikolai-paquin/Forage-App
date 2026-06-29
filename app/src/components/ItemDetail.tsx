@@ -6,6 +6,7 @@ import { extractPalette } from '../lib/color';
 import { ensureFont, fontStack } from '../lib/fonts';
 import { copyHex, copyText } from '../lib/util';
 import { startMediaDrag } from '../lib/dragout';
+import { openExternal } from '../lib/openExternal';
 import {
   paletteToCss,
   paletteToTailwind,
@@ -215,7 +216,16 @@ function Media({ item }: { item: Item }) {
         className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
       />
     );
-  return (
+  return item.url ? (
+    <button
+      onClick={() => openExternal(item.url)}
+      title="Open link"
+      className="grid aspect-video w-2/3 place-items-center gap-2 rounded-lg bg-white/5 text-white/40 transition hover:bg-white/10 hover:text-white/70"
+    >
+      <ExternalLink size={28} />
+      <span className="max-w-[80%] truncate text-[12px]">{item.url}</span>
+    </button>
+  ) : (
     <div className="grid aspect-video w-2/3 place-items-center rounded-lg bg-white/5 text-white/40">
       <ExternalLink size={28} />
     </div>
@@ -378,9 +388,9 @@ export function ItemDetail({
                 <Pipette size={17} />
               </button>
               {item.url && (
-                <a href={item.url} target="_blank" rel="noreferrer" className={iconBtn} title="Open source">
+                <button onClick={() => openExternal(item.url)} className={iconBtn} title="Open source">
                   <ExternalLink size={17} />
-                </a>
+                </button>
               )}
               <a
                 href={item.media ?? item.url ?? '#'}

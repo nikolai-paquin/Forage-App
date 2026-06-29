@@ -82,7 +82,7 @@ export interface Project {
   autoTags?: string[];
 }
 
-export type LibraryTab = 'all' | 'unfiltered' | 'bookmarks';
+export type LibraryTab = 'all' | 'unfiltered' | 'bookmarks' | 'videos';
 
 export type View =
   | { kind: 'library'; tab: LibraryTab }

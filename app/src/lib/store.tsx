@@ -479,10 +479,13 @@ export function ForageProvider({ children, demo = false }: { children: ReactNode
       inView =
         view.tab === 'bookmarks'
           ? live.filter((i) => i.type === 'link')
-          : view.tab === 'unfiltered'
-            ? // Not yet filed into any collection — the staging area.
-              live.filter((i) => !projects.some((p) => itemInProject(i, p)))
-            : live;
+          : view.tab === 'videos'
+            ? // A watch-later shelf — every saved video (YouTube and uploads).
+              live.filter((i) => i.type === 'video')
+            : view.tab === 'unfiltered'
+              ? // Not yet filed into any collection — the staging area.
+                live.filter((i) => !projects.some((p) => itemInProject(i, p)))
+              : live;
     } else if (view.kind === 'collection') {
       const p = projectById(view.id);
       inView = p ? items.filter((i) => !i.deletedAt && itemInProject(i, p)) : [];

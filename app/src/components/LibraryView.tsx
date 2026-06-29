@@ -46,6 +46,7 @@ const TABS: { id: LibraryTab; label: string; icon: React.ReactNode }[] = [
   { id: 'all', label: 'All', icon: <ImageIcon size={15} /> },
   { id: 'unfiltered', label: 'Unfiltered', icon: <Inbox size={15} /> },
   { id: 'bookmarks', label: 'Bookmarks', icon: <Bookmark size={15} /> },
+  { id: 'videos', label: 'Videos', icon: <Play size={15} /> },
 ];
 
 function Empty({
@@ -196,7 +197,7 @@ export function LibraryView({
 
       {/* body */}
       {tab === 'bookmarks' ? (
-        visibleItems.length === 0 ? (
+        visibleItems.length === 0 && projects.length === 0 ? (
           <Empty
             icon={<Bookmark size={34} strokeWidth={1.5} />}
             title="No bookmarks yet"
@@ -212,6 +213,28 @@ export function LibraryView({
           </Empty>
         ) : (
           <div>
+            {/* Groups: keep research/project links together. */}
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-[12px] font-medium uppercase tracking-wide text-faint">Groups</h3>
+            </div>
+            <div className="mb-6 flex gap-4 overflow-x-auto pb-1">
+              <button
+                onClick={onNewCollection}
+                className="flex h-24 w-[160px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-border-strong text-muted transition hover:border-ink hover:text-ink"
+              >
+                <Plus size={20} />
+                <span className="text-[12.5px]">New group</span>
+              </button>
+              {projects.map((p) => (
+                <div key={p.id} className="w-[160px] shrink-0">
+                  <CollectionCover
+                    project={p}
+                    onOpen={() => setView({ kind: 'collection', id: p.id })}
+                  />
+                </div>
+              ))}
+            </div>
+
             <div className="mb-3 flex justify-start">
               <button
                 onClick={onAddLink}
@@ -220,7 +243,13 @@ export function LibraryView({
                 <Plus size={15} /> Add a link
               </button>
             </div>
-            <BookmarksList items={visibleItems} onOpen={onOpen} />
+            {visibleItems.length === 0 ? (
+              <p className="py-12 text-center text-[13.5px] text-muted">
+                No links yet — add one, then drop it into a group.
+              </p>
+            ) : (
+              <BookmarksList items={visibleItems} onOpen={onOpen} />
+            )}
           </div>
         )
       ) : (
@@ -251,6 +280,20 @@ export function LibraryView({
                 title="Nothing unfiltered"
                 sub="Every save is filed into a collection. New saves that aren't in a collection show up here, ready to sort."
               />
+            ) : tab === 'videos' ? (
+              <Empty
+                icon={<Play size={34} strokeWidth={1.5} />}
+                title="No videos yet"
+                sub="Save a YouTube link or any video and it lands here — a watch-later shelf so the videos you mean to get to never get lost."
+              >
+                <button
+                  onClick={onAddLink}
+                  className="mt-5 rounded-full px-4 py-2 text-[13px] font-medium text-accent-ink"
+                  style={{ background: 'var(--ink)' }}
+                >
+                  Add a video link
+                </button>
+              </Empty>
             ) : (
               <Empty
                 icon={<ImageIcon size={34} strokeWidth={1.5} />}

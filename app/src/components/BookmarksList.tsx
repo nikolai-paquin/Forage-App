@@ -1,10 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Item } from '../types';
 import { useForage } from '../lib/store';
 import { sourceLabel } from '../lib/util';
 import { toast } from '../lib/toast';
-import { ChevronLeft, ChevronRight, Link as LinkIcon, Maximize2, Share2, Trash2 } from './icons';
+import { openExternal } from '../lib/openExternal';
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Folder,
+  Link as LinkIcon,
+  Maximize2,
+  Plus,
+  Share2,
+  Trash2,
+} from './icons';
 
 const PER_PAGE = 20;
 const PER_COL = 10;
@@ -18,11 +29,86 @@ function faviconOf(url?: string): string {
   }
 }
 
+/** A dropdown to file a link into one or more groups (collections). */
+function GroupMenu({ item, onClose }: { item: Item; onClose: () => void }) {
+  const { projects, assignToProject, removeFromProject, createProject } = useForage();
+  const ref = useRef<HTMLDivElement>(null);
+  const [name, setName] = useState('');
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [onClose]);
+
+  const create = () => {
+    const n = name.trim();
+    if (!n) return;
+    const id = createProject(n, undefined, false);
+    assignToProject(item.id, id);
+    setName('');
+    toast(`Added to ${n}`);
+  };
+
+  return (
+    <div
+      ref={ref}
+      className="absolute right-0 top-9 z-20 w-56 rounded-xl border border-border bg-surface p-1.5 shadow-lg"
+    >
+      <p className="px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-faint">
+        Add to group
+      </p>
+      <div className="max-h-52 overflow-y-auto">
+        {projects.map((p) => {
+          const inIt = item.projectIds.includes(p.id);
+          return (
+            <button
+              key={p.id}
+              onClick={() => (inIt ? removeFromProject(item.id, p.id) : assignToProject(item.id, p.id))}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] text-ink transition hover:bg-surface-2"
+            >
+              <span
+                className="grid h-4 w-4 shrink-0 place-items-center rounded-[5px] border"
+                style={{
+                  borderColor: inIt ? p.color : 'var(--border-strong)',
+                  background: inIt ? p.color : 'transparent',
+                }}
+              >
+                {inIt && <Check size={11} className="text-white" />}
+              </span>
+              <span className="truncate">{p.name}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-1 flex items-center gap-1 border-t border-border px-1 pt-1.5">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && create()}
+          placeholder="New group…"
+          className="min-w-0 flex-1 bg-transparent px-1 py-1 text-[13px] text-ink placeholder:text-faint focus:outline-none"
+        />
+        <button
+          onClick={create}
+          title="Create group"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted transition hover:bg-surface-2 hover:text-ink"
+        >
+          <Plus size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /** A browser-bookmarks-style list: preview · title + description · actions.
  *  Fills a left column to 10, overflows into a right column, paginates at 20. */
 export function BookmarksList({ items, onOpen }: { items: Item[]; onOpen: (i: Item) => void }) {
   const { deleteForever, reinsertItem } = useForage();
   const [page, setPage] = useState(0);
+  const [menuFor, setMenuFor] = useState<string | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(items.length / PER_PAGE));
   useEffect(() => {
@@ -59,19 +145,11 @@ export function BookmarksList({ items, onOpen }: { items: Item[]; onOpen: (i: It
         key={item.id}
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
-        className="group flex items-center gap-3.5 rounded-lg border border-border bg-surface px-3 py-2.5 transition hover:bg-surface-2"
+        className="group relative flex items-center gap-3.5 rounded-lg border border-border bg-surface px-3 py-2.5 transition hover:bg-surface-2"
       >
-        <a
-          href={item.url || '#'}
-          target="_blank"
-          rel="noreferrer"
-          onClick={(e) => {
-            if (!item.url) {
-              e.preventDefault();
-              onOpen(item);
-            }
-          }}
-          className="flex min-w-0 flex-1 items-center gap-3.5"
+        <button
+          onClick={() => (item.url ? openExternal(item.url) : onOpen(item))}
+          className="flex min-w-0 flex-1 items-center gap-3.5 text-left"
         >
           <div className="grid h-12 w-20 shrink-0 place-items-center overflow-hidden rounded-md bg-surface-2 text-faint">
             {item.media ? (
@@ -87,9 +165,21 @@ export function BookmarksList({ items, onOpen }: { items: Item[]; onOpen: (i: It
             {desc && <p className="truncate text-[12px] text-muted">{desc}</p>}
             <p className="truncate text-[11px] text-faint">{sourceLabel(item.source)}</p>
           </div>
-        </a>
+        </button>
 
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+          <div className="relative">
+            <button
+              onClick={() => setMenuFor((m) => (m === item.id ? null : item.id))}
+              title="Add to group"
+              className={`grid h-8 w-8 place-items-center rounded-full transition hover:bg-surface hover:text-ink ${
+                item.projectIds.length ? 'text-ink' : 'text-muted'
+              }`}
+            >
+              <Folder size={15} />
+            </button>
+            {menuFor === item.id && <GroupMenu item={item} onClose={() => setMenuFor(null)} />}
+          </div>
           <button
             onClick={() => onOpen(item)}
             title="Details"
